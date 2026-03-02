@@ -6,6 +6,7 @@ function CourseView() {
     const { courseId } = useParams();
     const [courseData, setCourseData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [activeLesson, setActiveLesson] = useState(null);
     const handleComplete = async (lessonId) => {
         try {
             await api.post(`/lessons/${lessonId}/complete`);
@@ -35,36 +36,87 @@ function CourseView() {
     if (loading) return <h3>Loading...</h3>;
     if (!courseData) return <h3>Course not found!</h3>;
     return (
-        <div>
-            <h2>{courseData?.course?.title}</h2>
-            <p>Progress: {courseData?.progress}%</p>
+        <div className="h-screen flex flex-col bg-gray-100">
 
-            {courseData?.modules?.map((module) => (
-                <div key={module._id} style={{ marginTop: "20px" }}>
-                    <h3>{module.title}</h3>
+            {/* HEADER */}
+            <div className="bg-white shadow px-6 py-4 flex justify-between items-center">
+                <h1 className="text-2xl font-semibold">
+                    {courseData.course.title}
+                </h1>
 
-                    {module.lessons?.map((lesson) => (
+                <div className="w-1/3">
+                    <div className="w-full bg-gray-200 rounded-full h-3">
                         <div
-                            key={lesson._id}
-                            style={{
-                                marginLeft: "20px",
-                                color: lesson.completed ? "green" : "black"
-                            }}
-                        >
-                            {lesson.title} {lesson.completed ? "✔️" : ""}
+                            className="bg-green-500 h-3 rounded-full"
+                            style={{ width: `${courseData.progress}%` }}
+                        />
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1 text-right">
+                        {courseData.progress}% completed
+                    </p>
+                </div>
+            </div>
 
-                            {!lesson.completed && (
-                                <button
-                                    style={{ marginLeft: "10px" }}
-                                    onClick={() => handleComplete(lesson._id)}
+            <div className="flex flex-1 overflow-hidden">
+
+                {/* SIDEBAR */}
+                <div className="w-1/3 bg-white border-r overflow-y-auto p-4">
+                    {courseData.modules.map((module) => (
+                        <div key={module._id} className="mb-6">
+                            <h3 className="font-semibold text-gray-700 mb-2">
+                                {module.title}
+                            </h3>
+
+                            {module.lessons.map((lesson) => (
+                                <div
+                                    key={lesson._id}
+                                    onClick={() => setActiveLesson(lesson)}
+                                    className={`p-2 rounded cursor-pointer mb-1 flex justify-between items-center
+                  ${activeLesson?._id === lesson._id
+                                            ? "bg-blue-100"
+                                            : "hover:bg-gray-100"
+                                        }
+                `}
                                 >
-                                    Complete
-                                </button>
-                            )}
+                                    <span>{lesson.title}</span>
+                                    {lesson.completed && (
+                                        <span className="text-green-600 font-bold">✔</span>
+                                    )}
+                                </div>
+                            ))}
                         </div>
                     ))}
                 </div>
-            ))}
+
+                {/* CONTENT PANEL */}
+                <div className="flex-1 p-8 overflow-y-auto">
+                    {activeLesson ? (
+                        <>
+                            <h2 className="text-2xl font-bold mb-4">
+                                {activeLesson.title}
+                            </h2>
+
+                            <p className="text-gray-700 mb-6 whitespace-pre-line">
+                                {activeLesson.content}
+                            </p>
+
+                            {!activeLesson.completed && (
+                                <button
+                                    onClick={() => handleComplete(activeLesson._id)}
+                                    className="bg-black text-white px-6 py-2 rounded hover:bg-gray-800 transition"
+                                >
+                                    Mark as Complete
+                                </button>
+                            )}
+                        </>
+                    ) : (
+                        <div className="text-gray-500 text-lg">
+                            Select a lesson to begin.
+                        </div>
+                    )}
+                </div>
+
+            </div>
         </div>
     );
 }
