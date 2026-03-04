@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../api";
-
+import NavBar from "../components/NavBar";
 function CourseView() {
     const { courseId } = useParams();
     const [courseData, setCourseData] = useState(null);
@@ -37,8 +37,7 @@ function CourseView() {
     if (!courseData) return <h3>Course not found!</h3>;
     return (
         <div className="h-screen flex flex-col bg-gray-100">
-
-            {/* HEADER */}
+            <NavBar />
             <div className="bg-white shadow px-6 py-4 flex justify-between items-center">
                 <h1 className="text-2xl font-semibold">
                     {courseData.course.title}
