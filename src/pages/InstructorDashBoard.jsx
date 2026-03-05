@@ -5,11 +5,24 @@ import { useNavigate } from "react-router-dom";
 function InstructorDashBoard() {
     const navigate = useNavigate();
     const [courses, setCourses] = useState([]);
+    const [loading, setLoading] = useState(true);
     const PublishCourse = async (courseId) => {
-        console.log(courseId);
-        await api.patch(`/course/${courseId}/publish`);
+        try {
 
-    }
+            const res = await api.patch(`/course/${courseId}/publish`);
+
+            setCourses(prev =>
+                prev.map(course =>
+                    course._id === courseId
+                        ? { ...course, isPublished: res.data.isPublished }
+                        : course
+                )
+            );
+
+        } catch (err) {
+            console.log(err);
+        }
+    };
     useEffect(() => {
         const fetchCourses = async () => {
             try {
@@ -19,9 +32,15 @@ function InstructorDashBoard() {
             catch (err) {
                 console.log(err);
             }
+            finally {
+                setLoading(false);
+            }
         }
         fetchCourses();
     }, [])
+    if (loading) {
+        return <div className="p-10 text-center">Loading courses...</div>;
+    }
     return (
         <div className="bg-gray-100 min-h-screen">
             <NavBar />
@@ -59,10 +78,14 @@ function InstructorDashBoard() {
                                     Edit Modules
                                 </button>
 
-                                <button className="bg-green-500 text-white px-3 py-1 rounded"
+                                <button
                                     onClick={() => PublishCourse(course._id)}
+                                    className={`px-3 py-1 rounded text-white ${course.isPublished
+                                        ? "bg-red-500"
+                                        : "bg-green-500"
+                                        }`}
                                 >
-                                    {!course.isPublished ? "Publish" : "UnPublish"}
+                                    {course.isPublished ? "Unpublish" : "Publish"}
                                 </button>
                             </div>
                         </div>

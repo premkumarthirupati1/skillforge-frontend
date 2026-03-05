@@ -6,6 +6,9 @@ import CourseView from "./pages/courseView";
 import InstructorDashBoard from "./pages/InstructorDashBoard";
 import CreateCourse from "./pages/CreateCourse";
 import EditCourse from "./pages/EditCourse";
+import CourseBuilder from "./pages/CourseBuilder";
+import LessonBuilder from "./pages/LessonBuilder";
+import ModuleEditor from "./pages/ModuleEditor";
 function App() {
   return (
     <BrowserRouter>
@@ -38,6 +41,21 @@ function App() {
           </ProtectedRoute>
         }
         />
+        <Route path="/course-builder/:courseId" element={
+          <ProtectedRoute>
+            <CourseBuilder />
+          </ProtectedRoute>
+        } />
+        <Route path="/module/:moduleId/edit" element={
+          <ProtectedRoute>
+            <ModuleEditor />
+          </ProtectedRoute>
+        } />
+        <Route path="/lesson-builder/:moduleId" element={
+          <ProtectedRoute>
+            <LessonBuilder />
+          </ProtectedRoute>
+        } />
       </Routes>
     </BrowserRouter>
   );
