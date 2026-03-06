@@ -9,16 +9,21 @@ import EditCourse from "./pages/EditCourse";
 import CourseBuilder from "./pages/CourseBuilder";
 import LessonBuilder from "./pages/LessonBuilder";
 import ModuleEditor from "./pages/ModuleEditor";
+import EditLesson from "./pages/EditLesson";
+import HomePage from "./pages/Homepage";
+import Signup from "./pages/Singup";
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={<HomePage />} />
+        <Route path="/signup" element={<Signup />} />
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <Dashboard />
           </ProtectedRoute>
         } />
+        <Route path="/login" element={<Login />} />
         <Route path="/course/:courseId/full" element={
           <ProtectedRoute>
             <CourseView />
@@ -54,6 +59,11 @@ function App() {
         <Route path="/lesson-builder/:moduleId" element={
           <ProtectedRoute>
             <LessonBuilder />
+          </ProtectedRoute>
+        } />
+        <Route path="/edit-lesson/:lessonId" element={
+          <ProtectedRoute>
+            <EditLesson />
           </ProtectedRoute>
         } />
       </Routes>

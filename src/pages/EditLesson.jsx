@@ -1,15 +1,12 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import api from "../api";
 import NavBar from "../components/NavBar";
 
-function LessonBuilder() {
+function EditLesson() {
 
+    const { lessonId } = useParams();;
     const navigate = useNavigate();
-
-    const { moduleId } = useParams();
-
-    const [lessons, setLessons] = useState([]);
 
     const [formData, setFormData] = useState({
         title: "",
@@ -19,21 +16,29 @@ function LessonBuilder() {
         order: ""
     });
 
-    const fetchLessons = async () => {
+    const fetchLesson = async () => {
+
         try {
 
-            const res = await api.get(`/lessons/${moduleId}`);
+            const res = await api.get(`/lessons/${lessonId}/get-lesson`);
 
-            setLessons(res.data);
+            setFormData({
+                title: res.data.title,
+                contentType: res.data.contentType,
+                content: res.data.content,
+                duration: res.data.duration,
+                order: res.data.order
+            });
 
         } catch (err) {
             console.log(err);
         }
+
     };
 
     useEffect(() => {
-        fetchLessons();
-    }, [moduleId]);
+        fetchLesson();
+    }, [lessonId]);
 
     const handleChange = (e) => {
 
@@ -43,31 +48,21 @@ function LessonBuilder() {
         });
 
     };
-    const createLesson = async () => {
+
+    const updateLesson = async () => {
 
         try {
 
-            await api.post("/lessons/create-lesson", {
+            await api.patch(`/lessons/${lessonId}/update-lesson`, {
                 ...formData,
                 duration: Number(formData.duration),
-                order: Number(formData.order),
-                moduleId
+                order: Number(formData.order)
             });
 
-            fetchLessons();
-
-            setFormData({
-                title: "",
-                contentType: "video",
-                content: "",
-                duration: "",
-                order: ""
-            });
+            navigate(-1);
 
         } catch (err) {
-
             console.log(err);
-
         }
 
     };
@@ -81,41 +76,10 @@ function LessonBuilder() {
             <div className="max-w-3xl mx-auto p-8">
 
                 <h1 className="text-3xl font-bold mb-6">
-                    Lesson Builder
+                    Edit Lesson
                 </h1>
 
-                <div className="space-y-3 mb-8">
-                    {lessons
-                        .sort((a, b) => a.order - b.order)
-                        .map((lesson) => (
-
-                            <div
-                                key={lesson._id}
-                                className="bg-white p-4 rounded shadow flex justify-between items-center"
-                            >
-
-                                <span>
-                                    {lesson.order}. {lesson.title}
-                                </span>
-
-                                <button
-                                    onClick={() => navigate(`/edit-lesson/${lesson._id}`)}
-                                    className="bg-blue-500 text-white px-3 py-1 rounded"
-                                >
-                                    Edit
-                                </button>
-
-                            </div>
-
-                        ))}
-
-                </div>
-
                 <div className="bg-white p-6 rounded shadow space-y-4">
-
-                    <h2 className="text-xl font-semibold">
-                        Add Lesson
-                    </h2>
 
                     <input
                         name="title"
@@ -138,7 +102,7 @@ function LessonBuilder() {
 
                     <textarea
                         name="content"
-                        placeholder="Content (Video URL / text / quiz JSON)"
+                        placeholder="Content"
                         value={formData.content}
                         onChange={handleChange}
                         className="w-full border p-3 rounded"
@@ -147,7 +111,7 @@ function LessonBuilder() {
                     <input
                         name="duration"
                         type="number"
-                        placeholder="Duration (minutes)"
+                        placeholder="Duration"
                         value={formData.duration}
                         onChange={handleChange}
                         className="w-full border p-3 rounded"
@@ -163,10 +127,10 @@ function LessonBuilder() {
                     />
 
                     <button
-                        onClick={createLesson}
+                        onClick={updateLesson}
                         className="w-full bg-black text-white py-3 rounded hover:bg-gray-800"
                     >
-                        Save Lesson
+                        Update Lesson
                     </button>
 
                 </div>
@@ -179,4 +143,4 @@ function LessonBuilder() {
 
 }
 
-export default LessonBuilder;
+export default EditLesson;

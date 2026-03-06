@@ -5,6 +5,7 @@ function NavBar() {
     const navigate = useNavigate();
     const [menuOpen, setMenuOpen] = useState(false);
     const role = localStorage.getItem("role");
+    const token = localStorage.getItem("token");
     const handleLogout = () => {
         localStorage.removeItem("token");
         navigate("/");
@@ -22,7 +23,7 @@ function NavBar() {
             >
                 SkillForge
             </h1>
-            <div className="flex items-center gap-6">
+            {token && <div className="flex items-center gap-6">
                 <button
                     className="text-gray-700 hover:text-black"
                     onClick={() => navigate("/dashboard")}
@@ -74,7 +75,7 @@ function NavBar() {
                     }
                 </div>
 
-            </div>
+            </div>}
         </div>
     );
 }
