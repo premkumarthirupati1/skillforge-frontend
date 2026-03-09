@@ -58,7 +58,6 @@ function CourseView() {
 
             <div className="flex flex-1 overflow-hidden">
 
-                {/* SIDEBAR */}
                 <div className="w-1/3 bg-white border-r overflow-y-auto p-4">
                     {courseData.modules.map((module) => (
                         <div key={module._id} className="mb-6">
@@ -86,8 +85,6 @@ function CourseView() {
                         </div>
                     ))}
                 </div>
-
-                {/* CONTENT PANEL */}
                 <div className="flex-1 p-8 overflow-y-auto">
                     {activeLesson ? (
                         <>
@@ -95,9 +92,26 @@ function CourseView() {
                                 {activeLesson.title}
                             </h2>
 
-                            <p className="text-gray-700 mb-6 whitespace-pre-line">
-                                {activeLesson.content}
-                            </p>
+                            {activeLesson.contentType === "video" && (
+                                <video
+                                    controls
+                                    className="w-full max-h-[450px] rounded mb-6"
+                                >
+                                    <source src={activeLesson.content} type="video/mp4" />
+                                </video>
+                            )}
+
+                            {activeLesson.contentType === "text" && (
+                                <p className="text-gray-700 mb-6 whitespace-pre-line">
+                                    {activeLesson.content}
+                                </p>
+                            )}
+
+                            {activeLesson.contentType === "quiz" && (
+                                <div className="bg-gray-50 p-6 rounded">
+                                    Quiz feature coming soon.
+                                </div>
+                            )}
 
                             {!activeLesson.completed && (
                                 <button

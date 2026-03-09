@@ -11,13 +11,19 @@ import LessonBuilder from "./pages/LessonBuilder";
 import ModuleEditor from "./pages/ModuleEditor";
 import EditLesson from "./pages/EditLesson";
 import HomePage from "./pages/Homepage";
-import Signup from "./pages/Singup";
+import Signup from "./pages/Signup";
+import CourseShowcase from "./pages/CourseShowcase";
+import CourseDetails from "./pages/CourseDetails";
+import Profile from "./pages/Profile";
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/profile" element={<Profile />} />
         <Route path="/" element={<HomePage />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/course-showcase" element={<CourseShowcase />} />
+        <Route path="/course/:courseId" element={<CourseDetails />} />
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <Dashboard />
