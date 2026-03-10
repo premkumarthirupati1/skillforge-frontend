@@ -57,7 +57,7 @@ function Dashboard() {
                     <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800">
                         <p className="text-slate-400 mb-4 font-medium">Your learning path is empty.</p>
                         <button
-                            onClick={() => navigate('/course-showcase   ')}
+                            onClick={() => navigate('/course-showcase')}
                             className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl transition-all font-bold shadow-lg shadow-blue-200 dark:shadow-none"
                         >
                             Find a Course

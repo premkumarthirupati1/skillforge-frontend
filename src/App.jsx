@@ -15,6 +15,7 @@ import Signup from "./pages/Signup";
 import CourseShowcase from "./pages/CourseShowcase";
 import CourseDetails from "./pages/CourseDetails";
 import Profile from "./pages/Profile";
+import UnifiedDashBoard from "./pages/UnifiedDashboard";
 function App() {
   return (
     <BrowserRouter>
@@ -26,7 +27,7 @@ function App() {
         <Route path="/course/:courseId" element={<CourseDetails />} />
         <Route path="/dashboard" element={
           <ProtectedRoute>
-            <Dashboard />
+            <UnifiedDashBoard />
           </ProtectedRoute>
         } />
         <Route path="/login" element={<Login />} />

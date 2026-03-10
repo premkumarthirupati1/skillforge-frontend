@@ -2,13 +2,13 @@ import { useEffect, useState } from "react";
 import api from "../api";
 import NavBar from "../components/NavBar";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-hot-toast"; // Recommended for professional feedback
+import { toast } from "react-hot-toast";
 
 function InstructorDashBoard() {
     const navigate = useNavigate();
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [actionLoading, setActionLoading] = useState(null); // Track specific course actions
+    const [actionLoading, setActionLoading] = useState(null);
 
     const handlePublishToggle = async (courseId) => {
         setActionLoading(courseId);
@@ -51,7 +51,7 @@ function InstructorDashBoard() {
         <div className="bg-slate-50 min-h-screen font-sans text-slate-900">
             <NavBar />
             <div className="max-w-7xl mx-auto p-6 md:p-10">
-                {/* Header Section */}
+
                 <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
                     <div>
                         <h1 className="text-4xl font-extrabold tracking-tight">Instructor Dashboard</h1>
@@ -65,7 +65,6 @@ function InstructorDashBoard() {
                     </button>
                 </header>
 
-                {/* Course Grid */}
                 {courses.length === 0 ? (
                     <EmptyState onAdd={() => navigate('/create-course')} />
                 ) : (
@@ -86,7 +85,6 @@ function InstructorDashBoard() {
     );
 }
 
-// Sub-components for better maintainability [cite: 25]
 function CourseCard({ course, onTogglePublish, isProcessing, navigate }) {
     return (
         <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:border-indigo-300 transition-colors shadow-sm">
@@ -121,8 +119,8 @@ function CourseCard({ course, onTogglePublish, isProcessing, navigate }) {
                         disabled={isProcessing}
                         onClick={() => onTogglePublish(course._id)}
                         className={`w-full py-2.5 rounded-lg font-bold text-sm transition-all ${course.isPublished
-                                ? "bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200"
-                                : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                            ? "bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200"
+                            : "bg-emerald-600 hover:bg-emerald-700 text-white"
                             }`}
                     >
                         {isProcessing ? "Processing..." : course.isPublished ? "Take Course Offline" : "Publish to Marketplace"}
