@@ -136,7 +136,13 @@ function LessonBuilder() {
                             <option value="video">🎥 Video Lesson</option>
                             <option value="text">📄 Text Content</option>
                         </select>
+                        <button>
+
+                        </button>
                     </div>
+                    {/* This is video segement */}
+
+
 
                     {formData.contentType === "video" ? (
                         <div className="space-y-2">
