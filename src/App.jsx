@@ -16,6 +16,8 @@ import CourseShowcase from "./pages/CourseShowcase";
 import CourseDetails from "./pages/CourseDetails";
 import Profile from "./pages/Profile";
 import UnifiedDashBoard from "./pages/UnifiedDashboard";
+import LessonsView from "./pages/LessonsView";
+import LessonViewer from "./pages/LessonViewer";
 function App() {
   return (
     <BrowserRouter>
@@ -63,6 +65,11 @@ function App() {
             <ModuleEditor />
           </ProtectedRoute>
         } />
+        <Route path="/module/:moduleId" element={
+          <ProtectedRoute>
+            <LessonsView />
+          </ProtectedRoute>
+        } />
         <Route path="/lesson-builder/:moduleId" element={
           <ProtectedRoute>
             <LessonBuilder />
@@ -71,6 +78,11 @@ function App() {
         <Route path="/edit-lesson/:lessonId" element={
           <ProtectedRoute>
             <EditLesson />
+          </ProtectedRoute>
+        } />
+        <Route path="/lesson/:lessonId" element={
+          <ProtectedRoute>
+            <LessonViewer />
           </ProtectedRoute>
         } />
       </Routes>

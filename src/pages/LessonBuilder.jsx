@@ -154,13 +154,6 @@ function LessonBuilder() {
                     ) : (
                         <textarea name="content" placeholder="Write your lesson content here..." value={formData.content} onChange={handleChange} className="w-full border border-slate-200 p-3 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all h-32" />
                     )}
-
-
-
-
-
-
-
                     <div className="grid grid-cols-2 gap-4">
                         <input name="duration" type="number" placeholder="Duration (mins)" value={formData.duration} onChange={handleChange} className="w-full border border-slate-200 p-3 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all" />
                         <input name="order" type="number" placeholder="Order (Optional)" value={formData.order} onChange={handleChange} className="w-full border border-slate-200 p-3 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all" />
