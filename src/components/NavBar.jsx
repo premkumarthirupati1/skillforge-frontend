@@ -105,7 +105,15 @@ function NavBar() {
                         )}
                     </form>
                 </div>
-
+                <Link
+                    to="/course-showcase"
+                    className={`group relative text-sm font-bold flex items-center gap-1.5 transition-colors ${location.pathname === '/courses' ? 'text-blue-600' : 'text-slate-600 hover:text-blue-500'}`}
+                >
+                    <span>Explore</span>
+                    <span className="bg-blue-100 text-blue-600 text-[10px] px-1.5 py-0.5 rounded-md uppercase tracking-tighter group-hover:bg-blue-600 group-hover:text-white transition-all">
+                        New
+                    </span>
+                </Link>
                 {/* ACTION SECTION */}
                 <div className={`flex items-center gap-3 transition-all duration-300 ${searchExpanded ? 'hidden lg:flex' : 'flex'}`}>
                     {token ? (

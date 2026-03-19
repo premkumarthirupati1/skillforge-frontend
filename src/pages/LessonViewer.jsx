@@ -26,7 +26,7 @@ function LessonViewer() {
 
     const handleComplete = async () => {
         try {
-            await api.post(`/lessons/complete/${lessonId}`);
+            await api.post(`/lessons/${lessonId}/complete`);
             navigate(-1);
         } catch (err) {
             console.error("Failed to mark complete");
@@ -61,7 +61,7 @@ function LessonViewer() {
                             controlsList="nodownload"
                             className="w-full aspect-video"
 
-                            src={`http://localhost:5000/${lesson.content}`}
+                            src={`http://localhost:3000/${lesson.content}`}
                         >
                             Your browser does not support the video tag.
                         </video>

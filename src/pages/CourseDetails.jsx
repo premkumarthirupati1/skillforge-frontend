@@ -114,8 +114,7 @@ function CourseDetails() {
                 <div className="lg:col-span-1">
                     <div className="sticky top-8 bg-white rounded-2xl shadow-xl border border-slate-200 p-8">
                         <div className="text-center mb-6">
-                            <span className="text-slate-400 line-through text-sm">$99.99</span>
-                            <div className="text-4xl font-black text-slate-900">Free</div>
+                            <div className="text-4xl font-black text-slate-900">${course.price}</div>
                         </div>
 
                         {!isEnrolled ? (

@@ -1,30 +1,44 @@
+import { useEffect, useState } from "react"; // Changed useState to useEffect for fetching
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../api";
-import { useState } from "react";
+import NavBar from "../components/NavBar";
 
 function LessonsView() {
     const [lessons, setLessons] = useState([]);
     const [loading, setIsLoading] = useState(true);
     const { moduleId } = useParams();
     const navigate = useNavigate();
+
     const fetchLessons = async () => {
         try {
             const res = await api.get(`/modules/${moduleId}`);
             setLessons(res.data.lessons);
-        }
-        catch (err) {
+        } catch (err) {
             console.log(err);
-        }
-        finally {
+        } finally {
             setIsLoading(false);
         }
     }
-    useState(() => {
+
+    // Correct way to trigger the fetch in React
+    useEffect(() => {
         fetchLessons();
-    }, [moduleId])
+    }, [moduleId]);
+
     return (
         <div className="bg-slate-50 min-h-screen">
+            <NavBar />
             <div className="max-w-5xl mx-auto py-12 px-6">
+
+                {/* Back to Modules Arrow */}
+                <button
+                    onClick={() => navigate(-1)}
+                    className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition-colors mb-6 group"
+                >
+                    <span className="text-xl group-hover:-translate-x-1 transition-transform">←</span>
+                    <span className="font-semibold text-sm">Back to Modules</span>
+                </button>
+
                 <header className="mb-10">
                     <h1 className="text-3xl font-extrabold text-slate-900">Module Lessons</h1>
                     <p className="text-slate-500">Select a lesson to start learning.</p>
@@ -62,7 +76,7 @@ function LessonsView() {
                                 </div>
 
                                 <div className="flex items-center gap-2 text-indigo-600 font-semibold text-sm opacity-0 group-hover:opacity-100 transition-opacity">
-                                    Start Lesson <span>&rarr;</span>
+                                    Start Lesson <span>→</span>
                                 </div>
                             </div>
                         ))}
@@ -76,4 +90,5 @@ function LessonsView() {
         </div>
     );
 }
+
 export default LessonsView;
