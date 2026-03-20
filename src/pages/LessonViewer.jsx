@@ -26,7 +26,7 @@ function LessonViewer() {
 
     const handleComplete = async () => {
         try {
-            await api.post(`/lessons/${lessonId}/complete`);
+            await api.patch(`/lessons/${lessonId}/complete`);
             navigate(-1);
         } catch (err) {
             console.error("Failed to mark complete");

@@ -20,7 +20,7 @@ function EditLesson() {
 
     const fetchLesson = useCallback(async () => {
         try {
-            const res = await api.get(`/lessons/${lessonId}/get-lesson`);
+            const res = await api.get(`/lessons/get-lesson/${lessonId}`);
             const { title, contentType, content, duration, order } = res.data;
 
             setFormData({

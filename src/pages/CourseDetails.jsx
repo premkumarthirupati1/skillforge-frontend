@@ -21,6 +21,16 @@ function CourseDetails() {
         }
     };
 
+    const handleComplete = async (e, moduleId) => {
+        e.stopPropagation();
+        try {
+            await api.patch(`/module/${moduleId}/complete`)
+        }
+        catch (err) {
+            console.log(err);
+        }
+    }
+
     const enrollCourse = async () => {
         try {
             await api.post(`/enrollments/${courseId}/enroll`);
@@ -71,41 +81,65 @@ function CourseDetails() {
                         </div>
 
                         <div className="divide-y divide-slate-100">
-                            {modules.map((module, index) => (
-                                <div
-                                    key={module._id}
-                                    onClick={() => isEnrolled && navigate(`/module/${module._id}`)}
-                                    className={`group p-5 flex items-center gap-4 transition-colors ${isEnrolled ? "cursor-pointer hover:bg-slate-50" : "bg-slate-50/50"
-                                        }`}
-                                >
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border ${isEnrolled ? "bg-blue-50 border-blue-200 text-blue-600" : "bg-slate-100 border-slate-200 text-slate-400"
-                                        }`}>
-                                        {index + 1}
-                                    </div>
-
-                                    <div className="flex-grow">
-                                        <h3 className={`font-semibold ${isEnrolled ? "text-slate-800" : "text-slate-400"}`}>
-                                            {module.title}
-                                        </h3>
-                                        {!isEnrolled && (
-                                            <span className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Locked</span>
-                                        )}
-                                    </div>
-
-                                    {isEnrolled ? (
-                                        <div className="text-slate-300 group-hover:text-blue-500 transition-colors">
-                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
+                            {modules.map((module, index) => {
+                                const isModuleDone = module.lessons && module.lessons.length > 0
+                                    ? module.lessons.every(lesson => lesson.completed)
+                                    : false;
+                                return (
+                                    <div
+                                        key={module._id}
+                                        onClick={() => isEnrolled && navigate(`/module/${module._id}`)}
+                                        className={`group p-5 flex items-center gap-4 transition-colors ${isEnrolled ? "cursor-pointer hover:bg-slate-50" : "bg-slate-50/50"
+                                            }`}
+                                    >
+                                        {/* DYNAMIC ICON: Number or Checkmark */}
+                                        <div
+                                            className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border transition-all 
+                    ${isModuleDone
+                                                    ? "bg-green-100 border-green-200 text-green-600 shadow-sm"
+                                                    : isEnrolled
+                                                        ? "bg-blue-50 border-blue-200 text-blue-600"
+                                                        : "bg-slate-100 border-slate-200 text-slate-400"
+                                                }`}
+                                        >
+                                            {isModuleDone ? (
+                                                <svg className="w-5 h-5 animate-in zoom-in duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            ) : (
+                                                index + 1
+                                            )}
                                         </div>
-                                    ) : (
-                                        <svg className="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                        </svg>
-                                    )}
-                                </div>
-                            ))}
+
+                                        <div className="flex-grow">
+                                            <h3 className={`font-semibold transition-all ${isEnrolled ? "text-slate-800" : "text-slate-400"
+                                                } ${isModuleDone ? "text-slate-500 line-through" : ""}`}>
+                                                {module.title}
+                                            </h3>
+                                            {!isEnrolled && (
+                                                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Locked</span>
+                                            )}
+                                        </div>
+
+                                        {/* Status Indicator */}
+                                        <div className="text-slate-300 group-hover:text-blue-500 transition-colors">
+                                            {isEnrolled ? (
+                                                isModuleDone ? (
+                                                    <span className="text-xs font-bold text-green-500 uppercase">Completed</span>
+                                                ) : (
+                                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                                    </svg>
+                                                )
+                                            ) : (
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                                </svg>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>

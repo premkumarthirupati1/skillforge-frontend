@@ -8,7 +8,16 @@ function LessonsView() {
     const [loading, setIsLoading] = useState(true);
     const { moduleId } = useParams();
     const navigate = useNavigate();
-
+    const handleComplete = async (e, lessonId) => {
+        e.stopPropagation(); // Prevents navigating to the lesson page
+        try {
+            await api.patch(`/lessons/${lessonId}/complete`);
+            // Refresh the list to show the new completion status
+            fetchLessons();
+        } catch (err) {
+            console.log("Error marking as complete:", err);
+        }
+    };
     const fetchLessons = async () => {
         try {
             const res = await api.get(`/modules/${moduleId}`);
@@ -59,11 +68,27 @@ function LessonsView() {
                                 className="group bg-white border border-slate-200 p-5 rounded-2xl shadow-sm hover:shadow-md hover:border-indigo-500 transition-all cursor-pointer flex items-center justify-between"
                             >
                                 <div className="flex items-center gap-5">
-                                    <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center font-bold group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                                        {lesson.order}
-                                    </div>
+                                    <button
+                                        onClick={(e) => handleComplete(e, lesson._id)}
+                                        className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold z-10 transition-all duration-300
+        ${lesson.completed
+                                                ? 'bg-green-100 text-green-600 border-2 border-green-200 shadow-sm'
+                                                : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white'
+                                            }`}
+                                    >
+                                        {lesson.completed ? (
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        ) : (
+                                            lesson.order
+                                        )}
+                                    </button>
+
                                     <div>
-                                        <h3 className="font-bold text-slate-800 text-lg">{lesson.title}</h3>
+                                        <h3 className={`font-bold text-lg transition-colors ${lesson.complete ? 'text-slate-500 line-through' : 'text-slate-800'}`}>
+                                            {lesson.title}
+                                        </h3>
                                         <div className="flex items-center gap-3 mt-1">
                                             <span className="text-xs font-semibold px-2 py-0.5 bg-slate-100 text-slate-500 rounded-md uppercase">
                                                 {lesson.contentType === 'video' ? '🎥 Video' : '📄 Reading'}

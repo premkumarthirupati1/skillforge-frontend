@@ -30,7 +30,6 @@ function Profile() {
         try {
             const res = await api.put('/user/profile', { name, bio, socials });
             setUser(res.data);
-            alert("Profile Updated Successfully!");
         } catch (err) {
             alert("Update Failed");
         } finally {
