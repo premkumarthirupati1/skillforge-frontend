@@ -9,7 +9,7 @@ function LessonsView() {
     const { moduleId } = useParams();
     const navigate = useNavigate();
     const handleComplete = async (e, lessonId) => {
-        e.stopPropagation(); // Prevents navigating to the lesson page
+        e.stopPropagation();
         try {
             await api.patch(`/lessons/${lessonId}/complete`);
             // Refresh the list to show the new completion status

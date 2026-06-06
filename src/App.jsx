@@ -18,6 +18,8 @@ import Profile from "./pages/Profile";
 import UnifiedDashBoard from "./pages/UnifiedDashboard";
 import LessonsView from "./pages/LessonsView";
 import LessonViewer from "./pages/LessonViewer";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 function App() {
   return (
     <BrowserRouter>
@@ -85,6 +87,14 @@ function App() {
             <LessonViewer />
           </ProtectedRoute>
         } />
+        <Route path="/forgot-password"
+          element={
+            <ForgotPassword />
+          }
+        />
+        <Route path="/auth/forgot-password/:token"
+          element={<ResetPassword />}
+        />
       </Routes>
     </BrowserRouter>
   );
