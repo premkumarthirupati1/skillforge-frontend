@@ -1,3 +1,80 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --brand-bg: 255, 255, 255;
+    --brand-surface: 248, 250, 252;
+    --brand-elevated: 241, 245, 249;
+    --brand-border: 226, 232, 240;
+    --brand-primary: 79, 70, 229;
+    --brand-secondary: 124, 58, 237;
+    --brand-cyan: 8, 145, 178;
+    --brand-text: 15, 23, 42;
+    --brand-muted: 100, 116, 139;
+    --brand-subtle: 148, 163, 184;
+  }
+  
+  .dark {
+    --brand-bg: 8, 9, 13;
+    --brand-surface: 17, 19, 24;
+    --brand-elevated: 24, 26, 33;
+    --brand-border: 39, 42, 52;
+    --brand-primary: 99, 102, 241;
+    --brand-secondary: 139, 92, 246;
+    --brand-cyan: 34, 211, 238;
+    --brand-text: 248, 250, 252;
+    --brand-muted: 161, 161, 170;
+    --brand-subtle: 113, 113, 122;
+  }
+}
+
+@layer utilities {
+  .bg-grid-pattern {
+    background-image: 
+      linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  
+  .text-glow {
+    text-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+  }
+}
+
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--brand-border)) rgb(var(--brand-bg));
+}
+
+body::-webkit-scrollbar {
+  width: 8px;
+}
+body::-webkit-scrollbar-track {
+  background: rgb(var(--brand-bg));
+}
+body::-webkit-scrollbar-thumb {
+  background-color: rgb(var(--brand-border));
+  border-radius: 4px;
+}
+
+/* Custom Video Player Range Slider */
+input[type=range] {
+  -webkit-appearance: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 12px;
+  width: 12px;
+  border-radius: 50%;
+  background: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 0 5px rgba(0,0,0,0.3);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.group\/progress:hover input[type=range]::-webkit-slider-thumb,
+.group\/volume:hover input[type=range]::-webkit-slider-thumb {
+  opacity: 1;
+}

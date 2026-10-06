@@ -22,14 +22,13 @@ function SortableModule({ module }) {
             style={style}
             {...attributes}
             {...listeners}
-            className="bg-white p-4 rounded shadow mb-3 flex justify-between cursor-grab"
+            className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-800 p-4 rounded-xl shadow-sm mb-3 flex justify-between items-center cursor-grab hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
         >
-
-            <span>
+            <span className="font-semibold text-sm">
                 {module.order}. {module.title}
             </span>
 
-            <span className="text-gray-400">
+            <span className="text-slate-400 dark:text-slate-500 text-lg">
                 ≡
             </span>
 

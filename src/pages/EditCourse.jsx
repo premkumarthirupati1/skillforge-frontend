@@ -92,70 +92,118 @@ function EditCourse() {
         }
     };
 
-    if (loading) return <div className="p-20 text-center animate-pulse">Loading course...</div>;
+    if (loading) return (
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center text-slate-400 animate-pulse">
+            Loading course details...
+        </div>
+    );
 
     return (
-        <div className="bg-slate-50 min-h-screen font-sans">
+        <div className="bg-slate-50 dark:bg-slate-950 min-h-screen font-sans transition-colors duration-300">
             <NavBar />
             <div className="max-w-2xl mx-auto py-12 px-4">
-                <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+                <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800">
                     <header className="mb-8">
-                        <h2 className="text-3xl font-extrabold text-slate-900">Edit Course</h2>
+                        <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">Edit Course</h2>
                     </header>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Thumbnail Edit Section */}
                         <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-2">Course Thumbnail</label>
-                            <div className="flex flex-col items-center p-4 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50">
+                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Course Thumbnail</label>
+                            <div className="flex flex-col items-center p-4 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl bg-slate-50 dark:bg-slate-800/50">
                                 <img
                                     src={preview || `http://localhost:3000/${currentThumbnail}`}
                                     alt="Course Thumbnail"
                                     className="w-full h-40 object-cover rounded-xl mb-4 shadow-sm"
+                                    onError={(e) => {
+                                        e.currentTarget.style.display = "none";
+                                    }}
                                 />
                                 <input
                                     type="file"
                                     name="thumbnail"
                                     accept="image/*"
                                     onChange={handleChange}
-                                    className="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+                                    className="text-sm text-slate-500 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-indigo-50 dark:file:bg-indigo-900/40 file:text-indigo-700 dark:file:text-indigo-300 hover:file:bg-indigo-100 cursor-pointer"
                                 />
                             </div>
                         </div>
 
                         {/* Text Fields */}
                         <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-2">Title</label>
-                            <input name="title" value={formData.title} onChange={handleChange} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" required />
+                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Title</label>
+                            <input
+                                name="title"
+                                value={formData.title}
+                                onChange={handleChange}
+                                className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 p-3.5 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                required
+                            />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-2">Description</label>
-                            <textarea name="description" value={formData.description} onChange={handleChange} rows="4" className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" />
+                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Description</label>
+                            <textarea
+                                name="description"
+                                value={formData.description}
+                                onChange={handleChange}
+                                rows="4"
+                                className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 p-3.5 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                            />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-2">Price</label>
-                            <input name="price  " value={formData.price} onChange={handleChange} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" required />
+                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Price ($)</label>
+                            <input
+                                name="price"
+                                type="number"
+                                value={formData.price}
+                                onChange={handleChange}
+                                className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 p-3.5 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                required
+                            />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-2">Difficulty</label>
-                                <select name="difficulty" value={formData.difficulty} onChange={handleChange} className="w-full border border-slate-300 p-3 rounded-xl bg-white focus:ring-2 focus:ring-indigo-500">
+                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Difficulty</label>
+                                <select
+                                    name="difficulty"
+                                    value={formData.difficulty}
+                                    onChange={handleChange}
+                                    className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 p-3.5 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all"
+                                >
                                     <option value="beginner">Beginner</option>
                                     <option value="intermediate">Intermediate</option>
                                     <option value="advanced">Advanced</option>
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-2">Tags</label>
-                                <input name="tags" value={formData.tags} onChange={handleChange} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Tags</label>
+                                <input
+                                    name="tags"
+                                    value={formData.tags}
+                                    onChange={handleChange}
+                                    className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 p-3.5 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                />
                             </div>
                         </div>
 
                         <div className="flex gap-4 pt-4">
-                            <button type="button" onClick={() => navigate("/instructor")} className="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200">Cancel</button>
-                            <button type="submit" disabled={isSaving} className={`flex-1 py-3 rounded-xl font-bold text-white shadow-lg ${isSaving ? "bg-slate-400" : "bg-indigo-600 hover:bg-indigo-700"}`}>
+                            <button
+                                type="button"
+                                onClick={() => navigate("/instructor")}
+                                className="flex-1 py-3.5 rounded-xl font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={isSaving}
+                                className={`flex-1 py-3.5 rounded-xl font-bold text-white shadow-lg transition-all ${
+                                    isSaving ? "bg-slate-400 dark:bg-slate-700" : "bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/25"
+                                }`}
+                            >
                                 {isSaving ? "Saving..." : "Save Changes"}
                             </button>
                         </div>

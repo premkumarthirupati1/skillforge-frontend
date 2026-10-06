@@ -5,7 +5,7 @@ function UnifiedDashBoard() {
     const role = localStorage.getItem("role");
     if (!role) {
         return (
-            <div className="min-h-screen bg-slate-50">
+            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
                 <NavBar />
                 <div className="p-10 text-center animate-pulse text-slate-400">
                     Verifying user role...
@@ -14,7 +14,7 @@ function UnifiedDashBoard() {
         );
     }
     return (
-        <div className="min-h-screen bg-slate-50">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
             <main>
                 {role === "instructor" ? (
                     <InstructorDashBoard />

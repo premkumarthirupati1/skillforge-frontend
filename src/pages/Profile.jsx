@@ -43,8 +43,15 @@ function Profile() {
         setSocials(user?.socials || { github: "", twitter: "", linkedin: "" });
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        try {
+            await api.post('/auth/logout');
+        } catch (err) {
+            console.error("Logout request failed", err);
+        }
         localStorage.removeItem("token");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("role");
         navigate("/login");
     };
 
@@ -137,7 +144,7 @@ function Profile() {
                                                     value={socials[platform.id]}
                                                     onChange={handleSocialChange}
                                                     placeholder={`${platform.label} handle`}
-                                                    className="w-full bg-slate-100/50 dark:bg-slate-800/50 border-2 border-transparent focus:border-blue-500/20 rounded-2xl p-4 pl-12 focus:ring-4 focus:ring-blue-500/5 outline-none transition text-sm font-medium"
+                                                    className="w-full bg-slate-100/50 dark:bg-slate-800/50 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 border-2 border-transparent focus:border-blue-500/20 dark:focus:border-blue-500/40 rounded-2xl p-4 pl-12 focus:ring-4 focus:ring-blue-500/5 outline-none transition text-sm font-medium"
                                                 />
                                             </div>
                                         ))}

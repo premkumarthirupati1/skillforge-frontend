@@ -32,16 +32,16 @@ function ForgotPassword() {
     };
 
     return (
-        <div className="bg-slate-50 min-h-screen flex items-center justify-center font-sans p-4 text-slate-900">
-            <div className="bg-white border border-slate-200 p-8 rounded-2xl shadow-xl max-w-md w-full transition-all">
+        <div className="bg-slate-50 dark:bg-slate-950 min-h-screen flex items-center justify-center font-sans p-4 text-slate-900 dark:text-slate-100 transition-colors duration-300">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-3xl shadow-xl max-w-md w-full transition-all">
 
                 {/* Brand Header */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 mb-3 font-bold text-2xl">
+                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 mb-3 font-bold text-2xl">
                         SF
                     </div>
-                    <h2 className="text-3xl font-extrabold tracking-tight">Reset Password</h2>
-                    <p className="text-slate-500 mt-2 text-sm">
+                    <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Reset Password</h2>
+                    <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">
                         {!isSubmitted
                             ? "Enter your email address and we'll send you a link to reset your password."
                             : "Check your inbox for the recovery details."}
@@ -51,7 +51,7 @@ function ForgotPassword() {
                 {!isSubmitted ? (
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
-                            <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-2">
+                            <label htmlFor="email" className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                                 Email Address
                             </label>
                             <input
@@ -62,14 +62,14 @@ function ForgotPassword() {
                                 onChange={(e) => setEmail(e.target.value)}
                                 disabled={isLoading}
                                 placeholder="name@example.com"
-                                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-sm disabled:bg-slate-50 disabled:text-slate-400"
+                                className="w-full px-4 py-3 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-sm disabled:bg-slate-50 dark:disabled:bg-slate-800/50 disabled:text-slate-400"
                             />
                         </div>
 
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg hover:shadow-indigo-200 disabled:bg-indigo-400 flex items-center justify-center gap-2 text-sm"
+                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg hover:shadow-indigo-500/25 disabled:bg-indigo-400 flex items-center justify-center gap-2 text-sm"
                         >
                             {isLoading ? (
                                 <>
@@ -86,18 +86,18 @@ function ForgotPassword() {
                     </form>
                 ) : (
                     <div className="text-center space-y-6">
-                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 mb-2">
+                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 mb-2">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 19v-8a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 11l9-6 9 6M4 11v8M20 11v8" />
                             </svg>
                         </div>
-                        <p className="text-sm text-slate-600">
-                            An email has been sent to <span className="font-semibold text-slate-800">{email}</span>. Click the link in the email to securely reset your password.
+                        <p className="text-sm text-slate-600 dark:text-slate-300">
+                            An email has been sent to <span className="font-semibold text-slate-800 dark:text-slate-100">{email}</span>. Click the link in the email to securely reset your password.
                         </p>
                         <button
                             onClick={() => setIsSubmitted(false)}
-                            className="text-indigo-600 hover:text-indigo-700 font-medium text-sm transition-colors"
+                            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium text-sm transition-colors"
                         >
                             Didn't get the email? Try again
                         </button>
@@ -105,8 +105,8 @@ function ForgotPassword() {
                 )}
 
                 {/* Back to Sign In Link */}
-                <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-                    <Link to="/login" className="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors inline-flex items-center gap-1">
+                <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 text-center">
+                    <Link to="/login" className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors inline-flex items-center gap-1">
                         ← Back to Sign In
                     </Link>
                 </div>

@@ -1,155 +1,141 @@
-import { useState, useEffect, useRef } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import {
-    Search,
     Sun,
     Moon,
     ShoppingCart,
     Heart,
     User,
-    LayoutDashboard,
     LogOut,
-    BookOpen,
-    ShieldCheck,
     ChevronDown,
-    X
+    Search
 } from "lucide-react";
+import SearchBar from "../pages/SearchBar";
+import api from "../api";
 
 function NavBar() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [menuOpen, setMenuOpen] = useState(false);
-    const [searchExpanded, setSearchExpanded] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [isDark, setIsDark] = useState(document.documentElement.classList.contains("dark"));
+    const [scrolled, setScrolled] = useState(false);
 
-    const searchRef = useRef(null);
-    const role = localStorage.getItem("role");
     const token = localStorage.getItem("token");
 
-    // Close search when clicking outside
-    useEffect(() => {
-        function handleClickOutside(event) {
-            if (searchRef.current && !searchRef.current.contains(event.target)) {
-                setSearchExpanded(false);
-            }
+    const handleLogout = async () => {
+        try {
+            await api.post('/auth/logout');
+        } catch (err) {
+            console.error("Logout request failed", err);
         }
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
+        localStorage.removeItem("token");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("role");
+        navigate('/');
+    };
+
+    // Theme management
+    const [theme, setTheme] = useState(localStorage.getItem("theme") || "dark");
+
+    useEffect(() => {
+        if (theme === "dark") {
+            document.documentElement.classList.add("dark");
+            localStorage.setItem("theme", "dark");
+        } else {
+            document.documentElement.classList.remove("dark");
+            localStorage.setItem("theme", "light");
+        }
+    }, [theme]);
+
+    const toggleTheme = () => {
+        setTheme(prev => prev === "dark" ? "light" : "dark");
+    };
+
+    // Scroll listener for Vercel-like glassy effect
+    useEffect(() => {
+        const handleScroll = () => {
+            setScrolled(window.scrollY > 20);
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    const handleSearch = (e) => {
-        e.preventDefault();
-        if (searchQuery.trim()) {
-            navigate(`/course-showcase?search=${searchQuery}`);
-            setSearchExpanded(false);
-        }
-    };
-    const handleLogout = () => {
-        localStorage.removeItem("token");
-        navigate('/');
-    }
-    const toggleDark = () => {
-        const html = document.documentElement;
-        if (html.classList.contains("dark")) {
-            html.classList.remove("dark");
-            localStorage.setItem("theme", "light");
-            setIsDark(false);
-        } else {
-            html.classList.add("dark");
-            localStorage.setItem("theme", "dark");
-            setIsDark(true);
-        }
-    };
-
     return (
-        <nav className="sticky top-0 w-full z-50 transition-all duration-300 border-b border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md">
-            <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center gap-4">
+        <nav className={`sticky top-0 w-full z-50 transition-all duration-500 border-b ${
+            scrolled 
+            ? 'bg-brand-bg/80 backdrop-blur-md border-brand-border shadow-sm' 
+            : 'bg-brand-bg border-transparent'
+        }`}>
+            <div className="w-full px-8 md:px-12 h-16 flex justify-between items-center gap-4">
 
                 {/* LOGO SECTION */}
-                <div className={`flex items-center gap-8 transition-all duration-300 ${searchExpanded ? 'opacity-0 scale-95 md:opacity-100 md:scale-100' : 'opacity-100'}`}>
+                <div className="flex items-center gap-8">
                     <h1
-                        className="text-2xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent cursor-pointer tracking-tighter shrink-0"
+                        className="text-xl font-bold text-brand-text cursor-pointer tracking-tight shrink-0 flex items-center gap-2"
                         onClick={() => navigate("/dashboard")}
                     >
                         SkillForge
+                        <span className="w-1.5 h-1.5 rounded-full bg-brand-primary animate-pulse"></span>
                     </h1>
                 </div>
 
-                {/* SEARCH BAR SECTION */}
-                <div ref={searchRef} className={`flex-grow flex justify-center transition-all duration-500 ease-in-out ${searchExpanded ? 'max-w-md' : 'max-w-[40px] md:max-w-xs'}`}>
-                    <form onSubmit={handleSearch} className="relative w-full group">
-                        <input
-                            type="text"
-                            placeholder="Search for courses..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            onFocus={() => setSearchExpanded(true)}
-                            className={`w-full bg-slate-100 dark:bg-slate-800 border border-transparent focus:border-blue-500/30 rounded-2xl py-2.5 pl-11 pr-10 outline-none transition-all duration-500 text-sm font-medium ${searchExpanded ? 'opacity-100 shadow-lg shadow-blue-500/5' : 'opacity-0 md:opacity-100 pointer-events-none md:pointer-events-auto'
-                                }`}
-                        />
-                        <button
-                            type="button"
-                            onClick={() => setSearchExpanded(!searchExpanded)}
-                            className="absolute left-0 top-0 h-full px-3 text-slate-400 group-hover:text-blue-500 transition-colors z-10"
+                {/* MIDDLE NAVIGATION */}
+                <div className="hidden md:flex items-center gap-6">
+                    {['Learn', 'Skills', 'Projects', 'Challenges', 'Community'].map((item) => (
+                        <Link 
+                            key={item}
+                            to={`/${item.toLowerCase()}`}
+                            className="text-sm font-medium text-brand-muted hover:text-brand-text transition-colors duration-200"
                         >
-                            <Search size={20} />
-                        </button>
-                        {searchExpanded && (
-                            <button
-                                type="button"
-                                onClick={() => { setSearchExpanded(false); setSearchQuery(""); }}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                            >
-                                <X size={16} />
-                            </button>
-                        )}
-                    </form>
+                            {item}
+                        </Link>
+                    ))}
                 </div>
-                <Link
-                    to="/course-showcase"
-                    className={`group relative text-sm font-bold flex items-center gap-1.5 transition-colors ${location.pathname === '/courses' ? 'text-blue-600' : 'text-slate-600 hover:text-blue-500'}`}
-                >
-                    <span>Explore</span>
-                    <span className="bg-blue-100 text-blue-600 text-[10px] px-1.5 py-0.5 rounded-md uppercase tracking-tighter group-hover:bg-blue-600 group-hover:text-white transition-all">
-                        New
-                    </span>
-                </Link>
+
                 {/* ACTION SECTION */}
-                <div className={`flex items-center gap-3 transition-all duration-300 ${searchExpanded ? 'hidden lg:flex' : 'flex'}`}>
+                <div className="flex items-center gap-4 transition-all duration-300">
+                    <div className="hidden md:flex relative group w-64">
+                        <SearchBar placeholder="Search courses..." />
+                    </div>
+
+                    <button
+                        onClick={toggleTheme}
+                        className="p-2 rounded-full bg-brand-surface border border-brand-border hover:border-brand-primary/50 text-brand-muted hover:text-brand-primary transition-all duration-300"
+                        aria-label="Toggle Theme"
+                    >
+                        {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+                    </button>
+
                     {token ? (
                         <>
-                            <div className="hidden sm:flex items-center border-r border-slate-200 dark:border-slate-800 pr-4 mr-1 gap-2">
-                                <button className="p-2.5 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all relative">
-                                    <Heart size={20} />
-                                </button>
-                                <button className="p-2.5 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
-                                    <ShoppingCart size={20} />
-                                </button>
-                            </div>
-
-                            <button onClick={toggleDark} className="p-2.5 rounded-xl text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all">
-                                {isDark ? <Sun size={20} /> : <Moon size={20} className="text-slate-600" />}
-                            </button>
-
                             <div className="relative">
                                 <button
                                     onClick={() => setMenuOpen(!menuOpen)}
-                                    className="flex items-center gap-2 p-1.5 pl-3 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all"
+                                    className="flex items-center gap-2 p-1 pl-2.5 rounded-full bg-brand-surface border border-brand-border hover:border-brand-primary/50 transition-all duration-300"
                                 >
-                                    <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-                                        <User size={16} />
+                                    <div className="w-6 h-6 bg-brand-primary/20 rounded-full flex items-center justify-center text-brand-primary shadow-[0_0_10px_rgba(99,102,241,0.2)]">
+                                        <User size={12} />
                                     </div>
-                                    <ChevronDown size={14} className={`text-slate-400 transition-transform ${menuOpen ? 'rotate-180' : ''}`} />
+                                    <ChevronDown size={14} className={`text-brand-muted transition-transform duration-300 mr-1.5 ${menuOpen ? 'rotate-180' : ''}`} />
                                 </button>
 
                                 {menuOpen && (
-                                    <div className="absolute right-0 mt-3 w-56 bg-white dark:bg-slate-900 shadow-2xl rounded-2xl border border-slate-100 dark:border-slate-800 p-2">
-                                        <button onClick={() => navigate("/profile")} className="flex items-center gap-3 w-full text-left px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors">
-                                            <User size={16} className="text-purple-500" />
+                                    <div className="absolute right-0 mt-3 w-48 bg-brand-elevated shadow-2xl shadow-black/50 rounded-xl border border-brand-border p-1.5 animate-in fade-in zoom-in-95 duration-200">
+                                        <button onClick={() => {navigate("/profile"); setMenuOpen(false);}} className="flex items-center gap-3 w-full text-left px-3 py-2 text-sm font-medium text-brand-text hover:bg-brand-surface rounded-lg transition-colors">
+                                            <User size={14} className="text-brand-primary" />
                                             Profile
                                         </button>
-                                        <button onClick={handleLogout} className="flex items-center gap-3 w-full text-left px-3 py-2.5 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors mt-2">
-                                            <LogOut size={16} />
+                                        
+                                        {localStorage.getItem("role") === "instructor" && (
+                                            <button onClick={() => {navigate("/studio"); setMenuOpen(false);}} className="flex items-center gap-3 w-full text-left px-3 py-2 text-sm font-medium text-brand-primary hover:bg-brand-primary/10 rounded-lg transition-colors mt-1">
+                                                <div className="w-3.5 h-3.5 border-2 border-current rounded-sm flex items-center justify-center shrink-0">
+                                                    <div className="w-1 h-1 bg-current rounded-full" />
+                                                </div>
+                                                Creator Studio
+                                            </button>
+                                        )}
+
+                                        <button onClick={handleLogout} className="flex items-center gap-3 w-full text-left px-3 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 rounded-lg transition-colors mt-1">
+                                            <LogOut size={14} />
                                             Sign Out
                                         </button>
                                     </div>
@@ -157,7 +143,7 @@ function NavBar() {
                             </div>
                         </>
                     ) : (
-                        <button onClick={() => navigate("/login")} className="bg-blue-600 text-white px-6 py-2.5 rounded-xl text-sm font-bold">Sign In</button>
+                        <button onClick={() => navigate("/login")} className="bg-brand-text text-brand-bg hover:bg-brand-text/90 px-5 py-1.5 rounded-md text-sm font-semibold transition-all">Sign In</button>
                     )}
                 </div>
             </div>

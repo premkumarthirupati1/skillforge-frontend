@@ -20,6 +20,11 @@ import LessonsView from "./pages/LessonsView";
 import LessonViewer from "./pages/LessonViewer";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import ComingSoon from "./pages/ComingSoon";
+import InstructorStudio from "./pages/InstructorStudio";
+import CourseEditor from "./pages/CourseEditor";
+
 function App() {
   return (
     <BrowserRouter>
@@ -27,7 +32,18 @@ function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/" element={<HomePage />} />
         <Route path="/signup" element={<Signup />} />
+        
+        {/* Core catalog routes */}
         <Route path="/course-showcase" element={<CourseShowcase />} />
+        <Route path="/courses" element={<CourseShowcase />} />
+        
+        {/* Nav Links mapping */}
+        <Route path="/learn" element={<CourseShowcase />} />
+        <Route path="/skills" element={<CourseShowcase />} />
+        <Route path="/projects" element={<ComingSoon title="Project Forge" />} />
+        <Route path="/challenges" element={<ComingSoon title="Coding Challenges" />} />
+        <Route path="/community" element={<ComingSoon title="Community Hub" />} />
+
         <Route path="/course/:courseId" element={<CourseDetails />} />
         <Route path="/dashboard" element={
           <ProtectedRoute>
@@ -46,6 +62,16 @@ function App() {
           </ProtectedRoute>
         }
         />
+        <Route path="/studio" element={
+          <ProtectedRoute>
+            <InstructorStudio />
+          </ProtectedRoute>
+        } />
+        <Route path="/studio/course/:courseId" element={
+          <ProtectedRoute>
+            <CourseEditor />
+          </ProtectedRoute>
+        } />
         <Route path="/create-course" element={
           <ProtectedRoute>
             <CreateCourse />
@@ -95,6 +121,11 @@ function App() {
         <Route path="/auth/forgot-password/:token"
           element={<ResetPassword />}
         />
+        <Route path="/payment/success" element={
+          <ProtectedRoute>
+            <PaymentSuccess />
+          </ProtectedRoute>
+        } />
       </Routes>
     </BrowserRouter>
   );

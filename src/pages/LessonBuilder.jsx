@@ -92,18 +92,22 @@ function LessonBuilder() {
         }
     };
 
-    if (loading) return <div className="p-20 text-center animate-pulse text-slate-400">Loading lessons...</div>;
+    if (loading) return (
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center text-slate-400 animate-pulse transition-colors duration-300">
+            Loading lessons...
+        </div>
+    );
 
     return (
-        <div className="bg-slate-50 min-h-screen font-sans">
+        <div className="bg-slate-50 dark:bg-slate-950 min-h-screen font-sans transition-colors duration-300">
             <NavBar />
             <div className="max-w-4xl mx-auto py-12 px-6">
                 <header className="flex justify-between items-center mb-8">
                     <div>
-                        <h1 className="text-3xl font-extrabold text-slate-900">Lesson Builder</h1>
-                        <p className="text-slate-500">Upload videos or add text content.</p>
+                        <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white">Lesson Builder</h1>
+                        <p className="text-slate-500 dark:text-slate-400">Upload videos or add text content.</p>
                     </div>
-                    <button onClick={() => navigate(-1)} className="text-sm font-semibold text-slate-600 hover:text-indigo-600">
+                    <button onClick={() => navigate(-1)} className="text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
                         &larr; Back to Modules
                     </button>
                 </header>
@@ -111,55 +115,88 @@ function LessonBuilder() {
                 <div className="space-y-3 mb-12">
                     {lessons.length > 0 ? (
                         lessons.sort((a, b) => a.order - b.order).map((lesson) => (
-                            <div key={lesson._id} className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm flex justify-between items-center hover:border-indigo-200 transition-all">
+                            <div key={lesson._id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm flex justify-between items-center hover:border-indigo-300 dark:hover:border-indigo-600 transition-all">
                                 <div className="flex items-center gap-4">
-                                    <span className="bg-slate-100 text-slate-500 px-2 py-1 rounded text-xs font-bold">{lesson.order}</span>
+                                    <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-lg text-xs font-bold">{lesson.order}</span>
                                     <div>
-                                        <p className="font-bold text-slate-800">{lesson.title}</p>
-                                        <p className="text-xs text-slate-400 uppercase tracking-tighter">{lesson.contentType} • {lesson.duration} mins</p>
+                                        <p className="font-bold text-slate-800 dark:text-slate-100">{lesson.title}</p>
+                                        <p className="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-tighter">{lesson.contentType} • {lesson.duration} mins</p>
                                     </div>
                                 </div>
-                                <button onClick={() => navigate(`/edit-lesson/${lesson._id}`)} className="text-indigo-600 font-bold text-sm hover:underline">Edit</button>
+                                <button onClick={() => navigate(`/edit-lesson/${lesson._id}`)} className="text-indigo-600 dark:text-indigo-400 font-bold text-sm hover:underline">Edit</button>
                             </div>
                         ))
                     ) : (
-                        <div className="text-center py-10 bg-white rounded-2xl border-2 border-dashed border-slate-200 text-slate-400">No lessons found.</div>
+                        <div className="text-center py-10 bg-white dark:bg-slate-900 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500">No lessons found.</div>
                     )}
                 </div>
 
-                <div className="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 space-y-5">
-                    <h2 className="text-xl font-bold text-slate-800 mb-2">Create New Lesson</h2>
+                <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-200 dark:border-slate-800 space-y-5">
+                    <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Create New Lesson</h2>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input name="title" placeholder="Lesson Title" value={formData.title} onChange={handleChange} className="w-full border border-slate-200 p-3 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all" />
-                        <select name="contentType" value={formData.contentType} onChange={handleChange} className="w-full border border-slate-200 p-3 rounded-xl bg-white outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                        <input
+                            name="title"
+                            placeholder="Lesson Title"
+                            value={formData.title}
+                            onChange={handleChange}
+                            className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 p-3.5 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                        />
+                        <select
+                            name="contentType"
+                            value={formData.contentType}
+                            onChange={handleChange}
+                            className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 p-3.5 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                        >
                             <option value="video">🎥 Video Lesson</option>
                             <option value="text">📄 Text Content</option>
                         </select>
                     </div>
 
-
-
                     {formData.contentType === "video" ? (
                         <div className="space-y-2">
-                            <label className="text-sm font-semibold text-slate-600">Upload Video File</label>
+                            <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">Upload Video File</label>
                             <input
                                 type="file"
                                 name="lessonFile"
                                 accept="video/*"
                                 onChange={handleChange}
-                                className="w-full border border-dashed border-slate-300 p-8 rounded-xl bg-slate-50 text-center cursor-pointer hover:bg-slate-100 transition-all"
+                                className="w-full border border-dashed border-slate-300 dark:border-slate-700 p-8 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-center cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-all file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 dark:file:bg-indigo-900/40 file:text-indigo-700 dark:file:text-indigo-300 hover:file:bg-indigo-100"
                             />
                         </div>
                     ) : (
-                        <textarea name="content" placeholder="Write your lesson content here..." value={formData.content} onChange={handleChange} className="w-full border border-slate-200 p-3 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all h-32" />
+                        <textarea
+                            name="content"
+                            placeholder="Write your lesson content here..."
+                            value={formData.content}
+                            onChange={handleChange}
+                            className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 p-3.5 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all h-32"
+                        />
                     )}
                     <div className="grid grid-cols-2 gap-4">
-                        <input name="duration" type="number" placeholder="Duration (mins)" value={formData.duration} onChange={handleChange} className="w-full border border-slate-200 p-3 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all" />
-                        <input name="order" type="number" placeholder="Order (Optional)" value={formData.order} onChange={handleChange} className="w-full border border-slate-200 p-3 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all" />
+                        <input
+                            name="duration"
+                            type="number"
+                            placeholder="Duration (mins)"
+                            value={formData.duration}
+                            onChange={handleChange}
+                            className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 p-3.5 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                        />
+                        <input
+                            name="order"
+                            type="number"
+                            placeholder="Order (Optional)"
+                            value={formData.order}
+                            onChange={handleChange}
+                            className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 p-3.5 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                        />
                     </div>
 
-                    <button onClick={createLesson} disabled={isSubmitting} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all disabled:bg-slate-300">
+                    <button
+                        onClick={createLesson}
+                        disabled={isSubmitting}
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-2xl font-bold shadow-lg shadow-indigo-500/25 transition-all disabled:bg-slate-300 dark:disabled:bg-slate-700"
+                    >
                         {isSubmitting ? "Uploading..." : "Add Lesson to Module"}
                     </button>
                 </div>
