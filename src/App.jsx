@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/login";
 import Dashboard from "./pages/dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
-import CourseView from "./pages/courseView";
+import CourseView from "./pages/CourseView";
 import InstructorDashBoard from "./pages/InstructorDashBoard";
 import CreateCourse from "./pages/CreateCourse";
 import EditCourse from "./pages/EditCourse";
