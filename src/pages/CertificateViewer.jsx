@@ -49,11 +49,22 @@ function CertificateViewer() {
         setIsGeneratingPdf(true);
         try {
             const canvas = await html2canvas(certificateRef.current, {
-                scale: 2, // High resolution
+                scale: 3, // Ultra-high resolution
                 useCORS: true,
-                backgroundColor: "#ffffff"
+                backgroundColor: "#ffffff",
+                logging: false,
+                onclone: (clonedDoc) => {
+                    // Force the cloned element to be fully visible and unconstrained by scrollbars
+                    const clonedElement = clonedDoc.getElementById("certificate-node");
+                    if (clonedElement) {
+                        clonedElement.style.transform = "none";
+                        clonedElement.style.width = "1123px"; // Exact A4 pixel width at 96 DPI
+                        clonedElement.style.height = "794px"; // Exact A4 pixel height
+                    }
+                }
             });
-            const imgData = canvas.toDataURL('image/png');
+            
+            const imgData = canvas.toDataURL('image/jpeg', 1.0);
             
             // A4 landscape dimensions: 297mm x 210mm
             const pdf = new jsPDF({
@@ -62,7 +73,11 @@ function CertificateViewer() {
                 format: 'a4'
             });
 
-            pdf.addImage(imgData, 'PNG', 0, 0, 297, 210);
+            // Calculate precise aspect ratio fitting
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            
+            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
             pdf.save(`${course?.title?.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'course'}_certificate.pdf`);
         } catch (err) {
             console.error("Error generating PDF:", err);
@@ -136,8 +151,8 @@ function CertificateViewer() {
                     
                     {/* The Certificate UI */}
                     <div 
-                        ref={certificateRef}
-                        style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }} className="relative w-[1000px] h-[707px] shrink-0 bg-white text-slate-900 border-[16px] border-[#1e293b] print:border-none p-12 shadow-2xl flex flex-col items-center justify-center text-center overflow-hidden print:w-full print:h-screen print:p-0 print:shadow-none"
+                        id="certificate-node" ref={certificateRef}
+                        style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }} className="relative w-[1123px] h-[794px] shrink-0 bg-white text-slate-900 border-[16px] border-[#1e293b] print:border-none p-12 shadow-2xl flex flex-col items-center justify-center text-center overflow-hidden print:w-full print:h-screen print:p-0 print:shadow-none"
                     >
                         {/* Background Patterns */}
                         <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
