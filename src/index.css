@@ -5,15 +5,15 @@
 @layer base {
   :root {
     --brand-bg: 255, 255, 255;
-    --brand-surface: 248, 250, 252;
-    --brand-elevated: 241, 245, 249;
-    --brand-border: 226, 232, 240;
+    --brand-surface: 250, 250, 250;
+    --brand-elevated: 244, 244, 245;
+    --brand-border: 228, 228, 231;
     --brand-primary: 79, 70, 229;
     --brand-secondary: 124, 58, 237;
     --brand-cyan: 8, 145, 178;
-    --brand-text: 15, 23, 42;
-    --brand-muted: 100, 116, 139;
-    --brand-subtle: 148, 163, 184;
+    --brand-text: 9, 9, 11;
+    --brand-muted: 82, 82, 91;
+    --brand-subtle: 161, 161, 170;
   }
   
   .dark {
@@ -33,13 +33,13 @@
 @layer utilities {
   .bg-grid-pattern {
     background-image: 
-      linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+      linear-gradient(to right, rgba(var(--brand-border), 0.8) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(var(--brand-border), 0.8) 1px, transparent 1px);
     background-size: 40px 40px;
   }
   
   .text-glow {
-    text-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+    text-shadow: 0 0 24px rgba(var(--brand-primary), 0.25);
   }
 }
 
