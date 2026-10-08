@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import api from "../api";
 import { useNavigate } from "react-router-dom";
 import NavBar from "../components/NavBar";
+import { getImageUrl } from "../utils/imageHelper";
 import { PlayCircle, ArrowRight, LayoutDashboard, Compass } from "lucide-react";
 
 function Dashboard() {
@@ -189,7 +190,7 @@ function Dashboard() {
                                 >
                                     <div className="w-20 h-20 shrink-0 rounded-lg overflow-hidden bg-brand-elevated">
                                         <img
-                                            src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/${course.thumbnail?.replace(/\\/g, "/")}`}
+                                            src={getImageUrl(course.thumbnail)}
                                             className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
                                             alt={course.title}
                                             onError={(e) => { e.currentTarget.style.display = "none"; }}

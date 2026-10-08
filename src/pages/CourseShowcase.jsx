@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import api from "../api";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import NavBar from "../components/NavBar";
+import { getImageUrl } from "../utils/imageHelper";
 import { highlightWordPrefix } from "./SearchBar";
 import StarRating from "../components/StarRating";
 import { Search, Loader2, PlayCircle, BookOpen, Clock, Tag } from "lucide-react";
@@ -86,7 +87,7 @@ function CourseShowcase() {
                                         {/* Background Image */}
                                         <div className="absolute inset-0">
                                             <img
-                                                src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/${course.thumbnail?.replace(/\\/g, "/")}`}
+                                                src={getImageUrl(course.thumbnail)}
                                                 alt={course.title}
                                                 className="w-full h-full object-cover transition-transform duration-1000 group-hover/slide:scale-105"
                                                 onError={(e) => { e.currentTarget.style.display = "none"; }}
@@ -185,7 +186,7 @@ function CourseShowcase() {
                                 {/* Thumbnail */}
                                 <div className="aspect-video bg-brand-elevated relative overflow-hidden">
                                     <img
-                                        src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/${course.thumbnail?.replace(/\\/g, "/")}`}
+                                        src={getImageUrl(course.thumbnail)}
                                         alt={course.title}
                                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                                         onError={(e) => { e.currentTarget.style.display = "none"; }}
