@@ -117,7 +117,7 @@ function Dashboard() {
                                     <div className="h-40 w-full overflow-hidden bg-brand-elevated relative">
                                         {course.thumbnail ? (
                                             <img
-                                                src={`${SERVER_URL}/${course.thumbnail?.replace(/\\/g, "/")}`}
+                                                src={getImageUrl(course.thumbnail)}
                                                 alt={course.title}
                                                 className="w-full h-full object-cover transition-transform duration-card group-hover:scale-105 opacity-80 group-hover:opacity-100"
                                                 onError={(e) => { e.currentTarget.style.display = "none"; }}
