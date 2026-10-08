@@ -245,7 +245,7 @@ function Dashboard() {
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                         
                         {/* Learning Activity Chart */}
-                        <div className="lg:col-span-3 bg-[#1C1D24] border border-white/5 rounded-2xl p-8 shadow-lg flex flex-col">
+                        <div className="lg:col-span-3 bg-[#1C1D24] border border-white/5 rounded-2xl p-8 shadow-lg flex flex-col min-h-[320px]">
                             <div className="flex justify-between items-center mb-8">
                                 <h3 className="text-lg font-bold">Learning Activity</h3>
                                 <button className="text-gray-400 text-sm flex items-center gap-2 hover:text-white transition-colors">
@@ -295,7 +295,7 @@ function Dashboard() {
                         </div>
 
                         {/* Recently Viewed Lessons */}
-                        <div className="lg:col-span-2 bg-[#1C1D24] border border-white/5 rounded-2xl p-8 shadow-lg">
+                        <div className="lg:col-span-2 bg-[#1C1D24] border border-white/5 rounded-2xl p-8 shadow-lg flex flex-col min-h-[320px]">
                             <h3 className="text-lg font-bold mb-6">Recently Viewed Courses</h3>
                             
                             {courses.length === 0 ? (
