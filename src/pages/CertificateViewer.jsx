@@ -4,10 +4,14 @@ import api from "../api";
 import NavBar from "../components/NavBar";
 import { Award, Download, ArrowLeft, CheckCircle2, ShieldCheck } from "lucide-react";
 
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+
 function CertificateViewer() {
     const { courseId } = useParams();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
+    const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
     const [enrollment, setEnrollment] = useState(null);
     const [user, setUser] = useState(null);
     const [error, setError] = useState("");
@@ -17,12 +21,10 @@ function CertificateViewer() {
     useEffect(() => {
         const fetchCertificateData = async () => {
             try {
-                // 1. Fetch user profile for their name
                 const userRes = await api.get('/user/profile');
                 const userData = Array.isArray(userRes.data) ? userRes.data[0] : userRes.data;
                 setUser(userData);
 
-                // 2. Fetch enrollment progress
                 const enrollRes = await api.get(`/enrollments/${courseId}/progress`);
                 const enrollData = enrollRes.data;
                 
@@ -42,8 +44,32 @@ function CertificateViewer() {
         fetchCertificateData();
     }, [courseId]);
 
-    const handlePrint = () => {
-        window.print();
+    const handlePrint = async () => {
+        if (!certificateRef.current) return;
+        setIsGeneratingPdf(true);
+        try {
+            const canvas = await html2canvas(certificateRef.current, {
+                scale: 2, // High resolution
+                useCORS: true,
+                backgroundColor: "#ffffff"
+            });
+            const imgData = canvas.toDataURL('image/png');
+            
+            // A4 landscape dimensions: 297mm x 210mm
+            const pdf = new jsPDF({
+                orientation: 'landscape',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            pdf.addImage(imgData, 'PNG', 0, 0, 297, 210);
+            pdf.save(`${course?.title?.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'course'}_certificate.pdf`);
+        } catch (err) {
+            console.error("Error generating PDF:", err);
+            alert("Failed to generate PDF. Please try again.");
+        } finally {
+            setIsGeneratingPdf(false);
+        }
     };
 
     if (loading) {
@@ -98,10 +124,10 @@ function CertificateViewer() {
                     </button>
                     
                     <button 
-                        onClick={handlePrint}
+                        onClick={handlePrint} disabled={isGeneratingPdf}
                         className="bg-brand-primary text-white px-6 py-2.5 rounded-full font-bold shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_30px_rgba(99,102,241,0.5)] transition-all flex items-center gap-2 hover:-translate-y-0.5"
                     >
-                        <Download size={18} /> Download as PDF
+                        <Download size={18} /> {isGeneratingPdf ? "Generating PDF..." : "Download as PDF"}
                     </button>
                 </div>
 
