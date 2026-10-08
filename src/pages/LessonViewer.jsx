@@ -331,7 +331,7 @@ function LessonViewer() {
                                         onLoadedMetadata={handleLoadedMetadata}
                                         onEnded={handleVideoEnded}
                                         className="absolute inset-0 w-full h-full focus:outline-none cursor-pointer object-contain"
-                                        src={`http://localhost:3000/${lesson.content}`}
+                                        src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/${lesson.content}`}
                                     />
                                     
                                     {/* Play Overlay (Initial Big Play Button) */}

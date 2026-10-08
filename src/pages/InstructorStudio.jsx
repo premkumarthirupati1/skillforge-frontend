@@ -117,7 +117,7 @@ function InstructorStudio() {
                                 {/* Thumbnail */}
                                 <div className="aspect-video bg-brand-elevated relative overflow-hidden cursor-pointer" onClick={() => navigate(`/studio/course/${course._id}`)}>
                                     {course.thumbnail ? (
-                                        <img src={course.thumbnail.startsWith('http') ? course.thumbnail : `http://localhost:3000/${course.thumbnail}`} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                        <img src={course.thumbnail.startsWith('http') ? course.thumbnail : `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/${course.thumbnail}`} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center text-brand-muted">
                                             <PlayCircle size={48} opacity={0.2} />

@@ -198,7 +198,7 @@ function HomePage() {
                                 >
                                     <div className="h-44 bg-brand-elevated relative overflow-hidden">
                                         <img
-                                            src={`http://localhost:3000/${course.thumbnail?.replace(/\\/g, "/")}`}
+                                            src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/${course.thumbnail?.replace(/\\/g, "/")}`}
                                             alt={course.title}
                                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-card opacity-80 group-hover:opacity-100"
                                             onError={(e) => { e.currentTarget.style.display = "none"; }}

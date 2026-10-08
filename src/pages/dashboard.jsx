@@ -189,7 +189,7 @@ function Dashboard() {
                                 >
                                     <div className="w-20 h-20 shrink-0 rounded-lg overflow-hidden bg-brand-elevated">
                                         <img
-                                            src={`http://localhost:3000/${course.thumbnail?.replace(/\\/g, "/")}`}
+                                            src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/${course.thumbnail?.replace(/\\/g, "/")}`}
                                             className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
                                             alt={course.title}
                                             onError={(e) => { e.currentTarget.style.display = "none"; }}

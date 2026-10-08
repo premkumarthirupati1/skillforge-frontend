@@ -216,7 +216,7 @@ function SearchBar({
         if (!thumb) return null;
         if (thumb.startsWith("http://") || thumb.startsWith("https://")) return thumb;
         const clean = thumb.replace(/\\/g, "/");
-        return `http://localhost:3000/${clean.startsWith("/") ? clean.slice(1) : clean}`;
+        return `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/${clean.startsWith("/") ? clean.slice(1) : clean}`;
     };
 
     const getDifficultyBadge = (difficulty) => {
@@ -409,4 +409,4 @@ function SearchBar({
     );
 }
 
-export default SearchBar;
+export default SearchBar;

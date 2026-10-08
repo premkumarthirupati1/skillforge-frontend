@@ -113,7 +113,7 @@ function EditCourse() {
                             <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Course Thumbnail</label>
                             <div className="flex flex-col items-center p-4 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl bg-slate-50 dark:bg-slate-800/50">
                                 <img
-                                    src={preview || `http://localhost:3000/${currentThumbnail}`}
+                                    src={preview || `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/${currentThumbnail}`}
                                     alt="Course Thumbnail"
                                     className="w-full h-40 object-cover rounded-xl mb-4 shadow-sm"
                                     onError={(e) => {

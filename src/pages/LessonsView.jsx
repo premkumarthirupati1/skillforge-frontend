@@ -140,7 +140,7 @@ function LessonsView() {
                                         {lesson.contentType === 'video' ? (
                                             <div className="w-48 aspect-video shrink-0 rounded-lg overflow-hidden bg-black relative border border-brand-border shadow-inner">
                                                 <video 
-                                                    src={`http://localhost:3000/${lesson.content}#t=2`} 
+                                                    src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/${lesson.content}#t=2`} 
                                                     className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
                                                     preload="metadata"
                                                     muted

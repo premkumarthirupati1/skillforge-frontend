@@ -70,13 +70,13 @@ function CourseShowcase() {
                             navigation
                             pagination={{ clickable: true }}
                             autoplay={{ delay: 5000, disableOnInteraction: false }}
-                            className="rounded-3xl shadow-2xl overflow-hidden"
+                            className="rounded-3xl shadow-2xl overflow-hidden relative z-0"
                         >
                             {featuredCourses.map((course) => (
                                 <SwiperSlide key={`featured-${course._id}`}>
                                     <div className="relative h-[450px] group cursor-pointer" onClick={() => navigate(`/course/${course._id}`)}>
                                         <img
-                                            src={`http://localhost:3000/${course.thumbnail?.replace(/\\/g, "/")}`}
+                                            src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/${course.thumbnail?.replace(/\\/g, "/")}`}
                                             alt={course.title}
                                             className="absolute inset-0 w-full h-full object-cover"
                                             onError={(e) => {
@@ -155,7 +155,7 @@ function CourseShowcase() {
                             >
                                 <div className="h-48 bg-slate-200 dark:bg-slate-800 relative overflow-hidden">
                                     <img
-                                        src={`http://localhost:3000/${course.thumbnail?.replace(/\\/g, "/")}`}
+                                        src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/${course.thumbnail?.replace(/\\/g, "/")}`}
                                         alt={course.title}
                                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                                         onError={(e) => {
