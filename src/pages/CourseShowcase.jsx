@@ -108,7 +108,7 @@ function CourseShowcase() {
                                                 </span>
                                             </div>
                                             
-                                            <h2 className="text-4xl md:text-5xl font-black mb-6 leading-tight tracking-tight text-white drop-shadow-md">
+                                            <h2 className="text-4xl md:text-5xl font-black mb-6 leading-tight tracking-tight text-brand-text drop-shadow-md">
                                                 {course.title}
                                             </h2>
                                             
@@ -117,7 +117,7 @@ function CourseShowcase() {
                                             </p>
                                             
                                             <div className="flex items-center gap-4">
-                                                <button className="bg-brand-text text-brand-bg px-8 py-3.5 rounded-full font-bold hover:bg-white hover:scale-105 transition-all flex items-center gap-2 shadow-lg">
+                                                <button className="bg-brand-text text-brand-bg px-8 py-3.5 rounded-full font-bold hover:opacity-90 hover:scale-105 transition-all flex items-center gap-2 shadow-lg">
                                                     <PlayCircle size={20} />
                                                     Start Learning
                                                 </button>
