@@ -23,7 +23,7 @@ function CertificateViewer() {
                 setUser(userData);
 
                 // 2. Fetch enrollment progress
-                const enrollRes = await api.get(`/enrollments/progress/${courseId}`);
+                const enrollRes = await api.get(`/enrollments/${courseId}/progress`);
                 const enrollData = enrollRes.data;
                 
                 if (enrollData.progress < 100) {
