@@ -4,7 +4,7 @@ import api from "../api";
 import NavBar from "../components/NavBar";
 import { Award, Download, ArrowLeft, CheckCircle2, ShieldCheck } from "lucide-react";
 
-import html2canvas from "html2canvas";
+import { toPng } from 'html-to-image';
 import jsPDF from "jspdf";
 
 function CertificateViewer() {
@@ -48,36 +48,28 @@ function CertificateViewer() {
         if (!certificateRef.current) return;
         setIsGeneratingPdf(true);
         try {
-            const canvas = await html2canvas(certificateRef.current, {
-                scale: 3, // Ultra-high resolution
-                useCORS: true,
-                backgroundColor: "#ffffff",
-                logging: false,
-                onclone: (clonedDoc) => {
-                    // Force the cloned element to be fully visible and unconstrained by scrollbars
-                    const clonedElement = clonedDoc.getElementById("certificate-node");
-                    if (clonedElement) {
-                        clonedElement.style.transform = "none";
-                        clonedElement.style.width = "1123px"; // Exact A4 pixel width at 96 DPI
-                        clonedElement.style.height = "794px"; // Exact A4 pixel height
-                    }
+            // html-to-image perfectly captures Tailwind flexbox and SVGs
+            const dataUrl = await toPng(certificateRef.current, {
+                quality: 1.0,
+                pixelRatio: 2, // High resolution
+                cacheBust: true,
+                style: {
+                    transform: 'scale(1)',
+                    transformOrigin: 'top left',
+                    margin: '0'
                 }
             });
             
-            const imgData = canvas.toDataURL('image/jpeg', 1.0);
-            
-            // A4 landscape dimensions: 297mm x 210mm
             const pdf = new jsPDF({
                 orientation: 'landscape',
                 unit: 'mm',
                 format: 'a4'
             });
 
-            // Calculate precise aspect ratio fitting
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();
             
-            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+            pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
             pdf.save(`${course?.title?.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'course'}_certificate.pdf`);
         } catch (err) {
             console.error("Error generating PDF:", err);
