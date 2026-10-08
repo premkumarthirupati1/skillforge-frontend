@@ -76,12 +76,13 @@ function CourseShowcase() {
                                     return `<span class="${className} !bg-brand-primary !w-8 !h-1.5 !rounded-full transition-all"></span>`;
                                 }
                             }}
+                            fadeEffect={{ crossFade: true }}
                             autoplay={{ delay: 6000, disableOnInteraction: false }}
-                            className="rounded-3xl overflow-hidden shadow-2xl border border-brand-border/50 group/swiper"
+                            className="rounded-3xl overflow-hidden shadow-2xl border border-brand-border/50 group/swiper bg-brand-surface"
                         >
                             {featuredCourses.map((course) => (
                                 <SwiperSlide key={`featured-${course._id}`}>
-                                    <div className="relative h-[500px] md:h-[550px] w-full flex items-center group/slide cursor-pointer" onClick={() => navigate(`/course/${course._id}`)}>
+                                    <div className="relative h-[500px] md:h-[550px] w-full flex items-center group/slide cursor-pointer bg-brand-bg" onClick={() => navigate(`/course/${course._id}`)}>
                                         {/* Background Image */}
                                         <div className="absolute inset-0">
                                             <img
