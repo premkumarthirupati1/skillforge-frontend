@@ -24,6 +24,7 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import ComingSoon from "./pages/ComingSoon";
 import InstructorStudio from "./pages/InstructorStudio";
 import CourseEditor from "./pages/CourseEditor";
+import CertificateViewer from "./pages/CertificateViewer";
 
 function App() {
   return (
@@ -124,6 +125,11 @@ function App() {
         <Route path="/payment/success" element={
           <ProtectedRoute>
             <PaymentSuccess />
+          </ProtectedRoute>
+        } />
+        <Route path="/certificate/:courseId" element={
+          <ProtectedRoute>
+            <CertificateViewer />
           </ProtectedRoute>
         } />
       </Routes>

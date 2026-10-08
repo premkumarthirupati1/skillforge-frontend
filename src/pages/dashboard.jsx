@@ -3,7 +3,7 @@ import api from "../api";
 import { useNavigate } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import { getImageUrl } from "../utils/imageHelper";
-import { PlayCircle, ArrowRight, LayoutDashboard, Compass } from "lucide-react";
+import { PlayCircle, ArrowRight, Award, LayoutDashboard, Compass } from "lucide-react";
 
 function Dashboard() {
     const navigate = useNavigate();
@@ -152,9 +152,23 @@ function Dashboard() {
                                                 />
                                             </div>
 
-                                            <div className="mt-4 flex items-center gap-1.5 text-brand-primary text-xs font-bold opacity-0 group-hover:opacity-100 transition-all transform translate-y-1 group-hover:translate-y-0">
-                                                <PlayCircle size={14} />
-                                                Resume Course
+                                            <div className="mt-4 flex items-center gap-1.5 text-xs font-bold opacity-0 group-hover:opacity-100 transition-all transform translate-y-1 group-hover:translate-y-0">
+                                                {enrollment.progress === 100 ? (
+                                                    <button 
+                                                        onClick={(e) => { 
+                                                            e.stopPropagation(); 
+                                                            navigate(`/certificate/${course._id}`); 
+                                                        }} 
+                                                        className="flex items-center gap-1.5 text-emerald-500 hover:text-emerald-400 w-full"
+                                                    >
+                                                        <Award size={14} /> View Certificate
+                                                    </button>
+                                                ) : (
+                                                    <div className="flex items-center gap-1.5 text-brand-primary">
+                                                        <PlayCircle size={14} />
+                                                        Resume Course
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
