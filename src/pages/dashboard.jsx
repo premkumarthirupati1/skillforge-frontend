@@ -165,7 +165,7 @@ function Dashboard() {
                                     alt="Avatar" 
                                     className="w-8 h-8 rounded-full bg-[#2A2B35]"
                                 />
-                                <span className="text-sm font-medium text-gray-300">{user?.email || 'alex.c@email.com'}</span>
+                                <span className="text-sm font-medium text-gray-300">{user?.email || 'student@skillforge.com'}</span>
                             </div>
                             <button className="relative p-2 text-gray-400 hover:text-white transition-colors">
                                 <Bell size={24} />
@@ -192,48 +192,53 @@ function Dashboard() {
                     <div className="mb-10">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-xl font-bold">My Courses</h3>
-                            <button className="text-brand-primary hover:text-brand-primary/80 font-medium text-sm transition-colors">
-                                View All
+                            <button onClick={() => navigate('/course-showcase')} className="text-brand-primary hover:text-brand-primary/80 font-medium text-sm transition-colors">
+                                View Catalog
                             </button>
                         </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {(courses.length > 0 ? courses.slice(0, 4) : [1, 2, 3, 4]).map((course, idx) => {
-                                const isMock = !course._id;
-                                const title = isMock ? ["Advanced UI/UX Design", "Full-Stack Web Dev", "Digital Marketing", "Data Science"][idx] : course.title;
-                                const progress = isMock ? [75, 40, 90, 25][idx] : course.progress;
-                                const modulesLeft = isMock ? [12, 35, 3, 28][idx] : course.modulesLeft;
-
-                                return (
-                                    <div key={idx} className="bg-[#1C1D24] border border-white/5 rounded-2xl p-6 hover:-translate-y-1 transition-transform cursor-pointer shadow-lg group">
+                        {courses.length === 0 ? (
+                            <div className="bg-[#1C1D24] border border-white/5 rounded-2xl p-10 text-center flex flex-col items-center">
+                                <BookOpen size={40} className="text-gray-600 mb-4" />
+                                <h4 className="text-lg font-bold text-gray-300">No Courses Yet</h4>
+                                <p className="text-gray-500 mb-6">You haven't enrolled in any courses yet.</p>
+                                <button 
+                                    onClick={() => navigate('/course-showcase')}
+                                    className="bg-white/10 hover:bg-white/20 px-6 py-2 rounded-lg font-bold transition-all"
+                                >
+                                    Explore Library
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                {courses.map((course, idx) => (
+                                    <div key={course._id} onClick={() => navigate(`/course/${course._id}`)} className="bg-[#1C1D24] border border-white/5 rounded-2xl p-6 hover:-translate-y-1 transition-transform cursor-pointer shadow-lg group">
                                         {mockIcons[idx % mockIcons.length]}
                                         
                                         <h4 className="font-bold text-lg mt-5 mb-1 line-clamp-2 group-hover:text-brand-primary transition-colors h-14">
-                                            {title}
+                                            {course.title}
                                         </h4>
                                         <p className="text-xs text-gray-400 mb-6 font-medium tracking-wide uppercase">
-                                            {course.author || "By SkillForge"}
+                                            {course.author}
                                         </p>
                                         
-                                        {/* Custom Progress Bar matching mockup */}
                                         <div className="w-full bg-[#2A2B35] h-1.5 rounded-full mb-3 overflow-hidden">
                                             <div 
                                                 className="bg-brand-primary h-full rounded-full relative" 
-                                                style={{ width: `${progress}%` }}
+                                                style={{ width: `${course.progress}%` }}
                                             >
-                                                {/* Glossy highlight on progress bar */}
                                                 <div className="absolute top-0 left-0 right-0 h-[1px] bg-white/30"></div>
                                             </div>
                                         </div>
                                         
                                         <div className="flex justify-between items-center text-xs font-bold text-gray-400">
-                                            <span className="text-white">{progress}%</span>
-                                            <span>{modulesLeft} modules left</span>
+                                            <span className="text-white">{course.progress}%</span>
+                                            <span>{course.progress === 100 ? "Completed" : "In Progress"}</span>
                                         </div>
                                     </div>
-                                );
-                            })}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {/* Bottom Section */}
@@ -249,7 +254,6 @@ function Dashboard() {
                             </div>
                             
                             <div className="flex-1 flex gap-4">
-                                {/* Y-Axis */}
                                 <div className="flex flex-col justify-between text-xs text-gray-500 font-medium py-2">
                                     <span>80</span>
                                     <span>60</span>
@@ -258,16 +262,13 @@ function Dashboard() {
                                     <span>0</span>
                                 </div>
                                 
-                                {/* Chart Area */}
                                 <div className="flex-1 border-b border-gray-800 flex justify-between items-end pb-0 relative">
-                                    {/* Horizontal grid lines */}
                                     <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-8">
                                         {[...Array(4)].map((_, i) => (
                                             <div key={i} className="w-full border-b border-gray-800/50 h-0"></div>
                                         ))}
                                     </div>
                                     
-                                    {/* Bars */}
                                     {[
                                         { day: 'Mon', h: '45%' },
                                         { day: 'Tue', h: '60%' },
@@ -282,7 +283,6 @@ function Dashboard() {
                                                 className="w-10 bg-brand-primary rounded-t-sm hover:brightness-125 transition-all cursor-pointer relative group/bar"
                                                 style={{ height: data.h }}
                                             >
-                                                {/* Tooltip on hover */}
                                                 <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-white text-black text-xs font-bold px-2 py-1 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none">
                                                     {data.h}
                                                 </div>
@@ -296,22 +296,28 @@ function Dashboard() {
 
                         {/* Recently Viewed Lessons */}
                         <div className="lg:col-span-2 bg-[#1C1D24] border border-white/5 rounded-2xl p-8 shadow-lg">
-                            <h3 className="text-lg font-bold mb-6">Recently Viewed Lessons</h3>
+                            <h3 className="text-lg font-bold mb-6">Recently Viewed Courses</h3>
                             
-                            <div className="space-y-4">
-                                {["Advanced UI/UX Design", "Data Science Fundamentals", "Digital Marketing Strategies"].map((title, idx) => (
-                                    <div key={idx} className="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group">
-                                        <div className="w-12 h-12 rounded-xl bg-brand-primary/10 flex items-center justify-center text-brand-primary group-hover:bg-brand-primary group-hover:text-white transition-all">
-                                            <Play size={20} className="ml-1" fill="currentColor" />
+                            {courses.length === 0 ? (
+                                <div className="text-center py-10 text-gray-500 font-medium text-sm border border-dashed border-white/5 rounded-xl">
+                                    No recent activity.
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {courses.slice(0, 3).map((course, idx) => (
+                                        <div key={course._id} onClick={() => navigate(`/course/${course._id}`)} className="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group">
+                                            <div className="w-12 h-12 rounded-xl bg-brand-primary/10 flex items-center justify-center text-brand-primary group-hover:bg-brand-primary group-hover:text-white transition-all">
+                                                <Play size={20} className="ml-1" fill="currentColor" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <h4 className="text-sm font-bold text-gray-200 group-hover:text-white transition-colors line-clamp-1">{course.title}</h4>
+                                                <p className="text-xs text-gray-500 mt-1">Progress: {course.progress}%</p>
+                                            </div>
+                                            <ChevronRight size={20} className="text-gray-600 group-hover:text-white transition-colors" />
                                         </div>
-                                        <div className="flex-1">
-                                            <h4 className="text-sm font-bold text-gray-200 group-hover:text-white transition-colors">{title}</h4>
-                                            <p className="text-xs text-gray-500 mt-1">Learn {10 + (idx * 2)} minutes</p>
-                                        </div>
-                                        <ChevronRight size={20} className="text-gray-600 group-hover:text-white transition-colors" />
-                                    </div>
-                                ))}
-                            </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                     </div>
