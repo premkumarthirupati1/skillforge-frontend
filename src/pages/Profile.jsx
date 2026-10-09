@@ -282,7 +282,7 @@ function Profile() {
                                         />
                                     </div>
                                     <h3 className="text-xl font-black text-white mt-4 tracking-tight">
-                                        {name || user.email.split('@')[0]}
+                                        {name || user?.email?.split('@')[0] || "Student"}
                                     </h3>
                                     <p className="text-brand-primary font-bold text-xs uppercase tracking-widest mt-1">
                                         {user.role}
