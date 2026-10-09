@@ -76,7 +76,7 @@ function Dashboard() {
         { name: "My Courses", icon: <BookOpen size={20} />, active: false, path: "/dashboard" },
         { name: "Catalog", icon: <Grid size={20} />, active: false, path: "/course-showcase" },
         { name: "Achievements", icon: <Trophy size={20} />, active: false, path: "/dashboard" },
-        { name: "Profile", icon: <User size={20} />, active: false, path: "/dashboard" },
+        { name: "Profile", icon: <User size={20} />, active: false, path: "/profile" },
     ];
 
     // Mock Icons for the Course Cards (to match the image)
