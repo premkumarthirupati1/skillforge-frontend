@@ -210,7 +210,7 @@ function Profile() {
                                 <div className="w-24 h-24 mx-auto rounded-full bg-white dark:bg-[#131419] p-1.5 -mt-12 relative z-10 group cursor-pointer">
                                     <label className="w-full h-full block relative cursor-pointer rounded-full overflow-hidden">
                                         <img
-                                            src={avatarPreview || user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user._id}`}
+                                            src={avatarPreview || (user.avatar ? (user.avatar.startsWith("http") ? user.avatar : `${import.meta.env.VITE_API_URL}/${user.avatar}`) : null) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user._id}`}
                                             alt="avatar"
                                             className="w-full h-full rounded-full bg-slate-200 dark:bg-[#2A2B35] object-cover"
                                         />
