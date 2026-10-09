@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../api";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";`nimport toast from "react-hot-toast";
 import { 
     LayoutDashboard, 
     BookOpen, 
@@ -43,9 +43,9 @@ function Profile() {
         setLoading(true);
         try {
             const res = await api.put('/user/profile', { name, bio, socials });
-            setUser(res.data);
+            setUser(res.data);`n            toast.success("Profile saved successfully!");
         } catch (err) {
-            alert("Update Failed");
+            toast.error("Profile update failed");
         } finally {
             setLoading(false);
         }

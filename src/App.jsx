@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 import Login from "./pages/login";
 import Dashboard from "./pages/dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -29,6 +30,19 @@ import CertificateViewer from "./pages/CertificateViewer";
 function App() {
   return (
     <BrowserRouter>
+      <Toaster 
+        position="bottom-right" 
+        toastOptions={{ 
+            style: { 
+                background: "#1C1D24", 
+                color: "#fff", 
+                border: "1px solid rgba(255,255,255,0.1)",
+                padding: "16px",
+                borderRadius: "12px",
+                boxShadow: "0 10px 30px rgba(0,0,0,0.5)"
+            } 
+        }} 
+      />
       <Routes>
         <Route path="/profile" element={<Profile />} />
         <Route path="/" element={<HomePage />} />

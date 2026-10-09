@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";`nimport toast from "react-hot-toast";
 import api from "../api";
 import NavBar from "../components/NavBar";
 import { Award, Download, ArrowLeft, CheckCircle2, ShieldCheck } from "lucide-react";
@@ -73,7 +73,7 @@ function CertificateViewer() {
             pdf.save(`${course?.title?.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'course'}_certificate.pdf`);
         } catch (err) {
             console.error("Error generating PDF:", err);
-            alert("Failed to generate PDF. Please try again.");
+            toast.error("Failed to generate PDF. Please try again.");
         } finally {
             setIsGeneratingPdf(false);
         }
