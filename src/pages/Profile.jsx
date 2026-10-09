@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 
 function Profile() {
-    const [user, setUser] = useState(null);
+    const [user, setUser] = useState(null);`n    const [avatarFile, setAvatarFile] = useState(null);`n    const [avatarPreview, setAvatarPreview] = useState(null);
     const [name, setName] = useState("");
     const [bio, setBio] = useState("");
     const [socials, setSocials] = useState({ github: "", twitter: "", linkedin: "" });
@@ -147,7 +147,7 @@ function Profile() {
                         <div className="flex items-center gap-6">
                             <div onClick={() => navigate('/profile')} className="flex items-center gap-3 bg-[#1C1D24] px-4 py-2 rounded-full border border-white/5 cursor-pointer hover:bg-white/5 transition-colors">
                                 <img 
-                                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user._id}`} 
+                                    src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user._id}`} 
                                     alt="Avatar" 
                                     className="w-8 h-8 rounded-full bg-[#2A2B35]"
                                 />
@@ -274,12 +274,29 @@ function Profile() {
                                     <div className="absolute inset-0 bg-brand-primary/10 backdrop-blur-sm mix-blend-overlay"></div>
                                 </div>
                                 <div className="px-8 pb-8 relative text-center">
-                                    <div className="w-24 h-24 mx-auto rounded-full bg-[#131419] p-1.5 -mt-12 relative z-10">
-                                        <img
-                                            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user._id}`}
-                                            alt="avatar"
-                                            className="w-full h-full rounded-full bg-[#2A2B35]"
-                                        />
+                                    <div className="w-24 h-24 mx-auto rounded-full bg-[#131419] p-1.5 -mt-12 relative z-10 group cursor-pointer">
+                                        <label className="w-full h-full block relative cursor-pointer rounded-full overflow-hidden">
+                                            <img
+                                                src={avatarPreview || user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user._id}`}
+                                                alt="avatar"
+                                                className="w-full h-full rounded-full bg-[#2A2B35] object-cover"
+                                            />
+                                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <span className="text-[10px] font-bold text-white uppercase tracking-wider">Change</span>
+                                            </div>
+                                            <input 
+                                                type="file" 
+                                                accept="image/*" 
+                                                className="hidden" 
+                                                onChange={(e) => {
+                                                    const file = e.target.files[0];
+                                                    if (file) {
+                                                        setAvatarFile(file);
+                                                        setAvatarPreview(URL.createObjectURL(file));
+                                                    }
+                                                }}
+                                            />
+                                        </label>
                                     </div>
                                     <h3 className="text-xl font-black text-white mt-4 tracking-tight">
                                         {name || user?.email?.split('@')[0] || "Student"}

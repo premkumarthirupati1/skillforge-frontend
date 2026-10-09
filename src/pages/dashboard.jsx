@@ -161,7 +161,7 @@ function Dashboard() {
                         <div className="flex items-center gap-6">
                             <div onClick={() => navigate('/profile')} className="flex items-center gap-3 bg-[#1C1D24] px-4 py-2 rounded-full border border-white/5 cursor-pointer hover:bg-white/5 transition-colors">
                                 <img 
-                                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?._id || 'alex'}`} 
+                                    src={user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?._id || 'alex'}`} 
                                     alt="Avatar" 
                                     className="w-8 h-8 rounded-full bg-[#2A2B35]"
                                 />
