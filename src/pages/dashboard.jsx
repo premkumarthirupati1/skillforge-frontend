@@ -135,7 +135,7 @@ function Dashboard() {
 
                 {/* Bottom Nav */}
                 <div className="px-6 pb-8 space-y-2">
-                    <button className="w-full flex items-center gap-4 px-4 py-3 rounded-xl font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-all">
+                    <button onClick={() => navigate('/profile')} className="w-full flex items-center gap-4 px-4 py-3 rounded-xl font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-all">
                         <User size={20} /> Profile
                     </button>
                     <button className="w-full flex items-center gap-4 px-4 py-3 rounded-xl font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-all">
@@ -159,7 +159,7 @@ function Dashboard() {
                             Welcome Back, {user?.name?.split(' ')[0] || 'Developer'}!
                         </h2>
                         <div className="flex items-center gap-6">
-                            <div className="flex items-center gap-3 bg-[#1C1D24] px-4 py-2 rounded-full border border-white/5">
+                            <div onClick={() => navigate('/profile')} className="flex items-center gap-3 bg-[#1C1D24] px-4 py-2 rounded-full border border-white/5 cursor-pointer hover:bg-white/5 transition-colors">
                                 <img 
                                     src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?._id || 'alex'}`} 
                                     alt="Avatar" 
