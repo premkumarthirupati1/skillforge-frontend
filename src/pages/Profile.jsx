@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../api";
-import { useNavigate } from "react-router-dom";`nimport toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import { 
     LayoutDashboard, 
     BookOpen, 
@@ -21,7 +22,9 @@ import {
 } from "lucide-react";
 
 function Profile() {
-    const [user, setUser] = useState(null);`n    const [avatarFile, setAvatarFile] = useState(null);`n    const [avatarPreview, setAvatarPreview] = useState(null);
+    const [user, setUser] = useState(null);
+    const [avatarFile, setAvatarFile] = useState(null);
+    const [avatarPreview, setAvatarPreview] = useState(null);
     const [name, setName] = useState("");
     const [bio, setBio] = useState("");
     const [socials, setSocials] = useState({ github: "", twitter: "", linkedin: "" });
@@ -43,7 +46,8 @@ function Profile() {
         setLoading(true);
         try {
             const res = await api.put('/user/profile', { name, bio, socials });
-            setUser(res.data);`n            toast.success("Profile saved successfully!");
+            setUser(res.data);
+            toast.success("Profile saved successfully!");
         } catch (err) {
             toast.error("Profile update failed");
         } finally {
