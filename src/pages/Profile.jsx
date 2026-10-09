@@ -18,7 +18,9 @@ import {
     Globe,
     Mail,
     Save,
-    XCircle
+    XCircle,
+    Sun,
+    Moon
 } from "lucide-react";
 
 function Profile() {
@@ -30,6 +32,20 @@ function Profile() {
     const [socials, setSocials] = useState({ github: "", twitter: "", linkedin: "" });
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+
+    const [theme, setTheme] = useState(localStorage.getItem("theme") || "dark");
+
+    useEffect(() => {
+        if (theme === "dark") {
+            document.documentElement.classList.add("dark");
+            localStorage.setItem("theme", "dark");
+        } else {
+            document.documentElement.classList.remove("dark");
+            localStorage.setItem("theme", "light");
+        }
+    }, [theme]);
+
+    const toggleTheme = () => setTheme(prev => prev === "dark" ? "light" : "dark");
 
     useEffect(() => {
         
@@ -157,8 +173,12 @@ function Profile() {
                                 />
                                 <span className="text-sm font-medium text-slate-600 dark:text-slate-300">{user.email}</span>
                             </div>
-                            <button className="relative p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white transition-colors">
-                                <Bell size={24} />
+                            <button onClick={toggleTheme} className="relative p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors bg-white dark:bg-slate-900 rounded-full border border-slate-200 dark:border-slate-800 shadow-sm">
+                                {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+                            </button>
+                            <button className="relative p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors bg-white dark:bg-slate-900 rounded-full border border-slate-200 dark:border-slate-800 shadow-sm">
+                                <Bell size={20} />
+                                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
                             </button>
                         </div>
                     </header>

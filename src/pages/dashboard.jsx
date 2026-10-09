@@ -16,13 +16,28 @@ import {
     Code,
     Megaphone,
     BarChart2,
-    Hammer
+    Hammer,
+    Sun,
+    Moon
 } from "lucide-react";
 import { getImageUrl } from "../utils/imageHelper";
 
 function Dashboard() {
     const navigate = useNavigate();
     const [courses, setCourses] = useState([]);
+    const [theme, setTheme] = useState(localStorage.getItem("theme") || "dark");
+
+    useEffect(() => {
+        if (theme === "dark") {
+            document.documentElement.classList.add("dark");
+            localStorage.setItem("theme", "dark");
+        } else {
+            document.documentElement.classList.remove("dark");
+            localStorage.setItem("theme", "light");
+        }
+    }, [theme]);
+
+    const toggleTheme = () => setTheme(prev => prev === "dark" ? "light" : "dark");
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState(null);
 
@@ -167,9 +182,12 @@ function Dashboard() {
                                 />
                                 <span className="text-sm font-medium text-slate-600 dark:text-slate-300">{user?.email || 'student@skillforge.com'}</span>
                             </div>
-                            <button className="relative p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white transition-colors">
-                                <Bell size={24} />
-                                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-[#131419]"></span>
+                            <button onClick={toggleTheme} className="relative p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors bg-white dark:bg-slate-900 rounded-full border border-slate-200 dark:border-slate-800 shadow-sm">
+                                {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+                            </button>
+                            <button className="relative p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors bg-white dark:bg-slate-900 rounded-full border border-slate-200 dark:border-slate-800 shadow-sm">
+                                <Bell size={20} />
+                                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
                             </button>
                         </div>
                     </header>
