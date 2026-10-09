@@ -32,7 +32,7 @@ function Profile() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        document.documentElement.classList.add("dark");
+        
         api.get('/user/profile').then(res => {
             const data = (Array.isArray(res.data) ? res.data[0] : res.data) || {};
             setUser(data);
@@ -86,23 +86,23 @@ function Profile() {
 
     if (!user) {
         return (
-            <div className="min-h-screen bg-[#131419] flex items-center justify-center text-brand-primary">
+            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center text-brand-primary">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-primary"></div>
             </div>
         );
     }
 
     return (
-        <div className="flex h-screen bg-[#0E0F14] text-white font-sans overflow-hidden">
+        <div className="flex h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white font-sans overflow-hidden">
             
             {/* ========================================== */}
             {/* SIDEBAR                                    */}
             {/* ========================================== */}
-            <aside className="w-[280px] bg-[#1C1D24] flex flex-col h-full border-r border-white/5 relative z-20">
+            <aside className="w-[280px] bg-white dark:bg-slate-900 flex flex-col h-full border-r border-slate-200 dark:border-slate-800 relative z-20">
                 <div className="p-8 flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
                     <div className="relative flex items-center justify-center w-8 h-8">
                         <div className="absolute inset-0 bg-brand-primary blur-md opacity-50 rounded-full"></div>
-                        <Hammer className="text-white relative z-10" size={24} />
+                        <Hammer className="text-slate-900 dark:text-white relative z-10" size={24} />
                         <div className="absolute top-0 right-0 w-3 h-3 bg-blue-500 rounded-full blur-[2px] -mt-1 -mr-1 mix-blend-screen"></div>
                     </div>
                     <h1 className="text-2xl font-bold tracking-tight">SkillForge</h1>
@@ -115,11 +115,11 @@ function Profile() {
                             onClick={() => navigate(item.path)}
                             className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl font-medium transition-all ${
                                 item.active 
-                                ? "bg-[#28255A] text-brand-primary shadow-[0_0_20px_rgba(99,102,241,0.15)] border border-brand-primary/20" 
-                                : "text-gray-400 hover:text-white hover:bg-white/5"
+                                ? "bg-brand-primary/10 dark:bg-brand-primary/20 text-brand-primary shadow-[0_0_20px_rgba(99,102,241,0.15)] border border-brand-primary/20" 
+                                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-white/5"
                             }`}
                         >
-                            <span className={item.active ? "text-brand-primary" : "text-gray-400"}>
+                            <span className={item.active ? "text-brand-primary" : "text-slate-500 dark:text-slate-400"}>
                                 {item.icon}
                             </span>
                             {item.name}
@@ -128,10 +128,10 @@ function Profile() {
                 </nav>
 
                 <div className="px-6 pb-8 space-y-2">
-                    <button className="w-full flex items-center gap-4 px-4 py-3 rounded-xl font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-all">
+                    <button className="w-full flex items-center gap-4 px-4 py-3 rounded-xl font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all">
                         <HelpCircle size={20} /> Help
                     </button>
-                    <button onClick={handleLogout} className="w-full flex items-center gap-4 px-4 py-3 rounded-xl font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-all mt-4">
+                    <button onClick={handleLogout} className="w-full flex items-center gap-4 px-4 py-3 rounded-xl font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all mt-4">
                         <LogOut size={20} /> Logout
                     </button>
                 </div>
@@ -140,7 +140,7 @@ function Profile() {
             {/* ========================================== */}
             {/* MAIN CONTENT                               */}
             {/* ========================================== */}
-            <main className="flex-1 bg-[#131419] h-full overflow-y-auto custom-scrollbar">
+            <main className="flex-1 bg-slate-50 dark:bg-slate-950 h-full overflow-y-auto custom-scrollbar">
                 <div className="max-w-[1200px] mx-auto p-10 pb-20">
                     
                     {/* Header */}
@@ -149,15 +149,15 @@ function Profile() {
                             Account Settings
                         </h2>
                         <div className="flex items-center gap-6">
-                            <div onClick={() => navigate('/profile')} className="flex items-center gap-3 bg-[#1C1D24] px-4 py-2 rounded-full border border-white/5 cursor-pointer hover:bg-white/5 transition-colors">
+                            <div onClick={() => navigate('/profile')} className="flex items-center gap-3 bg-white dark:bg-slate-900 px-4 py-2 rounded-full border border-slate-200 dark:border-slate-800 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/5 transition-colors">
                                 <img 
                                     src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user._id}`} 
                                     alt="Avatar" 
-                                    className="w-8 h-8 rounded-full bg-[#2A2B35]"
+                                    className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800"
                                 />
-                                <span className="text-sm font-medium text-gray-300">{user.email}</span>
+                                <span className="text-sm font-medium text-slate-600 dark:text-slate-300">{user.email}</span>
                             </div>
-                            <button className="relative p-2 text-gray-400 hover:text-white transition-colors">
+                            <button className="relative p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white transition-colors">
                                 <Bell size={24} />
                             </button>
                         </div>
@@ -167,15 +167,15 @@ function Profile() {
 
                         {/* LEFT COLUMN: SETTINGS FORM */}
                         <div className="flex-1 space-y-8">
-                            <section className="bg-[#1C1D24] border border-white/5 rounded-2xl shadow-lg overflow-hidden">
-                                <div className="p-8 border-b border-white/5">
-                                    <h3 className="text-xl font-bold text-white tracking-tight mb-2">Public Profile</h3>
-                                    <p className="text-gray-400 text-sm">Personalize how others see you on SkillForge.</p>
+                            <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-lg overflow-hidden">
+                                <div className="p-8 border-b border-slate-200 dark:border-slate-800">
+                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight mb-2">Public Profile</h3>
+                                    <p className="text-slate-500 dark:text-slate-400 text-sm">Personalize how others see you on SkillForge.</p>
                                 </div>
 
                                 <div className="p-8 space-y-8">
                                     <div className="space-y-4">
-                                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                        <label className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2">
                                             <User size={14} className="text-brand-primary" />
                                             Full Name
                                         </label>
@@ -183,32 +183,32 @@ function Profile() {
                                             type="text"
                                             value={name}
                                             onChange={(e) => setName(e.target.value)}
-                                            className="w-full bg-[#131419] text-white border border-white/10 rounded-xl p-4 focus:ring-2 focus:ring-brand-primary/50 focus:border-brand-primary transition-all font-medium"
+                                            className="w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 rounded-xl p-4 focus:ring-2 focus:ring-brand-primary/50 focus:border-brand-primary transition-all font-medium"
                                             placeholder="Your full name"
                                         />
                                     </div>
 
                                     <div className="space-y-4">
-                                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                        <label className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2">
                                             <Globe size={14} className="text-brand-primary" />
                                             Biography
                                         </label>
                                         <textarea
                                             value={bio}
                                             onChange={(e) => setBio(e.target.value)}
-                                            className="w-full bg-[#131419] text-white border border-white/10 rounded-xl p-4 focus:ring-2 focus:ring-brand-primary/50 focus:border-brand-primary transition-all h-32 resize-none font-medium"
+                                            className="w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 rounded-xl p-4 focus:ring-2 focus:ring-brand-primary/50 focus:border-brand-primary transition-all h-32 resize-none font-medium"
                                             placeholder="Tell us about yourself and your goals..."
                                         />
                                     </div>
 
                                     <div className="space-y-4">
-                                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                        <label className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2">
                                             <Mail size={14} className="text-brand-primary" />
                                             Social Links
                                         </label>
-                                        <div className="space-y-4 bg-[#131419] p-6 rounded-2xl border border-white/5">
+                                        <div className="space-y-4 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
                                             <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center text-gray-400">
+                                                <div className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center text-slate-500 dark:text-slate-400">
                                                     <Github size={18} />
                                                 </div>
                                                 <input
@@ -216,7 +216,7 @@ function Profile() {
                                                     value={socials.github}
                                                     onChange={handleSocialChange}
                                                     placeholder="GitHub URL"
-                                                    className="flex-1 bg-transparent border-b border-white/10 p-2 text-white focus:outline-none focus:border-brand-primary transition-all text-sm font-medium placeholder-gray-600"
+                                                    className="flex-1 bg-transparent border-b border-slate-200 dark:border-slate-800 p-2 text-slate-900 dark:text-white focus:outline-none focus:border-brand-primary transition-all text-sm font-medium placeholder-gray-600"
                                                 />
                                             </div>
                                             <div className="flex items-center gap-4">
@@ -228,7 +228,7 @@ function Profile() {
                                                     value={socials.twitter}
                                                     onChange={handleSocialChange}
                                                     placeholder="Twitter URL"
-                                                    className="flex-1 bg-transparent border-b border-white/10 p-2 text-white focus:outline-none focus:border-[#1DA1F2] transition-all text-sm font-medium placeholder-gray-600"
+                                                    className="flex-1 bg-transparent border-b border-slate-200 dark:border-slate-800 p-2 text-slate-900 dark:text-white focus:outline-none focus:border-[#1DA1F2] transition-all text-sm font-medium placeholder-gray-600"
                                                 />
                                             </div>
                                             <div className="flex items-center gap-4">
@@ -240,17 +240,17 @@ function Profile() {
                                                     value={socials.linkedin}
                                                     onChange={handleSocialChange}
                                                     placeholder="LinkedIn URL"
-                                                    className="flex-1 bg-transparent border-b border-white/10 p-2 text-white focus:outline-none focus:border-[#0077B5] transition-all text-sm font-medium placeholder-gray-600"
+                                                    className="flex-1 bg-transparent border-b border-slate-200 dark:border-slate-800 p-2 text-slate-900 dark:text-white focus:outline-none focus:border-[#0077B5] transition-all text-sm font-medium placeholder-gray-600"
                                                 />
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="p-6 bg-white/5 flex gap-4 justify-end border-t border-white/5">
+                                <div className="p-6 bg-white/5 flex gap-4 justify-end border-t border-slate-200 dark:border-slate-800">
                                     <button
                                         onClick={handleCancel}
-                                        className="px-6 py-3 rounded-xl font-bold text-gray-400 hover:text-white hover:bg-white/10 transition-all"
+                                        className="px-6 py-3 rounded-xl font-bold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white hover:bg-white/10 transition-all"
                                     >
                                         <span className="flex items-center gap-2">
                                             <XCircle size={18} />
@@ -273,20 +273,20 @@ function Profile() {
 
                         {/* RIGHT COLUMN: PREVIEW CARD */}
                         <div className="w-full lg:w-[380px]">
-                            <div className="bg-[#1C1D24] rounded-2xl overflow-hidden border border-white/5 shadow-lg sticky top-8">
+                            <div className="bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-lg sticky top-8">
                                 <div className="h-32 bg-gradient-to-br from-brand-primary/30 to-brand-secondary/30 relative">
                                     <div className="absolute inset-0 bg-brand-primary/10 backdrop-blur-sm mix-blend-overlay"></div>
                                 </div>
                                 <div className="px-8 pb-8 relative text-center">
-                                    <div className="w-24 h-24 mx-auto rounded-full bg-[#131419] p-1.5 -mt-12 relative z-10 group cursor-pointer">
+                                    <div className="w-24 h-24 mx-auto rounded-full bg-slate-50 dark:bg-slate-950 p-1.5 -mt-12 relative z-10 group cursor-pointer">
                                         <label className="w-full h-full block relative cursor-pointer rounded-full overflow-hidden">
                                             <img
                                                 src={avatarPreview || user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user._id}`}
                                                 alt="avatar"
-                                                className="w-full h-full rounded-full bg-[#2A2B35] object-cover"
+                                                className="w-full h-full rounded-full bg-slate-200 dark:bg-slate-800 object-cover"
                                             />
                                             <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <span className="text-[10px] font-bold text-white uppercase tracking-wider">Change</span>
+                                                <span className="text-[10px] font-bold text-slate-900 dark:text-white uppercase tracking-wider">Change</span>
                                             </div>
                                             <input 
                                                 type="file" 
@@ -302,29 +302,29 @@ function Profile() {
                                             />
                                         </label>
                                     </div>
-                                    <h3 className="text-xl font-black text-white mt-4 tracking-tight">
+                                    <h3 className="text-xl font-black text-slate-900 dark:text-white mt-4 tracking-tight">
                                         {name || user?.email?.split('@')[0] || "Student"}
                                     </h3>
                                     <p className="text-brand-primary font-bold text-xs uppercase tracking-widest mt-1">
                                         {user.role}
                                     </p>
-                                    <p className="text-gray-400 text-sm mt-4 leading-relaxed font-medium">
+                                    <p className="text-slate-500 dark:text-slate-400 text-sm mt-4 leading-relaxed font-medium">
                                         {bio || "No biography provided yet. Add a short bio to let others know more about you."}
                                     </p>
 
                                     <div className="flex justify-center gap-4 mt-8">
                                         {socials.github && (
-                                            <a href={socials.github} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-white hover:scale-110 transition-transform">
+                                            <a href={socials.github} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-slate-900 dark:text-white hover:scale-110 transition-transform">
                                                 <Github size={18} />
                                             </a>
                                         )}
                                         {socials.twitter && (
-                                            <a href={socials.twitter} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-[#1DA1F2] flex items-center justify-center text-white hover:scale-110 transition-transform shadow-[0_0_15px_rgba(29,161,242,0.4)]">
+                                            <a href={socials.twitter} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-[#1DA1F2] flex items-center justify-center text-slate-900 dark:text-white hover:scale-110 transition-transform shadow-[0_0_15px_rgba(29,161,242,0.4)]">
                                                 <Twitter size={18} />
                                             </a>
                                         )}
                                         {socials.linkedin && (
-                                            <a href={socials.linkedin} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-[#0077B5] flex items-center justify-center text-white hover:scale-110 transition-transform shadow-[0_0_15px_rgba(0,119,181,0.4)]">
+                                            <a href={socials.linkedin} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-[#0077B5] flex items-center justify-center text-slate-900 dark:text-white hover:scale-110 transition-transform shadow-[0_0_15px_rgba(0,119,181,0.4)]">
                                                 <Linkedin size={18} />
                                             </a>
                                         )}

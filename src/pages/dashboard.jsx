@@ -28,7 +28,7 @@ function Dashboard() {
 
     useEffect(() => {
         // Load theme as strictly dark for this specific dashboard view to match the image perfectly
-        document.documentElement.classList.add("dark");
+        
 
         const fetchData = async () => {
             try {
@@ -89,25 +89,25 @@ function Dashboard() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#131419] flex items-center justify-center text-brand-primary">
+            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center text-brand-primary">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-primary"></div>
             </div>
         );
     }
 
     return (
-        <div className="flex h-screen bg-[#0E0F14] text-white font-sans overflow-hidden">
+        <div className="flex h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white font-sans overflow-hidden">
             
             {/* ========================================== */}
             {/* SIDEBAR                                    */}
             {/* ========================================== */}
-            <aside className="w-[280px] bg-[#1C1D24] flex flex-col h-full border-r border-white/5 relative z-20">
+            <aside className="w-[280px] bg-white dark:bg-slate-900 flex flex-col h-full border-r border-slate-200 dark:border-slate-800 relative z-20">
                 
                 {/* Logo */}
                 <div className="p-8 flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
                     <div className="relative flex items-center justify-center w-8 h-8">
                         <div className="absolute inset-0 bg-brand-primary blur-md opacity-50 rounded-full"></div>
-                        <Hammer className="text-white relative z-10" size={24} />
+                        <Hammer className="text-slate-900 dark:text-white relative z-10" size={24} />
                         <div className="absolute top-0 right-0 w-3 h-3 bg-blue-500 rounded-full blur-[2px] -mt-1 -mr-1 mix-blend-screen"></div>
                     </div>
                     <h1 className="text-2xl font-bold tracking-tight">SkillForge</h1>
@@ -121,11 +121,11 @@ function Dashboard() {
                             onClick={() => navigate(item.path)}
                             className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl font-medium transition-all ${
                                 item.active 
-                                ? "bg-[#28255A] text-brand-primary shadow-[0_0_20px_rgba(99,102,241,0.15)] border border-brand-primary/20" 
-                                : "text-gray-400 hover:text-white hover:bg-white/5"
+                                ? "bg-brand-primary/10 dark:bg-brand-primary/20 text-brand-primary shadow-[0_0_20px_rgba(99,102,241,0.15)] border border-brand-primary/20" 
+                                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-white/5"
                             }`}
                         >
-                            <span className={item.active ? "text-brand-primary" : "text-gray-400"}>
+                            <span className={item.active ? "text-brand-primary" : "text-slate-500 dark:text-slate-400"}>
                                 {item.icon}
                             </span>
                             {item.name}
@@ -135,13 +135,13 @@ function Dashboard() {
 
                 {/* Bottom Nav */}
                 <div className="px-6 pb-8 space-y-2">
-                    <button onClick={() => navigate('/profile')} className="w-full flex items-center gap-4 px-4 py-3 rounded-xl font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-all">
+                    <button onClick={() => navigate('/profile')} className="w-full flex items-center gap-4 px-4 py-3 rounded-xl font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all">
                         <User size={20} /> Profile
                     </button>
-                    <button className="w-full flex items-center gap-4 px-4 py-3 rounded-xl font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-all">
+                    <button className="w-full flex items-center gap-4 px-4 py-3 rounded-xl font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all">
                         <HelpCircle size={20} /> Help
                     </button>
-                    <button onClick={handleLogout} className="w-full flex items-center gap-4 px-4 py-3 rounded-xl font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-all mt-4">
+                    <button onClick={handleLogout} className="w-full flex items-center gap-4 px-4 py-3 rounded-xl font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all mt-4">
                         <LogOut size={20} /> Logout
                     </button>
                 </div>
@@ -150,7 +150,7 @@ function Dashboard() {
             {/* ========================================== */}
             {/* MAIN CONTENT                               */}
             {/* ========================================== */}
-            <main className="flex-1 bg-[#131419] h-full overflow-y-auto custom-scrollbar">
+            <main className="flex-1 bg-slate-50 dark:bg-slate-950 h-full overflow-y-auto custom-scrollbar">
                 <div className="max-w-[1200px] mx-auto p-10 pb-20">
                     
                     {/* Header */}
@@ -159,15 +159,15 @@ function Dashboard() {
                             Welcome Back, {user?.name?.split(' ')[0] || 'Developer'}!
                         </h2>
                         <div className="flex items-center gap-6">
-                            <div onClick={() => navigate('/profile')} className="flex items-center gap-3 bg-[#1C1D24] px-4 py-2 rounded-full border border-white/5 cursor-pointer hover:bg-white/5 transition-colors">
+                            <div onClick={() => navigate('/profile')} className="flex items-center gap-3 bg-white dark:bg-slate-900 px-4 py-2 rounded-full border border-slate-200 dark:border-slate-800 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/5 transition-colors">
                                 <img 
                                     src={user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?._id || 'alex'}`} 
                                     alt="Avatar" 
-                                    className="w-8 h-8 rounded-full bg-[#2A2B35]"
+                                    className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800"
                                 />
-                                <span className="text-sm font-medium text-gray-300">{user?.email || 'student@skillforge.com'}</span>
+                                <span className="text-sm font-medium text-slate-600 dark:text-slate-300">{user?.email || 'student@skillforge.com'}</span>
                             </div>
-                            <button className="relative p-2 text-gray-400 hover:text-white transition-colors">
+                            <button className="relative p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white transition-colors">
                                 <Bell size={24} />
                                 <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-[#131419]"></span>
                             </button>
@@ -175,10 +175,10 @@ function Dashboard() {
                     </header>
 
                     {/* Banner */}
-                    <div className="bg-[#1C1D24] border border-white/5 rounded-2xl p-8 flex justify-between items-center mb-10 shadow-lg">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 flex justify-between items-center mb-10 shadow-lg">
                         <div>
                             <h3 className="text-xl font-bold mb-2">Continue Your Learning Journey!</h3>
-                            <p className="text-gray-400">Continue your learning journey across enrolled Courses.</p>
+                            <p className="text-slate-500 dark:text-slate-400">Continue your learning journey across enrolled Courses.</p>
                         </div>
                         <button 
                             onClick={() => navigate('/course-showcase')}
@@ -198,10 +198,10 @@ function Dashboard() {
                         </div>
                         
                         {courses.length === 0 ? (
-                            <div className="bg-[#1C1D24] border border-white/5 rounded-2xl p-10 text-center flex flex-col items-center">
-                                <BookOpen size={40} className="text-gray-600 mb-4" />
-                                <h4 className="text-lg font-bold text-gray-300">No Courses Yet</h4>
-                                <p className="text-gray-500 mb-6">You haven't enrolled in any courses yet.</p>
+                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-10 text-center flex flex-col items-center">
+                                <BookOpen size={40} className="text-slate-400 dark:text-slate-500 mb-4" />
+                                <h4 className="text-lg font-bold text-slate-600 dark:text-slate-300">No Courses Yet</h4>
+                                <p className="text-slate-500 dark:text-slate-400 mb-6">You haven't enrolled in any courses yet.</p>
                                 <button 
                                     onClick={() => navigate('/course-showcase')}
                                     className="bg-white/10 hover:bg-white/20 px-6 py-2 rounded-lg font-bold transition-all"
@@ -212,17 +212,17 @@ function Dashboard() {
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                 {courses.map((course, idx) => (
-                                    <div key={course._id} onClick={() => navigate(`/course/${course._id}`)} className="bg-[#1C1D24] border border-white/5 rounded-2xl p-6 hover:-translate-y-1 transition-transform cursor-pointer shadow-lg group">
+                                    <div key={course._id} onClick={() => navigate(`/course/${course._id}`)} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 hover:-translate-y-1 transition-transform cursor-pointer shadow-lg group">
                                         {mockIcons[idx % mockIcons.length]}
                                         
                                         <h4 className="font-bold text-lg mt-5 mb-1 line-clamp-2 group-hover:text-brand-primary transition-colors h-14">
                                             {course.title}
                                         </h4>
-                                        <p className="text-xs text-gray-400 mb-6 font-medium tracking-wide uppercase">
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 font-medium tracking-wide uppercase">
                                             {course.author}
                                         </p>
                                         
-                                        <div className="w-full bg-[#2A2B35] h-1.5 rounded-full mb-3 overflow-hidden">
+                                        <div className="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full mb-3 overflow-hidden">
                                             <div 
                                                 className="bg-brand-primary h-full rounded-full relative" 
                                                 style={{ width: `${course.progress}%` }}
@@ -231,8 +231,8 @@ function Dashboard() {
                                             </div>
                                         </div>
                                         
-                                        <div className="flex justify-between items-center text-xs font-bold text-gray-400">
-                                            <span className="text-white">{course.progress}%</span>
+                                        <div className="flex justify-between items-center text-xs font-bold text-slate-500 dark:text-slate-400">
+                                            <span className="text-slate-900 dark:text-white">{course.progress}%</span>
                                             <span>{course.progress === 100 ? "Completed" : "In Progress"}</span>
                                         </div>
                                     </div>
@@ -245,16 +245,16 @@ function Dashboard() {
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                         
                         {/* Learning Activity Chart */}
-                        <div className="lg:col-span-3 bg-[#1C1D24] border border-white/5 rounded-2xl p-8 shadow-lg flex flex-col min-h-[320px]">
+                        <div className="lg:col-span-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 shadow-lg flex flex-col min-h-[320px]">
                             <div className="flex justify-between items-center mb-8">
                                 <h3 className="text-lg font-bold">Learning Activity</h3>
-                                <button className="text-gray-400 text-sm flex items-center gap-2 hover:text-white transition-colors">
+                                <button className="text-slate-500 dark:text-slate-400 text-sm flex items-center gap-2 hover:text-slate-900 dark:text-white transition-colors">
                                     Progress <ChevronRight size={14} className="rotate-90" />
                                 </button>
                             </div>
                             
                             <div className="flex-1 flex gap-4">
-                                <div className="flex flex-col justify-between text-xs text-gray-500 font-medium py-2">
+                                <div className="flex flex-col justify-between text-xs text-slate-500 dark:text-slate-400 font-medium py-2">
                                     <span>80</span>
                                     <span>60</span>
                                     <span>40</span>
@@ -287,7 +287,7 @@ function Dashboard() {
                                                     {data.h}
                                                 </div>
                                             </div>
-                                            <span className="text-xs text-gray-500 font-medium">{data.day}</span>
+                                            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{data.day}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -295,25 +295,25 @@ function Dashboard() {
                         </div>
 
                         {/* Recently Viewed Lessons */}
-                        <div className="lg:col-span-2 bg-[#1C1D24] border border-white/5 rounded-2xl p-8 shadow-lg flex flex-col min-h-[320px]">
+                        <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 shadow-lg flex flex-col min-h-[320px]">
                             <h3 className="text-lg font-bold mb-6">Recently Viewed Courses</h3>
                             
                             {courses.length === 0 ? (
-                                <div className="text-center py-10 text-gray-500 font-medium text-sm border border-dashed border-white/5 rounded-xl">
+                                <div className="text-center py-10 text-slate-500 dark:text-slate-400 font-medium text-sm border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
                                     No recent activity.
                                 </div>
                             ) : (
                                 <div className="space-y-4">
                                     {courses.slice(0, 3).map((course, idx) => (
-                                        <div key={course._id} onClick={() => navigate(`/course/${course._id}`)} className="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group">
-                                            <div className="w-12 h-12 rounded-xl bg-brand-primary/10 flex items-center justify-center text-brand-primary group-hover:bg-brand-primary group-hover:text-white transition-all">
+                                        <div key={course._id} onClick={() => navigate(`/course/${course._id}`)} className="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer group">
+                                            <div className="w-12 h-12 rounded-xl bg-brand-primary/10 flex items-center justify-center text-brand-primary group-hover:bg-brand-primary group-hover:text-slate-900 dark:text-white transition-all">
                                                 <Play size={20} className="ml-1" fill="currentColor" />
                                             </div>
                                             <div className="flex-1">
-                                                <h4 className="text-sm font-bold text-gray-200 group-hover:text-white transition-colors line-clamp-1">{course.title}</h4>
-                                                <p className="text-xs text-gray-500 mt-1">Progress: {course.progress}%</p>
+                                                <h4 className="text-sm font-bold text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:text-white transition-colors line-clamp-1">{course.title}</h4>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Progress: {course.progress}%</p>
                                             </div>
-                                            <ChevronRight size={20} className="text-gray-600 group-hover:text-white transition-colors" />
+                                            <ChevronRight size={20} className="text-slate-400 dark:text-slate-500 group-hover:text-slate-900 dark:text-white transition-colors" />
                                         </div>
                                     ))}
                                 </div>
