@@ -123,7 +123,7 @@ function CourseShowcase() {
                                                 </button>
                                                 {course.price > 0 && (
                                                     <span className="text-xl font-black tracking-tight text-brand-text bg-brand-surface/50 backdrop-blur-md px-6 py-3 rounded-full border border-brand-border shadow-sm">
-                                                        ${course.price}
+                                                        ₹{course.price}
                                                     </span>
                                                 )}
                                             </div>
@@ -216,7 +216,7 @@ function CourseShowcase() {
                                         </div>
                                         {course.price !== undefined && (
                                             <span className="text-sm font-black text-brand-text">
-                                                {Number(course.price) === 0 ? "Free" : `$${course.price}`}
+                                                {Number(course.price) === 0 ? "Free" : `₹${course.price}`}
                                             </span>
                                         )}
                                     </div>

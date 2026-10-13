@@ -84,19 +84,86 @@ function CourseDetails() {
     const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
 
     const enrollCourse = async () => {
+        const token = localStorage.getItem("token");
+        if (!token) {
+            toast.error("Please log in to enroll in this course.");
+            navigate(`/login?redirect=/course/${courseId}`);
+            return;
+        }
+
         try {
+            setIsCheckoutLoading(true);
+
             if (Number(course.price) > 0) {
-                setIsCheckoutLoading(true);
-                const res = await api.post("/payment/create-checkout-session", { courseId });
-                window.location.href = res.data.url;
+                // 1. Create Razorpay order on backend
+                const res = await api.post("/payment/create-order", { courseId });
+                const { orderId, amount, currency, keyId } = res.data;
+
+                if (!window.Razorpay) {
+                    toast.error("Payment gateway failed to load. Please refresh and try again.");
+                    setIsCheckoutLoading(false);
+                    return;
+                }
+
+                // 2. Open Razorpay modal
+                const options = {
+                    key: keyId,
+                    amount: amount,
+                    currency: currency || "INR",
+                    name: "SkillForge",
+                    description: `Enrollment: ${course.title}`,
+                    order_id: orderId,
+                    handler: async function (response) {
+                        try {
+                            const verifyRes = await api.post("/payment/verify-payment", {
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature,
+                                courseId
+                            });
+
+                            if (verifyRes.data.success) {
+                                setIsEnrolled(true);
+                                toast.success("Payment verified! Course successfully unlocked 🎉");
+                            }
+                        } catch (verifyErr) {
+                            console.error("Verification error:", verifyErr);
+                            toast.error(verifyErr.response?.data?.message || "Payment verification failed.");
+                        } finally {
+                            setIsCheckoutLoading(false);
+                        }
+                    },
+                    prefill: {
+                        name: currentUser?.name || "",
+                        email: currentUser?.email || ""
+                    },
+                    theme: {
+                        color: "#6366F1"
+                    },
+                    modal: {
+                        ondismiss: function () {
+                            setIsCheckoutLoading(false);
+                        }
+                    }
+                };
+
+                const razorpayInstance = new window.Razorpay(options);
+                razorpayInstance.on("payment.failed", function (response) {
+                    console.error("Payment failed:", response.error);
+                    toast.error(response.error.description || "Payment failed");
+                    setIsCheckoutLoading(false);
+                });
+                razorpayInstance.open();
             } else {
+                // Free course direct enrollment
                 await api.post(`/enrollments/${courseId}/enroll`);
                 setIsEnrolled(true);
-                toast.success("Enrolled successfully!");
+                toast.success("Enrolled successfully in free course!");
+                setIsCheckoutLoading(false);
             }
         } catch (err) {
-            console.log(err);
-            toast.error(err.response?.data?.message || "Failed to enroll");
+            console.error("Checkout error:", err);
+            toast.error(err.response?.data?.message || "Failed to process enrollment");
             setIsCheckoutLoading(false);
         }
     };
@@ -291,7 +358,7 @@ function CourseDetails() {
                     <div className="sticky top-24 bg-brand-surface rounded-2xl shadow-2xl border border-brand-border p-8">
                         <div className="text-center mb-8 pb-8 border-b border-brand-border">
                             <div className="text-4xl font-black text-brand-text">
-                                {Number(course.price) === 0 ? "Free" : `$${course.price}`}
+                                {Number(course.price) === 0 ? "Free" : `₹${course.price}`}
                             </div>
                         </div>
 
@@ -308,7 +375,7 @@ function CourseDetails() {
                                     </>
                                 ) : (
                                     <>
-                                        Initialize Course
+                                        {Number(course.price) === 0 ? "Enroll for Free" : `Buy Course • ₹${course.price}`}
                                         <PlayCircle size={18} className="group-hover:scale-110 transition-transform" />
                                     </>
                                 )}

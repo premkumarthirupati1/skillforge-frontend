@@ -327,7 +327,7 @@ function SearchBar({
                                                     </h4>
                                                     {course.price !== undefined && (
                                                         <span className="text-xs font-extrabold text-blue-600 dark:text-blue-400 shrink-0">
-                                                            {Number(course.price) === 0 ? "Free" : `$${course.price}`}
+                                                            {Number(course.price) === 0 ? "Free" : `₹${course.price}`}
                                                         </span>
                                                     )}
                                                 </div>

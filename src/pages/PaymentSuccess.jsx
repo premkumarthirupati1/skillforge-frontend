@@ -47,10 +47,10 @@ function PaymentSuccess() {
                 <div className="bg-white dark:bg-slate-900 rounded-3xl p-10 max-w-md w-full text-center shadow-xl border border-slate-200 dark:border-slate-800">
                     {status === "verifying" && (
                         <div className="space-y-6 flex flex-col items-center">
-                            <Loader2 size={64} className="text-blue-600 animate-spin" />
+                            <Loader2 size={64} className="text-brand-primary animate-spin" />
                             <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Verifying Payment...</h2>
                             <p className="text-slate-500 dark:text-slate-400 text-sm">
-                                Please wait while we securely verify your transaction with Stripe. Do not close this page.
+                                Please wait while we securely verify your transaction. Do not close this page.
                             </p>
                         </div>
                     )}
