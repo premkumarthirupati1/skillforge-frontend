@@ -45,7 +45,7 @@ function ResetPassword() {
 
         setIsSubmitting(true);
         try {
-            await api.post(`/auth/reset-password/${email}`, { password });
+            await api.post(`/auth/reset-password/${email}`, { password, token });
             toast.success("Password updated successfully! Redirecting...");
 
             setTimeout(() => {
