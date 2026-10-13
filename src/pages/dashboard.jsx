@@ -36,24 +36,21 @@ function Dashboard() {
                 const userRes = await api.get('/user/profile');
                 setUser(Array.isArray(userRes.data) ? userRes.data[0] : userRes.data);
 
-                // Fetch Enrollments
-                const enrollmentsRes = await api.get('/enrollment');
-                
-                // Fetch Course Details for each enrollment
-                const courseDetailsPromises = enrollmentsRes.data.map(async (enrollment) => {
-                    try {
-                        const courseRes = await api.get(`/course/${enrollment.courseId}`);
-                        return {
-                            ...courseRes.data,
-                            progress: enrollment.progress || 0
-                        };
-                    } catch (e) {
-                        return null; // Ignore deleted/missing courses
-                    }
-                });
+                // Fetch Enrollments (fast cached endpoint with populated courses)
+                const enrollmentsRes = await api.get('/enrollments');
+                const rawEnrollments = Array.isArray(enrollmentsRes.data) ? enrollmentsRes.data : [];
 
-                const coursesData = await Promise.all(courseDetailsPromises);
-                setCourses(coursesData.filter(c => c !== null));
+                const coursesData = rawEnrollments
+                    .filter(e => e && e.courseId && !e.isDeleted)
+                    .map(e => {
+                        const courseObj = typeof e.courseId === 'object' ? e.courseId : {};
+                        return {
+                            ...courseObj,
+                            progress: e.progress || 0
+                        };
+                    });
+
+                setCourses(coursesData);
 
             } catch (err) {
                 console.error("Dashboard error:", err);
