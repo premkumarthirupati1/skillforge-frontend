@@ -14,6 +14,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "axios": "^1.13.6",
+    "framer-motion": "^14.2.0",
     "geist": "^1.7.2",
     "html-to-image": "^1.11.13",
     "html2canvas": "^1.4.1",

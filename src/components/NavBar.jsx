@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
     Sun,
     Moon,
@@ -62,20 +63,22 @@ function NavBar() {
     return (
         <nav className={`sticky top-0 w-full z-50 transition-all duration-500 border-b ${
             scrolled 
-            ? 'bg-brand-bg/80 backdrop-blur-md border-brand-border shadow-sm' 
+            ? 'bg-brand-bg/85 backdrop-blur-md border-brand-border shadow-sm' 
             : 'bg-brand-bg border-transparent'
         }`}>
             <div className="w-full px-8 md:px-12 h-16 flex justify-between items-center gap-4">
 
                 {/* LOGO SECTION */}
                 <div className="flex items-center gap-8">
-                    <h1
+                    <motion.h1
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                         className="text-xl font-bold text-brand-text cursor-pointer tracking-tight shrink-0 flex items-center gap-2"
                         onClick={() => navigate("/dashboard")}
                     >
                         SkillForge
                         <span className="w-1.5 h-1.5 rounded-full bg-brand-primary animate-pulse"></span>
-                    </h1>
+                    </motion.h1>
                 </div>
 
                 {/* MIDDLE NAVIGATION */}
@@ -112,7 +115,7 @@ function NavBar() {
                                     onClick={() => setMenuOpen(!menuOpen)}
                                     className="flex items-center gap-2 p-1 pl-2.5 rounded-full bg-brand-surface border border-brand-border hover:border-brand-primary/50 transition-all duration-300"
                                 >
-                                    <div className="w-6 h-6 bg-brand-primary/20 rounded-full flex items-center justify-center text-brand-primary shadow-[0_0_10px_rgba(99,102,241,0.2)]">
+                                    <div className="w-6 h-6 bg-brand-primary/20 rounded-full flex items-center justify-center text-brand-primary shadow-[0_0_10px_rgba(37,99,235,0.2)]">
                                         <User size={12} />
                                     </div>
                                     <ChevronDown size={14} className={`text-brand-muted transition-transform duration-300 mr-1.5 ${menuOpen ? 'rotate-180' : ''}`} />
@@ -143,7 +146,14 @@ function NavBar() {
                             </div>
                         </>
                     ) : (
-                        <button onClick={() => navigate("/login")} className="bg-brand-text text-brand-bg hover:bg-brand-text/90 px-5 py-1.5 rounded-md text-sm font-semibold transition-all">Sign In</button>
+                        <motion.button 
+                            whileHover={{ scale: 1.04 }}
+                            whileTap={{ scale: 0.96 }}
+                            onClick={() => navigate("/login")} 
+                            className="bg-brand-text text-brand-bg hover:bg-brand-text/90 px-5 py-1.5 rounded-md text-sm font-semibold transition-all shadow-sm"
+                        >
+                            Sign In
+                        </motion.button>
                     )}
                 </div>
             </div>
