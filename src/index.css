@@ -4,29 +4,29 @@
 
 @layer base {
   :root {
-    --brand-bg: 255, 255, 255;
-    --brand-surface: 250, 250, 250;
-    --brand-elevated: 244, 244, 245;
-    --brand-border: 228, 228, 231;
-    --brand-primary: 79, 70, 229;
-    --brand-secondary: 124, 58, 237;
-    --brand-cyan: 8, 145, 178;
-    --brand-text: 9, 9, 11;
-    --brand-muted: 82, 82, 91;
-    --brand-subtle: 161, 161, 170;
+    --brand-bg: 248, 250, 252;
+    --brand-surface: 255, 255, 255;
+    --brand-elevated: 241, 245, 249;
+    --brand-border: 226, 232, 240;
+    --brand-primary: 37, 99, 235;
+    --brand-secondary: 29, 78, 216;
+    --brand-cyan: 96, 165, 250;
+    --brand-text: 15, 23, 42;
+    --brand-muted: 71, 85, 105;
+    --brand-subtle: 148, 163, 184;
   }
   
   .dark {
-    --brand-bg: 8, 9, 13;
-    --brand-surface: 17, 19, 24;
-    --brand-elevated: 24, 26, 33;
-    --brand-border: 39, 42, 52;
-    --brand-primary: 99, 102, 241;
-    --brand-secondary: 139, 92, 246;
-    --brand-cyan: 34, 211, 238;
+    --brand-bg: 9, 13, 22;
+    --brand-surface: 17, 24, 39;
+    --brand-elevated: 26, 36, 56;
+    --brand-border: 31, 41, 55;
+    --brand-primary: 59, 130, 246;
+    --brand-secondary: 96, 165, 250;
+    --brand-cyan: 56, 189, 248;
     --brand-text: 248, 250, 252;
-    --brand-muted: 161, 161, 170;
-    --brand-subtle: 113, 113, 122;
+    --brand-muted: 156, 163, 175;
+    --brand-subtle: 107, 114, 128;
   }
 }
 
