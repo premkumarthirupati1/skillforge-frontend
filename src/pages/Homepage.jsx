@@ -242,22 +242,22 @@ report = evaluator.analyze(
                         initial={{ opacity: 0, y: 35 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, delay: 0.45, ease: "easeOut" }}
-                        className="pt-8 sm:pt-12 max-w-4xl mx-auto w-full relative"
+                        className="mt-12 sm:mt-16 max-w-4xl mx-auto w-full relative"
                     >
-                        {/* Floating Tech Chips */}
-                        <div className="hidden lg:block absolute -top-4 -left-12 animate-float-slow z-20">
+                        {/* Floating Tech Chips (Positioned safely on sides, below CTA buttons) */}
+                        <div className="hidden xl:block absolute top-24 -left-10 2xl:-left-16 animate-float-slow z-20">
                             <motion.div 
                                 whileHover={{ scale: 1.06 }}
-                                className="bg-brand-surface/95 backdrop-blur-md border border-brand-border px-3.5 py-2 rounded-xl shadow-xl flex items-center gap-2.5 text-xs font-bold text-brand-text cursor-default"
+                                className="bg-brand-surface/95 backdrop-blur-md border border-brand-border px-3.5 py-2 rounded-xl shadow-xl flex items-center gap-2.5 text-xs font-bold text-brand-text cursor-default select-none"
                             >
                                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                                 ⚡ Instant In-Browser Sandboxes
                             </motion.div>
                         </div>
-                        <div className="hidden lg:block absolute -bottom-3 -right-8 animate-float-subtle z-20">
+                        <div className="hidden xl:block absolute bottom-16 -right-10 2xl:-right-16 animate-float-subtle z-20">
                             <motion.div 
                                 whileHover={{ scale: 1.06 }}
-                                className="bg-brand-surface/95 backdrop-blur-md border border-brand-border px-3.5 py-2 rounded-xl shadow-xl flex items-center gap-2.5 text-xs font-bold text-brand-text cursor-default"
+                                className="bg-brand-surface/95 backdrop-blur-md border border-brand-border px-3.5 py-2 rounded-xl shadow-xl flex items-center gap-2.5 text-xs font-bold text-brand-text cursor-default select-none"
                             >
                                 <Sparkles size={14} className="text-brand-primary" />
                                 🤖 Real-time AI Code Reviewer
