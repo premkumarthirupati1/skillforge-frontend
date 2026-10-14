@@ -64,7 +64,7 @@ function HomePage() {
             {/* ========================================================================= */}
             {/* 1. HERO SECTION */}
             {/* ========================================================================= */}
-            <header className="relative pt-32 pb-24 lg:pt-48 lg:pb-40 flex flex-col items-center justify-center text-center overflow-hidden">
+            <header className="relative pt-12 pb-16 sm:pt-16 sm:pb-20 lg:pt-20 lg:pb-28 flex flex-col items-center justify-center text-center overflow-hidden">
                 
                 {/* Visual Ambient Background */}
                 <div className="absolute inset-0 bg-grid-pattern opacity-60 dark:opacity-40 pointer-events-none z-0" />
@@ -76,7 +76,7 @@ function HomePage() {
                     <div className="w-[40%] h-full bg-brand-cyan/40 rounded-full mix-blend-multiply dark:mix-blend-screen animate-blob animation-delay-4000 -ml-32" />
                 </div>
 
-                <div className="max-w-5xl mx-auto px-6 relative z-10 space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                <div className="max-w-5xl mx-auto px-6 relative z-10 space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
                     
                     {/* Badge */}
                     <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-brand-bg/50 backdrop-blur-md border border-brand-border shadow-sm hover:border-brand-primary/50 transition-colors cursor-pointer group">
@@ -91,7 +91,7 @@ function HomePage() {
                     </div>
 
                     {/* Headline */}
-                    <h1 className="text-6xl sm:text-7xl lg:text-8xl font-black text-brand-text leading-[1.05] tracking-tighter text-glow drop-shadow-sm">
+                    <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black text-brand-text leading-[1.08] tracking-tighter text-glow drop-shadow-sm">
                         Forge the skills. <br className="hidden sm:block" />
                         <span className="bg-gradient-to-br from-brand-primary via-brand-secondary to-brand-cyan bg-clip-text text-transparent">
                             Build your future.
@@ -99,16 +99,16 @@ function HomePage() {
                     </h1>
 
                     {/* Description */}
-                    <p className="text-lg sm:text-2xl text-brand-muted leading-relaxed max-w-3xl mx-auto font-medium">
+                    <p className="text-base sm:text-xl text-brand-muted leading-relaxed max-w-3xl mx-auto font-medium">
                         A premium developer platform where serious people come to build serious skills. Master software engineering through structured learning and production-grade projects.
                     </p>
 
                     {/* Action Buttons */}
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8">
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2 sm:pt-4">
                         {token ? (
                             <button
                                 onClick={() => navigate("/dashboard")}
-                                className="group bg-brand-text text-brand-bg px-8 py-4 rounded-xl font-bold text-lg transition-all hover:bg-brand-text/90 hover:scale-[1.02] active:scale-[0.98] shadow-xl flex items-center justify-center gap-3"
+                                className="group bg-brand-text text-brand-bg px-7 sm:px-8 py-3.5 sm:py-4 rounded-xl font-bold text-base sm:text-lg transition-all hover:bg-brand-text/90 hover:scale-[1.02] active:scale-[0.98] shadow-xl flex items-center justify-center gap-3"
                             >
                                 Enter Workspace
                                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
@@ -116,7 +116,7 @@ function HomePage() {
                         ) : (
                             <button
                                 onClick={() => navigate("/signup")}
-                                className="group bg-brand-text text-brand-bg px-8 py-4 rounded-xl font-bold text-lg transition-all hover:bg-brand-text/90 hover:scale-[1.02] active:scale-[0.98] shadow-xl flex items-center justify-center gap-3"
+                                className="group bg-brand-text text-brand-bg px-7 sm:px-8 py-3.5 sm:py-4 rounded-xl font-bold text-base sm:text-lg transition-all hover:bg-brand-text/90 hover:scale-[1.02] active:scale-[0.98] shadow-xl flex items-center justify-center gap-3"
                             >
                                 Start Learning for Free
                                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
@@ -124,7 +124,7 @@ function HomePage() {
                         )}
                         <button
                             onClick={() => navigate("/course-showcase")}
-                            className="group bg-brand-surface/80 backdrop-blur-sm border border-brand-border text-brand-text px-8 py-4 rounded-xl font-bold text-lg hover:bg-brand-elevated hover:border-brand-primary/30 transition-all flex items-center justify-center gap-3 shadow-sm hover:shadow-md"
+                            className="group bg-brand-surface/80 backdrop-blur-sm border border-brand-border text-brand-text px-7 sm:px-8 py-3.5 sm:py-4 rounded-xl font-bold text-base sm:text-lg hover:bg-brand-elevated hover:border-brand-primary/30 transition-all flex items-center justify-center gap-3 shadow-sm hover:shadow-md"
                         >
                             <PlayCircle size={20} className="text-brand-primary group-hover:scale-110 transition-transform" />
                             Explore Curriculum
@@ -132,7 +132,7 @@ function HomePage() {
                     </div>
 
                     {/* Social Proof Mini */}
-                    <div className="pt-12 flex flex-col items-center justify-center gap-4 text-brand-subtle">
+                    <div className="pt-6 sm:pt-8 flex flex-col items-center justify-center gap-3 text-brand-subtle">
                         <p className="text-sm font-bold uppercase tracking-widest">Trusted by engineers at</p>
                         <div className="flex gap-8 opacity-50 grayscale contrast-200">
                             {/* Abstract generic logos for effect */}
