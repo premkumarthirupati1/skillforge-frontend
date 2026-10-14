@@ -60,7 +60,7 @@ function Login() {
             toast.success("Welcome back!");
             navigate("/dashboard");
         } catch (err) {
-            const errorMsg = err.response?.data?.message || "Invalid email or password. Please try again.";
+            const errorMsg = err.response?.data?.message || "Incorrect credentials. Please check your email and password.";
             setError(errorMsg);
             toast.error(errorMsg);
             console.error(err);
