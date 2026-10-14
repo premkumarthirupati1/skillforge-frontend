@@ -17,6 +17,13 @@ function ResetPassword() {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
+        if (!token || !email) {
+            setIsVerifying(false);
+            setIsTokenValid(false);
+            toast.error("Invalid reset link. Missing token or email parameter.");
+            return;
+        }
+
         const verifyToken = async () => {
             try {
                 await api.post(`/auth/forgot-password/${token}/${email}`);
@@ -30,7 +37,7 @@ function ResetPassword() {
             }
         };
         verifyToken();
-    }, [token]);
+    }, [token, email]);
 
     const handlePasswordReset = async (e) => {
         e.preventDefault();
