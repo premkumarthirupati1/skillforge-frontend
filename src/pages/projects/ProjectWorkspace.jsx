@@ -37,7 +37,8 @@ import {
     BrainCircuit,
     Lightbulb,
     Zap,
-    RefreshCw
+    RefreshCw,
+    X
 } from "lucide-react";
 import { PROJECTS } from "../../data/projectsData";
 import { getProjectWorkspaceData } from "../../data/projectWorkspacesData";
@@ -403,8 +404,11 @@ export default function ProjectWorkspace() {
         setIsSpecsCollapsed(false);
 
         const targetLevel = requestedLevel !== null ? requestedLevel : (aiMentorState.level || 1);
-        const failingName = testCase || aiMentorState.activeFailingTest || (testResults?.steps?.find(s => !s.passed)?.name) || "Active Milestone Tests";
-        const failingErr = error || (testResults?.steps?.find(s => !s.passed)?.output) || testResults?.error || "";
+        
+        // Only associate with a failing test if one was specifically requested or if tests currently failed
+        const failingStep = testResults?.status === "failed" ? testResults?.steps?.find(s => !s.passed) : null;
+        const failingName = testCase || (testCase === null && prompt ? null : (failingStep?.name || null));
+        const failingErr = error || (failingName ? (failingStep?.output || testResults?.error || "") : "");
 
         setAiMentorState(prev => ({
             ...prev,
@@ -424,8 +428,8 @@ export default function ProjectWorkspace() {
                 milestoneObjective: milestoneGuide.objective,
                 activeFileName,
                 userCode: activeCode,
-                testResults: testResults || (failingErr ? { steps: [{ name: failingName, passed: false, output: failingErr }] } : null),
-                userQuery: prompt || (failingName ? `Why is test '${failingName}' failing: ${failingErr}` : ""),
+                testResults: testResults || (failingErr ? { steps: [{ name: failingName || "Assertion", passed: false, output: failingErr }] } : null),
+                userQuery: prompt || (failingName ? `Why is test '${failingName}' failing: ${failingErr}` : `Review code and guide me for ${milestoneGuide.title}`),
                 hintLevel: targetLevel
             });
 
@@ -528,6 +532,13 @@ export default function ProjectWorkspace() {
                     duration: result.duration,
                     steps: result.steps
                 });
+
+                // Clear previous failure context since tests passed
+                setAiMentorState(prev => ({
+                    ...prev,
+                    activeFailingTest: null,
+                    diagnosis: null
+                }));
 
                 // Mark current milestone verified!
                 setVerifiedMilestones(prev => {
@@ -1307,16 +1318,26 @@ export default function ProjectWorkspace() {
                                                 <XCircle size={16} className="text-rose-400 shrink-0" />
                                                 <span className="font-bold font-mono truncate">{aiMentorState.activeFailingTest}</span>
                                             </div>
-                                            {aiMentorState.targetLine && (
+                                            <div className="flex items-center gap-1.5 shrink-0">
+                                                {aiMentorState.targetLine && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => jumpToLine(aiMentorState.targetLine)}
+                                                        className="px-2.5 py-1 rounded bg-rose-500/20 hover:bg-rose-500/30 text-xs font-mono text-rose-200 flex items-center gap-1.5 transition-colors font-medium"
+                                                    >
+                                                        <Target size={12} />
+                                                        <span>Line {aiMentorState.targetLine}</span>
+                                                    </button>
+                                                )}
                                                 <button
                                                     type="button"
-                                                    onClick={() => jumpToLine(aiMentorState.targetLine)}
-                                                    className="px-2.5 py-1 rounded bg-rose-500/20 hover:bg-rose-500/30 text-xs font-mono text-rose-200 flex items-center gap-1.5 transition-colors shrink-0 font-medium"
+                                                    onClick={() => setAiMentorState(prev => ({ ...prev, activeFailingTest: null }))}
+                                                    className="p-1 rounded hover:bg-white/10 text-rose-300 hover:text-white transition-colors"
+                                                    title="Dismiss context"
                                                 >
-                                                    <Target size={12} />
-                                                    <span>Line {aiMentorState.targetLine}</span>
+                                                    <X size={14} />
                                                 </button>
-                                            )}
+                                            </div>
                                         </div>
                                     )}
 
