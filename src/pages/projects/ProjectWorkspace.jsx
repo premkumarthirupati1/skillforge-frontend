@@ -55,8 +55,17 @@ export default function ProjectWorkspace() {
         return getProjectWorkspaceData(project.id, project);
     }, [project]);
 
-    // State: Current active milestone (0-indexed)
-    const [currentMilestoneIndex, setCurrentMilestoneIndex] = useState(0);
+    // State: Current active milestone (0-indexed, restored from saved progress)
+    const [currentMilestoneIndex, setCurrentMilestoneIndex] = useState(() => {
+        try {
+            const savedBuilds = JSON.parse(localStorage.getItem("skillforge_user_builds") || "[]");
+            const b = savedBuilds.find(build => build.projectId === project.id);
+            if (b && typeof b.currentMilestone === "number" && b.currentMilestone >= 1) {
+                return Math.min(b.currentMilestone - 1, (project.milestones?.length || 5) - 1);
+            }
+        } catch {}
+        return 0;
+    });
     const currentMilestone = project.milestones?.[currentMilestoneIndex] || project.milestones?.[0];
 
     // State: Verified Milestones set (Milestones unlocked and passed by test suite)
@@ -77,6 +86,27 @@ export default function ProjectWorkspace() {
     });
 
     const isCurrentMilestoneVerified = verifiedMilestones.has(currentMilestoneIndex);
+
+    // Guard: Check if a given milestone is unlocked
+    const isMilestoneUnlocked = (idx) => {
+        if (idx === 0) return true;
+        return verifiedMilestones.has(idx - 1) || verifiedMilestones.has(idx);
+    };
+
+    // Safe milestone switcher that strictly prevents jumping ahead
+    const handleSelectMilestone = (targetIdx) => {
+        if (!isMilestoneUnlocked(targetIdx)) {
+            toast.error(`Stage ${targetIdx + 1} is locked! Complete and pass all tests for Stage ${targetIdx} first.`, {
+                icon: "🔒",
+                id: `locked_stage_${targetIdx}`
+            });
+            return false;
+        }
+        setCurrentMilestoneIndex(targetIdx);
+        setSelectedRoadmapIdx(targetIdx);
+        setSpecTab("spec");
+        return true;
+    };
 
     // State: File editor contents (persisted per project)
     const [files, setFiles] = useState(() => {
@@ -713,15 +743,17 @@ export default function ProjectWorkspace() {
 
                             {/* TAB: INTERACTIVE ROADMAP */}
                             {specTab === "roadmap" && (
-                                <div className="p-5 space-y-5 animate-in fade-in duration-200">
+                                <div className="p-5 space-y-4 animate-in fade-in duration-200">
                                     <div className="p-3.5 rounded-xl bg-gradient-to-r from-blue-900/20 via-indigo-950/20 to-transparent border border-blue-500/20 space-y-1">
                                         <div className="flex items-center justify-between">
                                             <span className="text-[10px] font-mono font-bold uppercase text-blue-400">{project.track}</span>
-                                            <span className="text-[10px] font-mono text-cyan-300 font-bold">5 Stages</span>
+                                            <span className="text-[10px] font-mono text-cyan-300 font-bold">
+                                                {verifiedMilestones.size} / {project.milestones?.length || 5} Verified
+                                            </span>
                                         </div>
                                         <h3 className="text-xs font-bold text-white">Full Architecture Roadmap</h3>
                                         <p className="text-[11px] text-slate-400 leading-normal">
-                                            Track your implementation progression from foundation to production.
+                                            Milestones unlock sequentially. Pass all tests in each stage to advance.
                                         </p>
                                     </div>
 
@@ -730,44 +762,182 @@ export default function ProjectWorkspace() {
                                         {project.milestones?.map((m, idx) => {
                                             const isVerified = verifiedMilestones.has(idx);
                                             const isActive = idx === currentMilestoneIndex;
+                                            const isSelected = idx === selectedRoadmapIdx;
+                                            const unlocked = isMilestoneUnlocked(idx);
+
                                             return (
                                                 <button
                                                     key={m.id}
                                                     type="button"
                                                     onClick={() => {
-                                                        setCurrentMilestoneIndex(idx);
-                                                        setSpecTab("spec");
+                                                        setSelectedRoadmapIdx(idx);
+                                                        if (!unlocked) {
+                                                            toast.error(`Stage ${idx + 1} is locked! Complete all tests in Stage ${idx} first.`, {
+                                                                icon: "🔒",
+                                                                id: `locked_click_${idx}`
+                                                            });
+                                                        }
                                                     }}
-                                                    className={`w-full p-3 rounded-xl border text-left transition-all flex items-start gap-3 ${
-                                                        isActive 
-                                                            ? "bg-blue-600/20 border-blue-500/40 text-white shadow-md" 
-                                                            : isVerified 
+                                                    className={`w-full p-3 rounded-xl border text-left transition-all flex items-start gap-3 relative ${
+                                                        isSelected
+                                                            ? "bg-blue-600/15 border-blue-500/50 text-white shadow-md"
+                                                            : isActive
+                                                            ? "bg-cyan-500/10 border-cyan-500/30 text-white"
+                                                            : isVerified
                                                             ? "bg-emerald-500/5 border-emerald-500/20 text-slate-300"
-                                                            : "bg-white/5 border-white/5 text-slate-400 hover:border-white/20"
+                                                            : "bg-white/[0.02] border-white/5 text-slate-500 hover:border-white/10 opacity-70"
                                                     }`}
                                                 >
+                                                    {/* Status Icon */}
                                                     <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
                                                         isVerified 
-                                                            ? "bg-emerald-500 text-black" 
+                                                            ? "bg-emerald-500 text-black shadow-sm" 
                                                             : isActive 
-                                                            ? "bg-cyan-400 text-black font-extrabold" 
-                                                            : "bg-[#05070B] border border-white/20 text-slate-400"
+                                                            ? "bg-cyan-400 text-black font-extrabold shadow-[0_0_10px_#38bdf8]" 
+                                                            : unlocked
+                                                            ? "bg-[#05070B] border border-blue-500/30 text-blue-300"
+                                                            : "bg-[#05070B] border border-white/10 text-slate-600"
                                                     }`}>
-                                                        {isVerified ? <Check size={14} className="stroke-[3]" /> : idx + 1}
+                                                        {isVerified ? (
+                                                            <Check size={14} className="stroke-[3]" />
+                                                        ) : !unlocked ? (
+                                                            <Lock size={12} className="text-slate-500" />
+                                                        ) : (
+                                                            idx + 1
+                                                        )}
                                                     </div>
+
+                                                    {/* Title & Status */}
                                                     <div className="flex-grow min-w-0">
                                                         <div className="flex items-center justify-between gap-1">
-                                                            <div className="font-bold text-xs truncate">{m.title}</div>
-                                                            <span className="text-[10px] font-mono text-cyan-400 shrink-0">{m.testCount || 4} Tests</span>
+                                                            <div className={`font-bold text-xs truncate ${!unlocked ? "text-slate-500" : ""}`}>
+                                                                {m.title}
+                                                            </div>
+                                                            <span className={`text-[10px] font-mono shrink-0 ${
+                                                                isVerified 
+                                                                    ? "text-emerald-400 font-bold" 
+                                                                    : !unlocked 
+                                                                    ? "text-slate-600 flex items-center gap-1" 
+                                                                    : "text-cyan-400"
+                                                            }`}>
+                                                                {!unlocked ? (
+                                                                    <span className="flex items-center gap-1"><Lock size={10} /> Locked</span>
+                                                                ) : (
+                                                                    `${m.testCount || 4} Tests`
+                                                                )}
+                                                            </span>
                                                         </div>
-                                                        <div className="text-[10px] text-slate-500 font-mono mt-0.5">
-                                                            {isVerified ? "✓ Completed & Verified" : isActive ? "● In Progress (Active)" : "Locked until Stage " + idx}
+                                                        <div className="text-[10px] font-mono mt-0.5">
+                                                            {isVerified ? (
+                                                                <span className="text-emerald-400 font-semibold">✓ Completed & Verified</span>
+                                                            ) : isActive ? (
+                                                                <span className="text-cyan-300 font-bold">● Active Workspace (Target)</span>
+                                                            ) : unlocked ? (
+                                                                <span className="text-blue-400">Ready to start</span>
+                                                            ) : (
+                                                                <span className="text-amber-500/70">🔒 Requires Stage {idx} completion</span>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </button>
                                             );
                                         })}
                                     </div>
+
+                                    {/* Milestone Detail & Objective Card */}
+                                    {(() => {
+                                        const selectedMilestone = project.milestones?.[selectedRoadmapIdx] || project.milestones?.[0];
+                                        const selectedGuide = workspaceData.milestoneGuides?.[selectedRoadmapIdx];
+                                        const isSelectedVerified = verifiedMilestones.has(selectedRoadmapIdx);
+                                        const isSelectedActive = selectedRoadmapIdx === currentMilestoneIndex;
+                                        const isSelectedUnlocked = isMilestoneUnlocked(selectedRoadmapIdx);
+
+                                        return (
+                                            <div className="p-4 rounded-xl bg-[#05070B] border border-white/10 space-y-3 mt-2">
+                                                <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                                                            Stage {selectedRoadmapIdx + 1}
+                                                        </span>
+                                                        <span className="text-xs font-bold text-white truncate max-w-[170px]">
+                                                            {selectedMilestone?.title}
+                                                        </span>
+                                                    </div>
+                                                    {isSelectedVerified ? (
+                                                        <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1 font-bold">
+                                                            <CheckCircle2 size={12} /> Verified
+                                                        </span>
+                                                    ) : isSelectedActive ? (
+                                                        <span className="text-[10px] font-mono text-cyan-400 flex items-center gap-1 font-bold">
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" /> Active
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-[10px] font-mono text-amber-500/90 flex items-center gap-1 font-bold">
+                                                            <Lock size={11} /> Locked
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                {/* Objective Description */}
+                                                <div className="space-y-1">
+                                                    <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                                                        Stage Objective
+                                                    </div>
+                                                    <p className="text-xs text-slate-300 leading-relaxed">
+                                                        {selectedGuide?.objective || "Implement architecture according to specification guidelines."}
+                                                    </p>
+                                                </div>
+
+                                                {/* Stats */}
+                                                <div className="grid grid-cols-2 gap-2 text-xs font-mono">
+                                                    <div className="p-2 rounded-lg bg-white/5 border border-white/5">
+                                                        <div className="text-[10px] text-slate-400 uppercase">Test Suite</div>
+                                                        <div className="font-bold text-cyan-300">{selectedGuide?.testCases?.length || selectedMilestone?.testCount || 4} Tests</div>
+                                                    </div>
+                                                    <div className="p-2 rounded-lg bg-white/5 border border-white/5">
+                                                        <div className="text-[10px] text-slate-400 uppercase">Constraints</div>
+                                                        <div className="font-bold text-indigo-300">{selectedGuide?.specRules?.length || 2} Constraints</div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Milestone Action Button (strictly enforces progression lock) */}
+                                                {isSelectedActive ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setSpecTab("spec")}
+                                                        className="w-full py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-mono font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-md active:scale-95"
+                                                    >
+                                                        <span>● Active Stage · Open Spec & Tests</span>
+                                                        <ChevronRight size={13} />
+                                                    </button>
+                                                ) : isSelectedUnlocked ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleSelectMilestone(selectedRoadmapIdx)}
+                                                        className="w-full py-2.5 px-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-mono font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-md active:scale-95"
+                                                    >
+                                                        <span>Switch Workspace to Stage {selectedRoadmapIdx + 1}</span>
+                                                        <ChevronRight size={13} />
+                                                    </button>
+                                                ) : (
+                                                    <div className="space-y-2 pt-1">
+                                                        <button
+                                                            type="button"
+                                                            disabled
+                                                            className="w-full py-2.5 px-3 rounded-xl bg-white/5 border border-white/10 text-slate-500 font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-not-allowed opacity-60"
+                                                        >
+                                                            <Lock size={13} className="text-amber-400" />
+                                                            <span>Locked · Complete Stage {selectedRoadmapIdx} First</span>
+                                                        </button>
+                                                        <p className="text-[10px] text-amber-500/80 text-center font-mono">
+                                                            Cannot jump ahead. Fix and pass tests in Stage {selectedRoadmapIdx} to unlock.
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })()}
+
                                 </div>
                             )}
 
