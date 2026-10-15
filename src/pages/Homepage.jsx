@@ -235,6 +235,27 @@ report = evaluator.analyze(
                         </motion.button>
                     </motion.div>
 
+                    {/* Key Platform Highlights Pill Bar */}
+                    <motion.div 
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.35, ease: "easeOut" }}
+                        className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 pt-2"
+                    >
+                        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-surface/90 border border-brand-border text-xs sm:text-sm font-semibold text-brand-muted shadow-sm hover:border-brand-primary/40 transition-colors">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <span>Instant In-Browser Sandboxes</span>
+                        </div>
+                        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-surface/90 border border-brand-border text-xs sm:text-sm font-semibold text-brand-muted shadow-sm hover:border-brand-primary/40 transition-colors">
+                            <Sparkles size={14} className="text-brand-primary" />
+                            <span>Real-Time AI Code Reviewer</span>
+                        </div>
+                        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-surface/90 border border-brand-border text-xs sm:text-sm font-semibold text-brand-muted shadow-sm hover:border-brand-primary/40 transition-colors">
+                            <CheckCircle2 size={14} className="text-brand-primary" />
+                            <span>Verifiable Diplomas</span>
+                        </div>
+                    </motion.div>
+
                     {/* ================================================================= */}
                     {/* INTERACTIVE DEVELOPER SANDBOX PREVIEW (THE HERO SIGNATURE PIECE) */}
                     {/* ================================================================= */}
@@ -242,28 +263,8 @@ report = evaluator.analyze(
                         initial={{ opacity: 0, y: 35 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, delay: 0.45, ease: "easeOut" }}
-                        className="mt-12 sm:mt-16 max-w-4xl mx-auto w-full relative"
+                        className="mt-6 sm:mt-8 max-w-4xl mx-auto w-full relative"
                     >
-                        {/* Floating Tech Chips (Positioned safely on sides, below CTA buttons) */}
-                        <div className="hidden xl:block absolute top-24 -left-10 2xl:-left-16 animate-float-slow z-20">
-                            <motion.div 
-                                whileHover={{ scale: 1.06 }}
-                                className="bg-brand-surface/95 backdrop-blur-md border border-brand-border px-3.5 py-2 rounded-xl shadow-xl flex items-center gap-2.5 text-xs font-bold text-brand-text cursor-default select-none"
-                            >
-                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                ⚡ Instant In-Browser Sandboxes
-                            </motion.div>
-                        </div>
-                        <div className="hidden xl:block absolute bottom-16 -right-10 2xl:-right-16 animate-float-subtle z-20">
-                            <motion.div 
-                                whileHover={{ scale: 1.06 }}
-                                className="bg-brand-surface/95 backdrop-blur-md border border-brand-border px-3.5 py-2 rounded-xl shadow-xl flex items-center gap-2.5 text-xs font-bold text-brand-text cursor-default select-none"
-                            >
-                                <Sparkles size={14} className="text-brand-primary" />
-                                🤖 Real-time AI Code Reviewer
-                            </motion.div>
-                        </div>
-
                         {/* Terminal Window Card */}
                         <motion.div 
                             animate={{ y: [-4, 4, -4] }}
