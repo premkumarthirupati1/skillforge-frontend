@@ -27,14 +27,17 @@ import {
     Volume2,
     Database,
     Network,
-    GitBranch,
-    RefreshCw,
-    ExternalLink
+    RefreshCw
 } from "lucide-react";
+import ProjectLaunchModal from "../../components/ProjectLaunchModal";
+import { PROJECTS } from "../../data/projectsData";
 
 export default function HomePage() {
     const navigate = useNavigate();
     const token = localStorage.getItem("token");
+
+    // Project launch modal state
+    const [activeModalProject, setActiveModalProject] = useState(null);
 
     // Course catalog state
     const [courses, setCourses] = useState([]);
@@ -832,96 +835,252 @@ await runTests();`}
             </section>
 
             {/* ========================================================================= */}
+            {/* ========================================================================= */}
             {/* PART 7 — FEATURED PROJECTS                                                */}
             {/* ========================================================================= */}
-            <section className="py-20 sm:py-28 bg-brand-surface/40 relative z-10 border-t border-brand-border/60">
-                <div className="max-w-7xl mx-auto px-6">
-                    
-                    {/* Section Header */}
-                    <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 sm:mb-16 gap-6">
-                        <div className="max-w-2xl space-y-2">
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs font-mono font-bold uppercase tracking-wider text-blue-500">
-                                <Code2 size={13} />
-                                <span>From concepts to creation</span>
-                            </div>
-                            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-brand-text tracking-tight">
-                                Put your knowledge to work on practical builds.
-                            </h2>
+            <section className="py-20 sm:py-28 max-w-7xl mx-auto px-6 relative z-10 w-full border-t border-brand-border/60">
+                
+                {/* Section Header */}
+                <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 sm:mb-16 gap-6">
+                    <div className="max-w-2xl space-y-2">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs font-mono font-bold uppercase tracking-wider text-blue-500">
+                            <Code2 size={13} />
+                            <span>From concepts to creation</span>
                         </div>
-
-                        <Link
-                            to="/projects"
-                            className="inline-flex items-center gap-1.5 text-sm font-bold text-blue-500 hover:text-blue-400 transition-colors shrink-0 group"
-                        >
-                            <span>All projects</span>
-                            <ArrowUpRight size={16} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                        </Link>
+                        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-brand-text tracking-tight">
+                            Put your knowledge to work on practical builds.
+                        </h2>
                     </div>
 
-                    {/* Featured Projects Grid */}
-                    <div className="grid md:grid-cols-3 gap-8">
-                        {featuredProjects.map((project, idx) => {
-                            const Icon = project.icon;
-                            return (
-                                <motion.div
-                                    key={project.id}
-                                    initial={{ opacity: 0, y: 24 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true, margin: "-40px" }}
-                                    transition={{ duration: 0.45, delay: idx * 0.12 }}
-                                    whileHover={{ y: -6 }}
-                                    onClick={() => navigate(project.route)}
-                                    className="group bg-brand-bg rounded-2xl border border-brand-border overflow-hidden transition-all duration-300 cursor-pointer hover:border-brand-primary/50 hover:shadow-2xl hover:shadow-brand-primary/10 flex flex-col justify-between"
-                                >
-                                    {/* Project Preview Header */}
-                                    <div className="p-6 pb-4 bg-gradient-to-b from-slate-900 to-transparent relative border-b border-brand-border/40">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 flex items-center justify-center">
-                                                <Icon size={20} />
+                    <Link
+                        to="/projects"
+                        className="inline-flex items-center gap-1.5 text-sm font-bold text-blue-500 hover:text-blue-400 transition-colors shrink-0 group"
+                    >
+                        <span>All projects</span>
+                        <ArrowUpRight size={16} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                    </Link>
+                </div>
+
+                {/* Featured Projects Grid */}
+                <div className="grid md:grid-cols-3 gap-8">
+                    {featuredProjects.map((project, idx) => {
+                        const fullProject = PROJECTS.find(p => p.id === project.id) || project;
+
+                        return (
+                            <motion.div
+                                key={project.id}
+                                initial={{ opacity: 0, y: 24 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true, margin: "-40px" }}
+                                transition={{ duration: 0.45, delay: idx * 0.12 }}
+                                whileHover={{ y: -6 }}
+                                onClick={() => setActiveModalProject(fullProject)}
+                                className="group bg-brand-surface rounded-2xl border border-brand-border overflow-hidden transition-all duration-300 cursor-pointer hover:border-brand-primary/50 hover:shadow-xl hover:shadow-brand-primary/10 flex flex-col justify-between"
+                            >
+                                {/* Actual Product Screenshot / Interactive Preview Header */}
+                                {project.id === "audio-synthesizer" && (
+                                    <div className="h-52 bg-[#06080F] relative overflow-hidden flex flex-col justify-between p-3.5 border-b border-brand-border/60 font-mono select-none">
+                                        <div className="absolute inset-0 bg-gradient-to-br from-pink-500/10 via-purple-600/10 to-transparent pointer-events-none" />
+                                        <div className="absolute inset-0 bg-grid-pattern opacity-20 pointer-events-none" />
+
+                                        {/* Status Header */}
+                                        <div className="relative z-10 flex items-center justify-between text-[10px]">
+                                            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-slate-300">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                                <span className="font-semibold">WebAudioContext</span>
+                                                <span className="text-slate-500">•</span>
+                                                <span className="text-cyan-300">440.0 Hz (A4)</span>
                                             </div>
-                                            <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider border ${project.difficultyColor}`}>
-                                                {project.difficulty}
+                                            <span className="text-[10px] font-bold text-purple-400 bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 rounded-full">
+                                                ADVANCED
                                             </span>
                                         </div>
-                                        <h3 className="text-lg font-bold text-brand-text group-hover:text-brand-primary transition-colors">
+
+                                        {/* Oscilloscope Waveform Display */}
+                                        <div className="relative z-10 flex items-center justify-center my-auto py-1">
+                                            <div className="w-full h-16 bg-[#030508] rounded-lg border border-cyan-500/20 shadow-inner flex items-center justify-center relative overflow-hidden px-2">
+                                                <div className="absolute inset-0 bg-[linear-gradient(to_right,#0e1e2d_1px,transparent_1px),linear-gradient(to_bottom,#0e1e2d_1px,transparent_1px)] bg-[size:10px_10px] opacity-35" />
+                                                <svg viewBox="0 0 320 60" className="w-full h-full text-cyan-400 drop-shadow-[0_0_8px_rgba(56,189,248,0.8)]">
+                                                    <path
+                                                        d="M0 30 Q 20 5, 40 30 T 80 30 T 120 10 T 160 50 T 200 30 T 240 15 T 280 45 T 320 30"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        strokeWidth="2.5"
+                                                        strokeLinecap="round"
+                                                    />
+                                                </svg>
+                                                <span className="absolute top-1 right-2 text-[8px] font-mono text-cyan-500/80 uppercase">Sawtooth · ADSR</span>
+                                            </div>
+                                        </div>
+
+                                        {/* 16-Step Rhythm Sequencer Matrix */}
+                                        <div className="relative z-10 bg-black/40 backdrop-blur-sm rounded-md p-1.5 border border-white/5 space-y-1">
+                                            <div className="flex items-center justify-between text-[9px] text-slate-400 px-0.5">
+                                                <span className="text-slate-400 font-semibold">16-Step Sequencer</span>
+                                                <span className="text-amber-400 font-bold">120 BPM</span>
+                                            </div>
+                                            <div className="grid grid-cols-[repeat(16,minmax(0,1fr))] gap-1">
+                                                {[1,0,1,0, 1,0,0,1, 1,0,1,0, 0,1,1,0].map((active, i) => (
+                                                    <div
+                                                        key={i}
+                                                        className={`h-2.5 rounded-sm transition-all ${
+                                                            active 
+                                                                ? "bg-cyan-400 shadow-[0_0_6px_rgba(56,189,248,0.7)]" 
+                                                                : (i % 4 === 0 ? "bg-slate-700/60" : "bg-slate-800/40")
+                                                        }`}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {project.id === "redis-clone" && (
+                                    <div className="h-52 bg-[#06080F] relative overflow-hidden flex flex-col justify-between p-3.5 border-b border-brand-border/60 font-mono select-none">
+                                        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-cyan-600/10 to-transparent pointer-events-none" />
+                                        <div className="absolute inset-0 bg-grid-pattern opacity-20 pointer-events-none" />
+
+                                        {/* Terminal Titlebar */}
+                                        <div className="relative z-10 flex items-center justify-between text-[10px]">
+                                            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-slate-300">
+                                                <Terminal size={11} className="text-blue-400" />
+                                                <span className="font-semibold text-slate-200">redis-server :6379</span>
+                                                <span className="text-slate-500">•</span>
+                                                <span className="text-emerald-400">TCP Active</span>
+                                            </div>
+                                            <span className="text-[10px] font-bold text-blue-400 bg-blue-500/15 border border-blue-500/30 px-2 py-0.5 rounded-full">
+                                                ADVANCED
+                                            </span>
+                                        </div>
+
+                                        {/* Live Terminal Console Stream */}
+                                        <div className="relative z-10 my-auto bg-[#030508] rounded-lg border border-slate-800/90 p-2.5 space-y-1 text-[11px] leading-tight shadow-inner">
+                                            <div className="flex items-center gap-1.5 text-slate-400">
+                                                <span className="text-blue-500">&gt;</span>
+                                                <span className="text-slate-200">redis-cli PING</span>
+                                            </div>
+                                            <div className="text-emerald-400 pl-3">
+                                                +PONG <span className="text-slate-500 text-[9px]">(0.12ms)</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 text-slate-400 pt-0.5">
+                                                <span className="text-blue-500">&gt;</span>
+                                                <span className="text-slate-200">SET session:0x94 "auth_ok" EX 3600</span>
+                                            </div>
+                                            <div className="text-cyan-300 pl-3">
+                                                +OK <span className="text-slate-500 text-[9px]">[TTL: 3600s · O(1) LRU]</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Status Bar */}
+                                        <div className="relative z-10 flex items-center justify-between text-[9px] text-slate-400 bg-black/40 backdrop-blur-sm px-2 py-1 rounded-md border border-white/5">
+                                            <span className="text-slate-300 font-semibold">RESP2 Protocol Parser</span>
+                                            <span className="text-cyan-400 font-mono font-bold">Memory: 14.2MB</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {project.id === "collaborative-canvas" && (
+                                    <div className="h-52 bg-[#06080F] relative overflow-hidden flex flex-col justify-between p-3.5 border-b border-brand-border/60 font-sans select-none">
+                                        <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/10 via-teal-600/10 to-transparent pointer-events-none" />
+                                        <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:12px_12px] opacity-60 pointer-events-none" />
+
+                                        {/* Top Bar */}
+                                        <div className="relative z-10 flex items-center justify-between text-[10px] font-mono">
+                                            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-slate-300">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                                <span className="font-semibold text-slate-200">Vector Canvas</span>
+                                                <span className="text-slate-500">•</span>
+                                                <span className="text-teal-300">2 Connected</span>
+                                            </div>
+                                            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                                                INTERMEDIATE
+                                            </span>
+                                        </div>
+
+                                        {/* Canvas Vector Nodes & Multiplayer Cursors */}
+                                        <div className="relative z-10 my-auto h-24 w-full">
+                                            {/* Vector Shape Box */}
+                                            <div className="absolute left-4 top-2 w-24 h-12 rounded-lg bg-blue-600/20 border-2 border-blue-500 flex items-center justify-center text-[10px] font-mono text-blue-200 font-bold shadow-lg">
+                                                Node: AuthState
+                                            </div>
+
+                                            {/* Connected Node */}
+                                            <div className="absolute right-4 top-6 w-24 h-12 rounded-lg bg-purple-600/20 border-2 border-purple-500 flex items-center justify-center text-[10px] font-mono text-purple-200 font-bold shadow-lg">
+                                                DB: Postgres
+                                            </div>
+
+                                            {/* Connecting SVG Bezier curve */}
+                                            <svg className="absolute inset-0 w-full h-full pointer-events-none">
+                                                <path d="M 115 26 C 145 26, 155 46, 185 46" stroke="#60A5FA" strokeWidth="2" strokeDasharray="3 3" fill="none" />
+                                            </svg>
+
+                                            {/* Live Multiplayer Cursor 1 (Sarah) */}
+                                            <div className="absolute left-20 top-7 flex items-start gap-1 pointer-events-none drop-shadow-md">
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="#A855F7" stroke="#FFFFFF" strokeWidth="1.5">
+                                                    <path d="M3 3l7 18 3-7 7-3L3 3z" />
+                                                </svg>
+                                                <span className="px-1.5 py-0.5 rounded bg-purple-600 text-white text-[8px] font-bold shadow-sm">
+                                                    Sarah
+                                                </span>
+                                            </div>
+
+                                            {/* Live Multiplayer Cursor 2 (Alex) */}
+                                            <div className="absolute right-12 top-1 flex items-start gap-1 pointer-events-none drop-shadow-md">
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="#38BDF8" stroke="#FFFFFF" strokeWidth="1.5">
+                                                    <path d="M3 3l7 18 3-7 7-3L3 3z" />
+                                                </svg>
+                                                <span className="px-1.5 py-0.5 rounded bg-sky-500 text-white text-[8px] font-bold shadow-sm">
+                                                    Alex
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Bottom Status Bar */}
+                                        <div className="relative z-10 flex items-center justify-between text-[9px] font-mono text-slate-400 bg-black/40 backdrop-blur-sm px-2 py-1 rounded-md border border-white/5">
+                                            <span className="text-slate-300 font-semibold">CRDT Fractional Indexing</span>
+                                            <span className="text-emerald-400 font-bold">60 FPS · 0ms Drift</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Card Body & Details */}
+                                <div className="p-6 flex flex-col flex-grow justify-between space-y-4">
+                                    <div className="space-y-2">
+                                        <h3 className="text-xl font-bold text-brand-text group-hover:text-brand-primary transition-colors">
                                             {project.title}
                                         </h3>
-                                    </div>
-
-                                    {/* Description and Tech Tags */}
-                                    <div className="p-6 pt-4 flex flex-col flex-grow justify-between space-y-4">
                                         <p className="text-xs sm:text-sm text-brand-muted leading-relaxed">
                                             {project.description}
                                         </p>
-
-                                        {/* Technology Tags */}
-                                        <div className="flex flex-wrap gap-1.5 pt-2">
-                                            {project.tags.map((tag) => (
-                                                <span
-                                                    key={tag}
-                                                    className="px-2 py-0.5 rounded bg-brand-surface border border-brand-border text-[11px] font-mono text-slate-400"
-                                                >
-                                                    {tag}
-                                                </span>
-                                            ))}
-                                        </div>
-
-                                        {/* Explore project link */}
-                                        <div className="pt-3 border-t border-brand-border/60 flex items-center justify-between">
-                                            <span className="text-xs text-brand-muted font-mono">
-                                                {project.language}
-                                            </span>
-                                            <span className="text-xs font-bold text-blue-500 group-hover:text-blue-400 flex items-center gap-1">
-                                                Explore project <ArrowUpRight size={13} />
-                                            </span>
-                                        </div>
                                     </div>
-                                </motion.div>
-                            );
-                        })}
-                    </div>
 
+                                    {/* Technology Tags */}
+                                    <div className="flex flex-wrap gap-1.5 pt-1">
+                                        {project.tags.map((tag) => (
+                                            <span
+                                                key={tag}
+                                                className="px-2.5 py-0.5 rounded-md bg-brand-elevated border border-brand-border text-[11px] font-mono text-brand-muted group-hover:text-brand-text transition-colors"
+                                            >
+                                                {tag}
+                                            </span>
+                                        ))}
+                                    </div>
+
+                                    {/* Explore project link */}
+                                    <div className="pt-3 border-t border-brand-border/60 flex items-center justify-between">
+                                        <span className="text-xs text-brand-muted font-mono">
+                                            {project.language}
+                                        </span>
+                                        <span className="text-xs font-bold text-blue-500 group-hover:text-blue-400 flex items-center gap-1">
+                                            Explore project <ArrowUpRight size={14} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                                        </span>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        );
+                    })}
                 </div>
+
             </section>
 
             {/* ========================================================================= */}
@@ -1126,6 +1285,13 @@ await runTests();`}
                     </div>
                 </div>
             </footer>
+
+            {/* Project Architecture & Launch Modal */}
+            <ProjectLaunchModal
+                project={activeModalProject}
+                isOpen={!!activeModalProject}
+                onClose={() => setActiveModalProject(null)}
+            />
 
         </div>
     );
