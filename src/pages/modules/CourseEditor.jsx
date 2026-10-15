@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import api from "../../api";
 import NavBar from "../../components/NavBar";
+import { extractVideoDuration } from "../../utils/videoHelper";
 
 function CourseEditor() {
     const navigate = useNavigate();
@@ -50,6 +51,8 @@ function CourseEditor() {
     const [lessonModuleId, setLessonModuleId] = useState(null);
     const [newLesson, setNewLesson] = useState({ title: "", description: "", type: "video", duration: "5" });
     const [lessonFile, setLessonFile] = useState(null);
+    const [extractedDuration, setExtractedDuration] = useState(null);
+    const [extractingDuration, setExtractingDuration] = useState(false);
     const [creatingLesson, setCreatingLesson] = useState(false);
     const fileInputRef = useRef(null);
 
@@ -138,6 +141,33 @@ function CourseEditor() {
         }
     };
 
+    const handleVideoFileChange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setLessonFile(file);
+        setExtractingDuration(true);
+
+        try {
+            const info = await extractVideoDuration(file);
+            setExtractedDuration(info);
+            setNewLesson(prev => ({ ...prev, duration: String(info.minutes) }));
+            toast.success(`Video duration extracted: ${info.formatted} (${info.minutes}m)`);
+        } catch (err) {
+            setExtractedDuration({ minutes: 5, seconds: 300, formatted: "5:00" });
+        } finally {
+            setExtractingDuration(false);
+        }
+    };
+
+    const resetLessonState = () => {
+        setLessonModuleId(null);
+        setNewLesson({ title: "", description: "", type: "video", duration: "5" });
+        setLessonFile(null);
+        setExtractedDuration(null);
+        setExtractingDuration(false);
+    };
+
     const handleCreateLesson = async (e) => {
         e.preventDefault();
         if (!newLesson.title.trim()) return toast.error("Lesson title required");
@@ -149,13 +179,15 @@ function CourseEditor() {
             const currentModule = modules.find(m => m._id === lessonModuleId);
             const nextOrder = (currentModule?.lessons?.length || 0) + 1;
 
+            const finalDuration = extractedDuration?.minutes || Number(newLesson.duration) || 5;
+
             const formData = new FormData();
             formData.append("title", newLesson.title.trim());
             formData.append("description", newLesson.description.trim());
             formData.append("contentType", newLesson.type);
             formData.append("moduleId", lessonModuleId);
             formData.append("order", nextOrder);
-            formData.append("duration", Number(newLesson.duration) || 5);
+            formData.append("duration", finalDuration);
             
             if (newLesson.type === "video") {
                 formData.append("lessonFile", lessonFile);
@@ -168,9 +200,7 @@ function CourseEditor() {
             });
             
             toast.success("Lesson uploaded & saved!");
-            setLessonModuleId(null);
-            setNewLesson({ title: "", description: "", type: "video", duration: "5" });
-            setLessonFile(null);
+            resetLessonState();
             await fetchCourseData();
             
         } catch (err) {
@@ -475,8 +505,8 @@ function CourseEditor() {
                                                                 <input 
                                                                     type="file" 
                                                                     ref={fileInputRef}
-                                                                    accept="video/mp4,video/webm"
-                                                                    onChange={e => setLessonFile(e.target.files[0])}
+                                                                    accept="video/mp4,video/webm,video/quicktime,video/x-matroska"
+                                                                    onChange={handleVideoFileChange}
                                                                     className="hidden" 
                                                                 />
                                                                 <button 
@@ -491,20 +521,33 @@ function CourseEditor() {
                                                                 </button>
                                                             </div>
 
-                                                            {/* Estimated Duration */}
+                                                            {/* Video Timeline Duration Extraction Panel */}
                                                             <div>
-                                                                <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-muted mb-1.5">
-                                                                    Estimated Duration (Minutes)
+                                                                <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-muted mb-1.5 flex items-center justify-between">
+                                                                    <span>Timeline Duration</span>
+                                                                    <span className="text-[10px] text-brand-primary font-normal">auto-extracted</span>
                                                                 </label>
-                                                                <div className="relative">
-                                                                    <Clock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted pointer-events-none" />
-                                                                    <input
-                                                                        type="number"
-                                                                        min="1"
-                                                                        value={newLesson.duration}
-                                                                        onChange={e => setNewLesson({...newLesson, duration: e.target.value})}
-                                                                        className="w-full bg-brand-elevated border border-brand-border rounded-xl py-2.5 pl-8 pr-3 text-xs sm:text-sm font-mono focus:outline-none focus:border-brand-primary text-brand-text"
-                                                                    />
+                                                                <div className="h-[42px] px-3.5 rounded-xl bg-brand-elevated border border-brand-border flex items-center justify-between text-xs">
+                                                                    {extractingDuration ? (
+                                                                        <div className="flex items-center gap-2 text-brand-primary">
+                                                                            <Loader2 size={14} className="animate-spin" />
+                                                                            <span className="font-medium text-xs">Reading video timeline...</span>
+                                                                        </div>
+                                                                    ) : extractedDuration ? (
+                                                                        <div className="flex items-center gap-2 text-emerald-400 font-medium">
+                                                                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                                                                            <span className="font-mono font-bold text-brand-text">{extractedDuration.formatted}</span>
+                                                                            <span className="text-[11px] text-brand-subtle">({extractedDuration.minutes} min)</span>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="flex items-center gap-2 text-brand-subtle text-xs">
+                                                                            <Clock size={13} className="text-brand-muted" />
+                                                                            <span>Extracted from video file</span>
+                                                                        </div>
+                                                                    )}
+                                                                    <span className="text-[10px] uppercase font-bold text-brand-muted bg-brand-surface px-2 py-0.5 rounded border border-brand-border/60">
+                                                                        Timeline
+                                                                    </span>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -512,7 +555,7 @@ function CourseEditor() {
                                                         <div className="flex justify-end gap-2.5 pt-2 border-t border-brand-border/60">
                                                             <button 
                                                                 type="button" 
-                                                                onClick={() => setLessonModuleId(null)} 
+                                                                onClick={resetLessonState} 
                                                                 className="px-4 py-2 text-xs font-bold text-brand-muted hover:text-brand-text cursor-pointer"
                                                             >
                                                                 Cancel
