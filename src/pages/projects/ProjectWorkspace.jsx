@@ -935,32 +935,32 @@ export default function ProjectWorkspace() {
                                                     {/* Title & Status */}
                                                     <div className="flex-grow min-w-0">
                                                         <div className="flex items-center justify-between gap-1">
-                                                            <div className={`font-bold text-xs truncate ${!unlocked ? "text-slate-500" : ""}`}>
+                                                            <div className={`font-bold text-sm truncate ${!unlocked ? "text-slate-500" : "text-white"}`}>
                                                                 {m.title}
                                                             </div>
-                                                            <span className={`text-[10px] font-mono shrink-0 ${
+                                                            <span className={`text-xs font-mono shrink-0 font-medium ${
                                                                 isVerified 
                                                                     ? "text-emerald-400 font-bold" 
                                                                     : !unlocked 
                                                                     ? "text-slate-600 flex items-center gap-1" 
-                                                                    : "text-cyan-400"
+                                                                    : "text-cyan-400 font-semibold"
                                                             }`}>
                                                                 {!unlocked ? (
-                                                                    <span className="flex items-center gap-1"><Lock size={10} /> Locked</span>
+                                                                    <span className="flex items-center gap-1"><Lock size={11} /> Locked</span>
                                                                 ) : (
                                                                     `${m.testCount || 4} Tests`
                                                                 )}
                                                             </span>
                                                         </div>
-                                                        <div className="text-[10px] font-mono mt-0.5">
+                                                        <div className="text-xs font-mono mt-1">
                                                             {isVerified ? (
                                                                 <span className="text-emerald-400 font-semibold">✓ Completed & Verified</span>
                                                             ) : isActive ? (
                                                                 <span className="text-cyan-300 font-bold">● Active Workspace (Target)</span>
                                                             ) : unlocked ? (
-                                                                <span className="text-blue-400">Ready to start</span>
+                                                                <span className="text-blue-300 font-medium">Ready to start</span>
                                                             ) : (
-                                                                <span className="text-amber-500/70">🔒 Requires Stage {idx} completion</span>
+                                                                <span className="text-amber-500/80">🔒 Requires Stage {idx} completion</span>
                                                             )}
                                                         </div>
                                                     </div>
@@ -979,49 +979,49 @@ export default function ProjectWorkspace() {
 
                                         return (
                                             <div className="p-4 rounded-xl bg-[#05070B] border border-white/10 space-y-3 mt-2">
-                                                <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                                                <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                                                        <span className="text-xs font-mono font-bold uppercase px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
                                                             Stage {selectedRoadmapIdx + 1}
                                                         </span>
-                                                        <span className="text-xs font-bold text-white truncate max-w-[170px]">
+                                                        <span className="text-sm font-bold text-white truncate max-w-[200px]">
                                                             {selectedMilestone?.title}
                                                         </span>
                                                     </div>
                                                     {isSelectedVerified ? (
-                                                        <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1 font-bold">
-                                                            <CheckCircle2 size={12} /> Verified
+                                                        <span className="text-xs font-mono text-emerald-400 flex items-center gap-1 font-bold">
+                                                            <CheckCircle2 size={13} /> Verified
                                                         </span>
                                                     ) : isSelectedActive ? (
-                                                        <span className="text-[10px] font-mono text-cyan-400 flex items-center gap-1 font-bold">
-                                                            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" /> Active
+                                                        <span className="text-xs font-mono text-cyan-400 flex items-center gap-1.5 font-bold">
+                                                            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" /> Active
                                                         </span>
                                                     ) : (
-                                                        <span className="text-[10px] font-mono text-amber-500/90 flex items-center gap-1 font-bold">
-                                                            <Lock size={11} /> Locked
+                                                        <span className="text-xs font-mono text-amber-500/90 flex items-center gap-1 font-bold">
+                                                            <Lock size={12} /> Locked
                                                         </span>
                                                     )}
                                                 </div>
 
                                                 {/* Objective Description */}
                                                 <div className="space-y-1">
-                                                    <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                                                    <div className="text-xs uppercase font-bold text-slate-300 tracking-wider">
                                                         Stage Objective
                                                     </div>
-                                                    <p className="text-xs text-slate-300 leading-relaxed">
+                                                    <p className="text-sm text-slate-200 leading-relaxed font-normal">
                                                         {selectedGuide?.objective || "Implement architecture according to specification guidelines."}
                                                     </p>
                                                 </div>
 
                                                 {/* Stats */}
                                                 <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                                                    <div className="p-2 rounded-lg bg-white/5 border border-white/5">
-                                                        <div className="text-[10px] text-slate-400 uppercase">Test Suite</div>
-                                                        <div className="font-bold text-cyan-300">{selectedGuide?.testCases?.length || selectedMilestone?.testCount || 4} Tests</div>
+                                                    <div className="p-2.5 rounded-lg bg-white/5 border border-white/5">
+                                                        <div className="text-xs text-slate-400 uppercase font-bold">Test Suite</div>
+                                                        <div className="font-bold text-sm text-cyan-300 mt-0.5">{selectedGuide?.testCases?.length || selectedMilestone?.testCount || 4} Tests</div>
                                                     </div>
-                                                    <div className="p-2 rounded-lg bg-white/5 border border-white/5">
-                                                        <div className="text-[10px] text-slate-400 uppercase">Constraints</div>
-                                                        <div className="font-bold text-indigo-300">{selectedGuide?.specRules?.length || 2} Constraints</div>
+                                                    <div className="p-2.5 rounded-lg bg-white/5 border border-white/5">
+                                                        <div className="text-xs text-slate-400 uppercase font-bold">Constraints</div>
+                                                        <div className="font-bold text-sm text-indigo-300 mt-0.5">{selectedGuide?.specRules?.length || 2} Constraints</div>
                                                     </div>
                                                 </div>
 
@@ -1069,62 +1069,62 @@ export default function ProjectWorkspace() {
                             {/* TAB: SPEC GUIDE */}
                             {specTab === "spec" && (
                                 <div className="p-5 space-y-5 animate-in fade-in duration-200">
-                                    <div className="space-y-1 border-b border-white/10 pb-3">
+                                    <div className="space-y-1.5 border-b border-white/10 pb-3">
                                         <div className="flex items-center gap-2">
-                                            <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px] font-mono font-bold uppercase">
+                                            <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 text-xs font-mono font-bold uppercase">
                                                 Stage {currentMilestoneIndex + 1} of {project.milestones?.length || 5}
                                             </span>
-                                            <span className="text-[11px] text-slate-400 font-mono">
+                                            <span className="text-xs text-slate-300 font-mono">
                                                 {milestoneGuide.testCases?.length || 4} Test Assertions
                                             </span>
                                         </div>
-                                        <h2 className="text-sm font-bold text-white">
+                                        <h2 className="text-base font-bold text-white">
                                             {milestoneGuide.title}
                                         </h2>
                                     </div>
 
                                     {/* Objective */}
-                                    <div className="p-3 rounded-xl bg-blue-500/5 border border-blue-500/15 text-xs text-blue-200 leading-relaxed">
+                                    <div className="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-sm text-blue-100 leading-relaxed">
                                         {milestoneGuide.objective}
                                     </div>
 
                                     {/* Specification Rules Checklist */}
-                                    <div className="space-y-2">
-                                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
-                                            <span className="flex items-center gap-1.5 text-blue-400">
-                                                <ShieldCheck size={13} />
+                                    <div className="space-y-2.5">
+                                        <div className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center justify-between">
+                                            <span className="flex items-center gap-1.5 text-blue-300">
+                                                <ShieldCheck size={14} />
                                                 <span>Production Rules & Spec</span>
                                             </span>
-                                            <span className="text-[10px] font-mono text-cyan-400">
+                                            <span className="text-xs font-mono text-cyan-300 font-semibold">
                                                 {milestoneGuide.specRules?.length || 0} constraints
                                             </span>
                                         </div>
 
-                                        <div className="space-y-1.5">
+                                        <div className="space-y-2">
                                             {milestoneGuide.specRules?.map((rule, idx) => (
-                                                <div key={idx} className="flex items-start gap-2 p-2.5 rounded-xl bg-white/5 border border-white/5 text-xs text-slate-300">
-                                                    <CheckCircle2 size={13} className="text-cyan-400 shrink-0 mt-0.5" />
-                                                    <span className="leading-relaxed">{rule}</span>
+                                                <div key={idx} className="flex items-start gap-2.5 p-3 rounded-xl bg-white/5 border border-white/5 text-sm text-slate-200 leading-relaxed">
+                                                    <CheckCircle2 size={15} className="text-cyan-400 shrink-0 mt-0.5" />
+                                                    <span>{rule}</span>
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
 
                                     {/* Test Assertions Target Table */}
-                                    <div className="space-y-2">
-                                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                                            <Terminal size={13} className="text-cyan-400" />
+                                    <div className="space-y-2.5">
+                                        <div className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                                            <Terminal size={14} className="text-cyan-400" />
                                             <span>Target Verification Test Harness</span>
                                         </div>
-                                        <div className="space-y-1.5 font-mono text-xs">
+                                        <div className="space-y-2 font-mono text-sm">
                                             {milestoneGuide.testCases?.map((tc, idx) => (
-                                                <div key={idx} className="p-2.5 rounded-xl bg-[#05070B] border border-white/10 space-y-1">
-                                                    <div className="flex items-center justify-between font-bold text-slate-200">
+                                                <div key={idx} className="p-3 rounded-xl bg-[#05070B] border border-white/10 space-y-1.5">
+                                                    <div className="flex items-center justify-between font-bold text-slate-100">
                                                         <span className="truncate pr-1">✓ {tc.name}</span>
-                                                        <span className="text-[9px] text-blue-400 uppercase">Harness</span>
+                                                        <span className="text-[10px] text-blue-400 uppercase font-semibold">Harness</span>
                                                     </div>
-                                                    <div className="text-[10px] text-slate-400 truncate">
-                                                        Expects: <span className="text-emerald-400">{tc.expected}</span>
+                                                    <div className="text-xs text-slate-300 truncate">
+                                                        Expects: <span className="text-emerald-400 font-semibold">{tc.expected}</span>
                                                     </div>
                                                 </div>
                                             ))}
@@ -1138,15 +1138,15 @@ export default function ProjectWorkspace() {
                                 <div className="p-5 space-y-4 animate-in fade-in duration-200">
                                     <div className="flex items-center justify-between border-b border-white/10 pb-3">
                                         <div>
-                                            <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                                                <CheckCircle2 size={15} className="text-cyan-400" />
+                                            <h2 className="text-base font-bold text-white flex items-center gap-2">
+                                                <CheckCircle2 size={16} className="text-cyan-400" />
                                                 <span>Objectives & Toolchain</span>
                                             </h2>
-                                            <p className="text-[11px] text-slate-400">
+                                            <p className="text-xs text-slate-300 mt-0.5">
                                                 Stage {currentMilestoneIndex + 1} validation criteria & environment.
                                             </p>
                                         </div>
-                                        <span className={`text-[11px] font-mono font-bold px-2.5 py-0.5 rounded ${
+                                        <span className={`text-xs font-mono font-bold px-2.5 py-1 rounded ${
                                             isCurrentMilestoneVerified 
                                                 ? "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20" 
                                                 : "text-amber-400 bg-amber-500/10 border border-amber-500/20"
@@ -1156,20 +1156,20 @@ export default function ProjectWorkspace() {
                                     </div>
 
                                     {/* Automated Verification Notice Banner */}
-                                    <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-200 flex items-start gap-2.5">
-                                        <ShieldCheck size={16} className="text-cyan-400 shrink-0 mt-0.5" />
+                                    <div className="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-sm text-blue-100 flex items-start gap-2.5 leading-relaxed">
+                                        <ShieldCheck size={18} className="text-cyan-400 shrink-0 mt-0.5" />
                                         <div>
                                             <span className="font-bold text-white block">Automated Verification</span>
-                                            <span className="text-[11px] text-slate-300">
+                                            <span className="text-xs sm:text-sm text-slate-200">
                                                 Objectives cannot be checked manually. Write code in the editor and click <b>Run Tests</b> to verify milestone completion.
                                             </span>
                                         </div>
                                     </div>
 
                                     {/* System Runtime Box */}
-                                    <div className="p-3 rounded-xl bg-gradient-to-r from-blue-900/20 via-cyan-900/10 to-transparent border border-blue-500/20 space-y-1.5">
-                                        <span className="text-[10px] font-mono font-bold uppercase text-cyan-300">Active Compiler Sandbox</span>
-                                        <div className="text-xs text-slate-200 font-mono">
+                                    <div className="p-3.5 rounded-xl bg-gradient-to-r from-blue-900/20 via-cyan-900/10 to-transparent border border-blue-500/20 space-y-1.5">
+                                        <span className="text-xs font-mono font-bold uppercase text-cyan-300">Active Compiler Sandbox</span>
+                                        <div className="text-xs sm:text-sm text-slate-200 font-mono">
                                             {isClientSideLanguage(workspaceData.language || project.language)
                                                 ? "Client-Side In-Browser V8 (0ms server latency)"
                                                 : "Backend Sandbox Service (/api/runner/execute)"}
@@ -1178,24 +1178,24 @@ export default function ProjectWorkspace() {
 
                                     {/* Milestone-Specific Concepts & Objectives */}
                                     {milestoneGuide.prerequisites && milestoneGuide.prerequisites.length > 0 && (
-                                        <div className="space-y-2">
-                                            <div className="text-[11px] font-bold text-white uppercase tracking-wider flex items-center justify-between">
+                                        <div className="space-y-2.5">
+                                            <div className="text-xs font-bold text-white uppercase tracking-wider flex items-center justify-between">
                                                 <span className="flex items-center gap-1.5">
-                                                    <Target size={13} className="text-cyan-400" />
+                                                    <Target size={14} className="text-cyan-400" />
                                                     <span>Stage {currentMilestoneIndex + 1} Objectives</span>
                                                 </span>
-                                                <span className={`text-[10px] font-mono ${isCurrentMilestoneVerified ? "text-emerald-400" : "text-amber-400"}`}>
+                                                <span className={`text-xs font-mono ${isCurrentMilestoneVerified ? "text-emerald-400 font-bold" : "text-amber-400"}`}>
                                                     {isCurrentMilestoneVerified ? "Verified" : "Run Tests to verify"}
                                                 </span>
                                             </div>
-                                            <div className="space-y-1.5">
+                                            <div className="space-y-2">
                                                 {milestoneGuide.prerequisites.map((p, idx) => (
                                                     <div
                                                         key={idx}
-                                                        className={`w-full p-2.5 rounded-xl border transition-all flex items-start gap-2.5 text-xs ${
+                                                        className={`w-full p-3 rounded-xl border transition-all flex items-start gap-2.5 text-sm ${
                                                             isCurrentMilestoneVerified
                                                                 ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-200" 
-                                                                : "bg-white/5 border-white/10 text-slate-300"
+                                                                : "bg-white/5 border-white/10 text-slate-200"
                                                         }`}
                                                     >
                                                         <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
@@ -1209,9 +1209,9 @@ export default function ProjectWorkspace() {
                                                                 <span className="w-1.5 h-1.5 rounded-full bg-slate-600" />
                                                             )}
                                                         </div>
-                                                        <span className="flex-grow">{p}</span>
-                                                        <span className={`text-[10px] font-mono shrink-0 ${
-                                                            isCurrentMilestoneVerified ? "text-emerald-400 font-bold" : "text-slate-500"
+                                                        <span className="flex-grow leading-relaxed">{p}</span>
+                                                        <span className={`text-xs font-mono shrink-0 ${
+                                                            isCurrentMilestoneVerified ? "text-emerald-400 font-bold" : "text-slate-400"
                                                         }`}>
                                                             {isCurrentMilestoneVerified ? "✓ Passed" : "Pending"}
                                                         </span>
@@ -1222,18 +1222,18 @@ export default function ProjectWorkspace() {
                                     )}
 
                                     {/* Project-Wide Toolchain */}
-                                    <div className="space-y-2">
-                                        <div className="text-[11px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-                                            <ShieldCheck size={13} className="text-blue-400" />
+                                    <div className="space-y-2.5">
+                                        <div className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                                            <ShieldCheck size={14} className="text-blue-400" />
                                             <span>Required Toolchain & Knowledge</span>
                                         </div>
-                                        <div className="space-y-1.5">
+                                        <div className="space-y-2">
                                             {(project.prerequisites || []).map((p, idx) => (
                                                 <div
                                                     key={idx}
-                                                    className="w-full p-2.5 rounded-xl border border-white/5 bg-white/[0.03] flex items-start gap-2.5 text-xs text-slate-300"
+                                                    className="w-full p-3 rounded-xl border border-white/5 bg-white/[0.03] flex items-start gap-2.5 text-sm text-slate-200 leading-relaxed"
                                                 >
-                                                    <div className="mt-0.5 w-4 h-4 rounded bg-blue-500/20 border border-blue-500/30 text-cyan-300 flex items-center justify-center shrink-0 text-[10px] font-mono font-bold">
+                                                    <div className="mt-0.5 w-4 h-4 rounded bg-blue-500/20 border border-blue-500/30 text-cyan-300 flex items-center justify-center shrink-0 text-xs font-mono font-bold">
                                                         {idx + 1}
                                                     </div>
                                                     <span>{p}</span>
@@ -1247,14 +1247,14 @@ export default function ProjectWorkspace() {
                             {/* TAB: PRD */}
                             {specTab === "prd" && (
                                 <div className="p-5 space-y-4 animate-in fade-in duration-200">
-                                    <h2 className="text-sm font-bold text-white">Product Requirements Document (PRD)</h2>
-                                    <p className="text-xs text-slate-400 leading-relaxed">{project.description}</p>
-                                    <div className="space-y-2 pt-2">
+                                    <h2 className="text-base font-bold text-white">Product Requirements Document (PRD)</h2>
+                                    <p className="text-sm text-slate-300 leading-relaxed">{project.description}</p>
+                                    <div className="space-y-2.5 pt-2">
                                         <h3 className="text-xs font-bold text-white uppercase tracking-wider">Key Skills Mastered</h3>
-                                        <ul className="space-y-1.5 text-xs">
+                                        <ul className="space-y-2 text-sm text-slate-200">
                                             {project.keySkills?.map((skill, i) => (
-                                                <li key={i} className="flex items-center gap-2">
-                                                    <CheckCircle2 size={13} className="text-blue-400 shrink-0" />
+                                                <li key={i} className="flex items-center gap-2.5">
+                                                    <CheckCircle2 size={15} className="text-blue-400 shrink-0" />
                                                     <span>{skill}</span>
                                                 </li>
                                             ))}
@@ -1268,52 +1268,52 @@ export default function ProjectWorkspace() {
                                 <div className="p-4 space-y-4 animate-in fade-in duration-200">
                                     
                                     {/* Mentor Header Card */}
-                                    <div className="p-3.5 rounded-2xl bg-gradient-to-br from-purple-950/40 via-[#0E0F1E] to-[#070A11] border border-purple-500/30 space-y-2 relative overflow-hidden shadow-lg">
+                                    <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-950/40 via-[#0E0F1E] to-[#070A11] border border-purple-500/30 space-y-2.5 relative overflow-hidden shadow-lg">
                                         <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-7 h-7 rounded-lg bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-300">
-                                                    <Bot size={16} />
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="w-8 h-8 rounded-lg bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-300">
+                                                    <Bot size={18} />
                                                 </div>
                                                 <div>
-                                                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                                                    <div className="text-sm font-bold text-white flex items-center gap-2">
                                                         <span>Forge Copilot</span>
-                                                        <span className="text-[9px] uppercase px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 font-mono font-bold">
+                                                        <span className="text-[10px] uppercase px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 font-mono font-bold tracking-wide">
                                                             Staff AI
                                                         </span>
                                                     </div>
-                                                    <div className="text-[10px] text-slate-400 font-mono">
+                                                    <div className="text-xs text-slate-300 font-mono">
                                                         Pedagogical Senior Debugger
                                                     </div>
                                                 </div>
                                             </div>
 
                                             <div className="flex items-center gap-1.5">
-                                                <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
-                                                <span className="text-[10px] font-mono text-purple-300">
+                                                <span className="w-2.5 h-2.5 rounded-full bg-purple-400 animate-pulse" />
+                                                <span className="text-xs font-mono text-purple-200 font-medium">
                                                     {aiMentorState.modelUsed ? (aiMentorState.modelUsed.includes("Gemini") ? "Gemini 1.5" : "Diagnostic Engine") : "Ready"}
                                                 </span>
                                             </div>
                                         </div>
 
-                                        <p className="text-[11px] text-purple-200/80 leading-relaxed">
+                                        <p className="text-xs sm:text-sm text-purple-100/90 leading-relaxed font-normal">
                                             Analyzes failing assertions, unblocks architecture, and provides graduated hints without spoiling your solution.
                                         </p>
                                     </div>
 
                                     {/* Active Test Case Context Bar */}
                                     {aiMentorState.activeFailingTest && (
-                                        <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-200 flex items-center justify-between gap-2">
+                                        <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs sm:text-sm text-rose-200 flex items-center justify-between gap-2">
                                             <div className="flex items-center gap-2 truncate">
-                                                <XCircle size={14} className="text-rose-400 shrink-0" />
+                                                <XCircle size={16} className="text-rose-400 shrink-0" />
                                                 <span className="font-bold font-mono truncate">{aiMentorState.activeFailingTest}</span>
                                             </div>
                                             {aiMentorState.targetLine && (
                                                 <button
                                                     type="button"
                                                     onClick={() => jumpToLine(aiMentorState.targetLine)}
-                                                    className="px-2 py-0.5 rounded bg-rose-500/20 hover:bg-rose-500/30 text-[10px] font-mono text-rose-200 flex items-center gap-1 transition-colors shrink-0"
+                                                    className="px-2.5 py-1 rounded bg-rose-500/20 hover:bg-rose-500/30 text-xs font-mono text-rose-200 flex items-center gap-1.5 transition-colors shrink-0 font-medium"
                                                 >
-                                                    <Target size={10} />
+                                                    <Target size={12} />
                                                     <span>Line {aiMentorState.targetLine}</span>
                                                 </button>
                                             )}
@@ -1321,12 +1321,12 @@ export default function ProjectWorkspace() {
                                     )}
 
                                     {/* Graduated Hint Level Selector */}
-                                    <div className="space-y-1.5">
-                                        <div className="text-[10px] uppercase font-bold tracking-wider text-slate-400 flex items-center justify-between">
+                                    <div className="space-y-2">
+                                        <div className="text-xs uppercase font-bold tracking-wider text-slate-300 flex items-center justify-between">
                                             <span>Guidance Level</span>
-                                            <span className="text-[9px] font-mono text-purple-400">Graduated Hinting</span>
+                                            <span className="text-xs font-mono text-purple-400">Graduated Hinting</span>
                                         </div>
-                                        <div className="grid grid-cols-3 gap-1 bg-[#05070B] p-1 rounded-xl border border-white/5 text-[11px] font-mono">
+                                        <div className="grid grid-cols-3 gap-1.5 bg-[#05070B] p-1.5 rounded-xl border border-white/10 text-xs font-mono">
                                             {[
                                                 { lvl: 1, label: "1. Nudge", title: "Conceptual guidance" },
                                                 { lvl: 2, label: "2. Pinpoint", title: "Pinpoints exact flaw" },
@@ -1336,10 +1336,10 @@ export default function ProjectWorkspace() {
                                                     key={tab.lvl}
                                                     type="button"
                                                     onClick={() => handleAskAiMentor({ requestedLevel: tab.lvl })}
-                                                    className={`py-1.5 px-2 rounded-lg text-center transition-all ${
+                                                    className={`py-2 px-2 rounded-lg text-center transition-all text-xs sm:text-sm font-semibold ${
                                                         aiMentorState.level === tab.lvl
-                                                            ? "bg-purple-600 text-white font-bold shadow"
-                                                            : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                                                            ? "bg-purple-600 text-white shadow-md font-bold"
+                                                            : "text-slate-300 hover:text-white hover:bg-white/5"
                                                     }`}
                                                     title={tab.title}
                                                 >
@@ -1350,22 +1350,22 @@ export default function ProjectWorkspace() {
                                     </div>
 
                                     {/* Diagnosis & Hint Box */}
-                                    <div className="p-3.5 rounded-2xl bg-[#05070B] border border-white/10 space-y-3">
+                                    <div className="p-4 rounded-2xl bg-[#05070B] border border-white/10 space-y-4">
                                         {aiMentorState.isLoading ? (
-                                            <div className="py-6 flex flex-col items-center justify-center gap-2 text-purple-300">
-                                                <RefreshCw size={20} className="animate-spin text-purple-400" />
-                                                <span className="text-xs font-mono">Consulting Forge Copilot...</span>
+                                            <div className="py-8 flex flex-col items-center justify-center gap-3 text-purple-300">
+                                                <RefreshCw size={24} className="animate-spin text-purple-400" />
+                                                <span className="text-sm font-mono font-medium">Consulting Forge Copilot...</span>
                                             </div>
                                         ) : aiMentorState.hint || aiMentorState.diagnosis ? (
-                                            <div className="space-y-3">
+                                            <div className="space-y-4">
                                                 {/* Diagnosis summary */}
                                                 {aiMentorState.diagnosis && (
-                                                    <div className="space-y-1 border-b border-white/10 pb-2.5">
-                                                        <div className="text-[10px] font-mono uppercase text-purple-400 font-bold flex items-center gap-1.5">
-                                                            <Sparkles size={11} />
+                                                    <div className="space-y-2 border-b border-white/10 pb-3">
+                                                        <div className="text-xs font-mono uppercase text-purple-300 font-bold flex items-center gap-1.5 tracking-wide">
+                                                            <Sparkles size={13} />
                                                             <span>Diagnosis</span>
                                                         </div>
-                                                        <p className="text-xs text-slate-200 leading-relaxed font-sans">
+                                                        <p className="text-sm sm:text-[15px] text-slate-100 leading-relaxed font-normal">
                                                             {aiMentorState.diagnosis}
                                                         </p>
                                                     </div>
@@ -1373,24 +1373,24 @@ export default function ProjectWorkspace() {
 
                                                 {/* Hint Body */}
                                                 {aiMentorState.hint && (
-                                                    <div className="space-y-1.5">
-                                                        <div className="text-[10px] font-mono uppercase text-cyan-400 font-bold flex items-center justify-between">
+                                                    <div className="space-y-2">
+                                                        <div className="text-xs font-mono uppercase text-cyan-300 font-bold flex items-center justify-between tracking-wide">
                                                             <span className="flex items-center gap-1.5">
-                                                                <Lightbulb size={12} />
+                                                                <Lightbulb size={14} className="text-amber-400" />
                                                                 <span>Level {aiMentorState.level} Hint</span>
                                                             </span>
                                                             {aiMentorState.targetLine && (
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => jumpToLine(aiMentorState.targetLine)}
-                                                                    className="text-[10px] text-cyan-300 hover:underline flex items-center gap-1"
+                                                                    className="text-xs text-cyan-300 hover:text-cyan-200 underline underline-offset-2 flex items-center gap-1 font-mono font-semibold"
                                                                 >
-                                                                    <Target size={10} />
+                                                                    <Target size={12} />
                                                                     <span>Jump to Line {aiMentorState.targetLine}</span>
                                                                 </button>
                                                             )}
                                                         </div>
-                                                        <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-100 leading-relaxed">
+                                                        <div className="p-3.5 rounded-xl bg-purple-500/15 border border-purple-500/30 text-sm sm:text-[15px] text-slate-100 leading-relaxed font-normal shadow-sm">
                                                             {aiMentorState.hint}
                                                         </div>
                                                     </div>
@@ -1398,37 +1398,37 @@ export default function ProjectWorkspace() {
 
                                                 {/* Code Pattern Snippet (if available) */}
                                                 {aiMentorState.codePattern && (
-                                                    <div className="space-y-1">
-                                                        <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
-                                                            <span>Suggested Structural Pattern:</span>
+                                                    <div className="space-y-2">
+                                                        <div className="flex items-center justify-between text-xs font-mono text-slate-300">
+                                                            <span className="font-semibold text-slate-200">Suggested Structural Pattern:</span>
                                                             <button
                                                                 type="button"
                                                                 onClick={() => {
                                                                     navigator.clipboard.writeText(aiMentorState.codePattern);
                                                                     toast.success("Snippet copied to clipboard");
                                                                 }}
-                                                                className="hover:text-white flex items-center gap-1 transition-colors"
+                                                                className="hover:text-white flex items-center gap-1.5 transition-colors px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-xs font-medium"
                                                             >
-                                                                <Copy size={11} />
-                                                                <span>Copy</span>
+                                                                <Copy size={13} />
+                                                                <span>Copy Snippet</span>
                                                             </button>
                                                         </div>
-                                                        <pre className="p-2.5 rounded-xl bg-[#090D16] border border-white/10 text-[11px] font-mono text-cyan-200 overflow-x-auto leading-relaxed">
+                                                        <pre className="p-3.5 rounded-xl bg-[#090D16] border border-white/10 text-xs sm:text-sm font-mono text-cyan-200 overflow-x-auto leading-relaxed shadow-inner">
                                                             <code>{aiMentorState.codePattern}</code>
                                                         </pre>
                                                     </div>
                                                 )}
                                             </div>
                                         ) : (
-                                            <div className="py-4 text-center space-y-2">
-                                                <Bot size={28} className="mx-auto text-purple-400/60" />
-                                                <p className="text-xs text-slate-300">
+                                            <div className="py-6 text-center space-y-3">
+                                                <Bot size={32} className="mx-auto text-purple-400/80" />
+                                                <p className="text-sm text-slate-200 font-medium">
                                                     No active errors detected yet. Run tests or choose a quick prompt below to analyze your code.
                                                 </p>
                                                 <button
                                                     type="button"
                                                     onClick={() => handleAskAiMentor({ prompt: "Review my code architecture for this milestone" })}
-                                                    className="px-3 py-1.5 rounded-xl bg-purple-600/30 hover:bg-purple-600/40 border border-purple-500/40 text-purple-200 font-mono text-xs font-bold transition-all"
+                                                    className="px-4 py-2 rounded-xl bg-purple-600/30 hover:bg-purple-600/40 border border-purple-500/40 text-purple-200 font-mono text-xs sm:text-sm font-bold transition-all shadow-sm"
                                                 >
                                                     ✨ Ask Copilot to Review Code
                                                 </button>
@@ -1438,10 +1438,10 @@ export default function ProjectWorkspace() {
 
                                     {/* Quick Action Prompts */}
                                     <div className="space-y-2">
-                                        <div className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                                        <div className="text-xs uppercase font-bold tracking-wider text-slate-300">
                                             Quick Prompts
                                         </div>
-                                        <div className="flex flex-wrap gap-1.5">
+                                        <div className="flex flex-wrap gap-2">
                                             {(aiMentorState.quickPrompts || [
                                                 "Why did my test fail?",
                                                 "Give me a subtle hint",
@@ -1452,7 +1452,7 @@ export default function ProjectWorkspace() {
                                                     key={idx}
                                                     type="button"
                                                     onClick={() => handleAskAiMentor({ prompt: q })}
-                                                    className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-purple-600/20 border border-white/10 hover:border-purple-500/30 text-[11px] text-slate-300 hover:text-purple-200 transition-all text-left"
+                                                    className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-purple-600/20 border border-white/10 hover:border-purple-500/30 text-xs sm:text-sm text-slate-200 hover:text-purple-100 transition-all text-left font-medium"
                                                 >
                                                     {q}
                                                 </button>
@@ -1469,35 +1469,35 @@ export default function ProjectWorkspace() {
                                             setAiMentorInput("");
                                             handleAskAiMentor({ prompt: query });
                                         }}
-                                        className="flex items-center gap-1.5 pt-1"
+                                        className="flex items-center gap-2 pt-1"
                                     >
                                         <input
                                             type="text"
                                             value={aiMentorInput}
                                             onChange={(e) => setAiMentorInput(e.target.value)}
                                             placeholder="Ask Forge Copilot a question..."
-                                            className="flex-grow px-3 py-2 rounded-xl bg-[#05070B] border border-white/10 text-white placeholder-slate-500 text-xs focus:outline-none focus:border-purple-500/50 transition-colors"
+                                            className="flex-grow px-3.5 py-2.5 rounded-xl bg-[#05070B] border border-white/10 text-white placeholder-slate-400 text-sm focus:outline-none focus:border-purple-500/50 transition-colors shadow-inner"
                                         />
                                         <button
                                             type="submit"
                                             disabled={aiMentorState.isLoading || !aiMentorInput.trim()}
-                                            className="p-2 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-40 text-white transition-all shrink-0 active:scale-95"
+                                            className="p-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-40 text-white transition-all shrink-0 active:scale-95 shadow-md"
                                             title="Send query to Forge Copilot"
                                         >
-                                            <Send size={14} />
+                                            <Send size={16} />
                                         </button>
                                     </form>
 
                                     {/* Static Milestone Reference Accordion */}
                                     <div className="space-y-2 pt-2 border-t border-white/10">
-                                        <div className="text-[10px] uppercase font-bold tracking-wider text-slate-400 flex items-center gap-1.5">
-                                            <BookOpen size={12} className="text-blue-400" />
+                                        <div className="text-xs uppercase font-bold tracking-wider text-slate-300 flex items-center gap-1.5">
+                                            <BookOpen size={14} className="text-blue-400" />
                                             <span>Curated Spec Hints</span>
                                         </div>
-                                        <div className="space-y-1.5">
+                                        <div className="space-y-2">
                                             {milestoneGuide.hints?.map((hint, idx) => (
-                                                <div key={idx} className="p-2.5 rounded-xl bg-white/[0.03] border border-white/5 text-xs text-slate-300 leading-relaxed">
-                                                    <span className="font-bold text-blue-300 font-mono mr-1.5">#{idx + 1}</span>
+                                                <div key={idx} className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-xs sm:text-sm text-slate-200 leading-relaxed">
+                                                    <span className="font-bold text-blue-300 font-mono mr-2">#{idx + 1}</span>
                                                     <span>{hint}</span>
                                                 </div>
                                             ))}
@@ -1650,7 +1650,7 @@ export default function ProjectWorkspace() {
                                                 return (
                                                     <div 
                                                         key={idx} 
-                                                        className={`flex items-start sm:items-center justify-between p-2.5 rounded-xl border transition-all gap-2 ${
+                                                        className={`flex items-start sm:items-center justify-between p-3 rounded-xl border transition-all gap-2.5 ${
                                                             step.passed 
                                                                 ? "bg-emerald-500/[0.04] border-emerald-500/20 text-slate-200" 
                                                                 : "bg-rose-500/[0.06] border-rose-500/30 text-rose-200"
@@ -1659,22 +1659,22 @@ export default function ProjectWorkspace() {
                                                         <div className="flex items-start sm:items-center gap-2.5 flex-grow min-w-0">
                                                             <div className="shrink-0 mt-0.5 sm:mt-0">
                                                                 {step.passed ? (
-                                                                    <CheckCircle2 size={15} className="text-emerald-400" />
+                                                                    <CheckCircle2 size={16} className="text-emerald-400" />
                                                                 ) : (
-                                                                    <XCircle size={15} className="text-rose-400" />
+                                                                    <XCircle size={16} className="text-rose-400" />
                                                                 )}
                                                             </div>
-                                                            <div className="min-w-0 flex-grow">
+                                                            <div className="min-w-0 flex-grow space-y-0.5">
                                                                 <div className="flex items-center gap-2 flex-wrap">
-                                                                    <span className="font-bold text-xs">{step.name}</span>
+                                                                    <span className="font-bold text-sm text-slate-100">{step.name}</span>
                                                                     {lineNum && (
                                                                         <button
                                                                             type="button"
                                                                             onClick={() => jumpToLine(lineNum)}
-                                                                            className="px-1.5 py-0.5 rounded bg-blue-500/20 hover:bg-blue-500/40 text-cyan-300 text-[10px] font-mono flex items-center gap-1 transition-colors"
+                                                                            className="px-2 py-0.5 rounded bg-blue-500/20 hover:bg-blue-500/40 text-cyan-300 text-xs font-mono flex items-center gap-1 transition-colors font-semibold"
                                                                             title={`Jump to line ${lineNum} in editor`}
                                                                         >
-                                                                            <Target size={11} />
+                                                                            <Target size={12} />
                                                                             <span>Line {lineNum}</span>
                                                                         </button>
                                                                     )}
@@ -1687,22 +1687,22 @@ export default function ProjectWorkspace() {
                                                                                 line: lineNum,
                                                                                 requestedLevel: 1
                                                                             })}
-                                                                            className="px-2 py-0.5 rounded-md bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 border border-purple-500/30 text-[10px] font-mono flex items-center gap-1 transition-all shadow-sm active:scale-95"
+                                                                            className="px-2.5 py-0.5 rounded-md bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 border border-purple-500/30 text-xs font-mono flex items-center gap-1.5 transition-all shadow-sm active:scale-95 font-semibold"
                                                                             title="Get AI diagnosis & graduated hints for this test"
                                                                         >
-                                                                            <Sparkles size={11} className="text-purple-300 animate-pulse" />
+                                                                            <Sparkles size={12} className="text-purple-300 animate-pulse" />
                                                                             <span>Explain & Get Hint</span>
                                                                         </button>
                                                                     )}
                                                                 </div>
                                                                 {step.output && (
-                                                                    <div className={`text-[11px] font-mono truncate max-w-xl ${step.passed ? "text-slate-400" : "text-rose-300 font-bold"}`}>
+                                                                    <div className={`text-xs sm:text-sm font-mono truncate max-w-2xl leading-relaxed ${step.passed ? "text-slate-400" : "text-rose-300 font-semibold"}`}>
                                                                         {step.output}
                                                                     </div>
                                                                 )}
                                                             </div>
                                                         </div>
-                                                        <span className={`text-[11px] font-mono shrink-0 ${step.passed ? "text-emerald-400" : "text-rose-400"}`}>
+                                                        <span className={`text-xs font-mono shrink-0 font-medium ${step.passed ? "text-emerald-400" : "text-rose-400"}`}>
                                                             {step.duration}
                                                         </span>
                                                     </div>
@@ -1711,9 +1711,9 @@ export default function ProjectWorkspace() {
 
                                             {/* Results Footer Message */}
                                             {testResults.status === "failed" && (
-                                                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 flex items-center justify-between flex-wrap gap-2">
-                                                    <div className="flex items-center gap-2 font-bold text-xs">
-                                                        <XCircle size={16} className="text-rose-400 shrink-0" />
+                                                <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 flex items-center justify-between flex-wrap gap-2.5">
+                                                    <div className="flex items-center gap-2 font-bold text-sm text-rose-200">
+                                                        <XCircle size={18} className="text-rose-400 shrink-0" />
                                                         <span>Tests Failed ({testResults.passed}/{testResults.total} passed). Fix errors to verify this milestone.</span>
                                                     </div>
                                                     <div className="flex items-center gap-2">
@@ -1724,16 +1724,16 @@ export default function ProjectWorkspace() {
                                                                 error: testResults.steps?.find(s => !s.passed)?.output || "Tests failed",
                                                                 requestedLevel: 1
                                                             })}
-                                                            className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-purple-600/30 to-indigo-600/30 hover:from-purple-600/50 hover:to-indigo-600/50 border border-purple-500/40 text-purple-200 text-xs font-mono font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                                                            className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-600/30 to-indigo-600/30 hover:from-purple-600/50 hover:to-indigo-600/50 border border-purple-500/40 text-purple-200 text-xs sm:text-sm font-mono font-bold transition-all flex items-center gap-2 shadow-sm active:scale-95"
                                                         >
-                                                            <Bot size={13} className="text-purple-300 animate-pulse" />
+                                                            <Bot size={15} className="text-purple-300 animate-pulse" />
                                                             <span>Forge Copilot: Diagnose All Failures</span>
                                                         </button>
                                                         <button
                                                             onClick={() => setTerminalTab("console")}
-                                                            className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 text-xs font-mono font-bold transition-colors flex items-center gap-1.5"
+                                                            className="px-3 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 text-xs sm:text-sm font-mono font-bold transition-colors flex items-center gap-1.5"
                                                         >
-                                                            <Terminal size={12} />
+                                                            <Terminal size={14} />
                                                             <span>View Raw Logs</span>
                                                         </button>
                                                     </div>
@@ -1741,9 +1741,9 @@ export default function ProjectWorkspace() {
                                             )}
 
                                             {testResults.status === "passed" && (
-                                                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-between flex-wrap gap-2">
-                                                    <div className="flex items-center gap-2 font-bold text-xs">
-                                                        <CheckCircle2 size={16} className="shrink-0" />
+                                                <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-between flex-wrap gap-2.5">
+                                                    <div className="flex items-center gap-2 font-bold text-sm text-emerald-300">
+                                                        <CheckCircle2 size={18} className="shrink-0" />
                                                         <span>All {testResults.passed} assertions passed! Milestone {currentMilestoneIndex + 1} verified.</span>
                                                     </div>
                                                     {currentMilestoneIndex + 1 < (project.milestones?.length || 5) && (
@@ -1752,10 +1752,10 @@ export default function ProjectWorkspace() {
                                                                 handleSelectMilestone(currentMilestoneIndex + 1);
                                                                 setTestResults(null);
                                                             }}
-                                                            className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all flex items-center gap-1.5 shadow-md active:scale-95"
+                                                            className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm transition-all flex items-center gap-2 shadow-md active:scale-95"
                                                         >
                                                             <span>Advance to Milestone {currentMilestoneIndex + 2}</span>
-                                                            <ChevronRight size={13} />
+                                                            <ChevronRight size={15} />
                                                         </button>
                                                     )}
                                                 </div>
