@@ -38,6 +38,13 @@ export const PROJECTS = [
             "O(1) LRU (Least Recently Used) cache eviction",
             "RDB snapshot file persistence"
         ],
+        prerequisites: [
+            "Rust toolchain 1.75+ or Go 1.21+ or Node.js 18+ installed",
+            "Working knowledge of TCP sockets, byte buffers, and stream I/O",
+            "Familiarity with concurrent threads / async event loops & mutex synchronization",
+            "Understanding of HashMaps, doubly linked lists, and O(1) LRU eviction mechanics",
+            "Redis CLI client (optional for manual end-to-end socket testing)"
+        ],
         milestones: [
             { id: 1, title: "Bind TCP Socket & Ping-Pong Handshake", testCount: 4 },
             { id: 2, title: "RESP Array & Bulk String Protocol Parser", testCount: 8 },
@@ -66,6 +73,13 @@ export const PROJECTS = [
             "Multi-cursor coordinates interpolation with latency smoothing",
             "Undo / Redo state management using command pattern",
             "Binary SVG & PNG export generation"
+        ],
+        prerequisites: [
+            "Modern web browser with HTML5 Canvas 2D Context & WebSocket support",
+            "TypeScript 5+ and modern React 18+ (hooks, useRef, useCallback)",
+            "Fundamental 2D coordinate geometry and camera affine transformations (pan/zoom matrix)",
+            "Basic understanding of WebSocket rooms, connection heartbeats, and reconnect backoff",
+            "Linear interpolation (lerp) concept for cursor position smoothing"
         ],
         milestones: [
             { id: 1, title: "Infinite HTML5 2D Vector Canvas Viewport", testCount: 5 },
@@ -96,6 +110,13 @@ export const PROJECTS = [
             "Sliding-window counter rate limiting middleware",
             "Docker Compose multi-container networking"
         ],
+        prerequisites: [
+            "Node.js 18+ / Express runtime environment",
+            "Understanding of HTTP status codes (301 Permanent vs 302 Temporary redirects)",
+            "Mathematical Base62 bijective encoding & decoding using modulo arithmetic",
+            "Basic understanding of Redis in-memory key-value caching & TTL expiration",
+            "Relational database indexing principles (B-Tree unique constraints in PostgreSQL)"
+        ],
         milestones: [
             { id: 1, title: "Base62 Encoding Engine & Hash Generator", testCount: 6 },
             { id: 2, title: "PostgreSQL Schema & Unique Hash Indexing", testCount: 4 },
@@ -124,6 +145,13 @@ export const PROJECTS = [
             "Reciprocal Rank Fusion (RRF) for hybrid keyword + vector retrieval",
             "System prompt engineering with few-shot code schema enforcement",
             "Server-Sent Events (SSE) token streaming pipeline"
+        ],
+        prerequisites: [
+            "Python 3.10+ (with typing, ast, and standard library json modules)",
+            "Understanding of Abstract Syntax Trees (AST) and Python syntax node traversal",
+            "Familiarity with vector embeddings, dimensional vector spaces, and cosine similarity",
+            "FastAPI or asynchronous HTTP request lifecycle fundamentals",
+            "Concepts of Server-Sent Events (SSE) for token-by-token streaming responses"
         ],
         milestones: [
             { id: 1, title: "AST Python/JS Code Chunking & Boundary Extractor", testCount: 5 },
@@ -154,6 +182,13 @@ export const PROJECTS = [
             "Commit DAG construction and parent pointer chaining",
             "Working directory diffing and atomic HEAD manipulation"
         ],
+        prerequisites: [
+            "Rust 1.75+ or Python 3.10+ or Go 1.21+ runtime installed",
+            "Understanding of SHA-1 cryptographic hashing & hexadecimal digest formatting",
+            "Zlib deflate / inflate compression algorithms for binary blob storage",
+            "Directed Acyclic Graph (DAG) data structures and parent pointer trees",
+            "CLI argument parsing and recursive directory tree traversal"
+        ],
         milestones: [
             { id: 1, title: "Git Directory Schema & `init` Command", testCount: 4 },
             { id: 2, title: "SHA-1 Hash-Object & Zlib Blob Storage", testCount: 6 },
@@ -182,6 +217,13 @@ export const PROJECTS = [
             "Cryptographic signature validation of JWT tokens at the boundary",
             "Live JSON configuration hot-reloading without downtime",
             "Prometheus gauge & histogram metric instrumentation"
+        ],
+        prerequisites: [
+            "Go 1.21+ or Node.js 18+ runtime with HTTP net package familiarity",
+            "Fundamental understanding of Reverse Proxies vs Forward Proxies",
+            "Load balancing algorithms (Round-Robin with modulo indexing, Least Connections)",
+            "JWT (JSON Web Token) standard, claims extraction, and HMAC-SHA256 verification",
+            "Prometheus metrics instrumentation principles (Counters and Gauges)"
         ],
         milestones: [
             { id: 1, title: "Basic TCP/HTTP Reverse Proxy Forwarder", testCount: 4 },
@@ -212,6 +254,13 @@ export const PROJECTS = [
             "Fast Fourier Transform (FFT) frequency waveform visualizer",
             "Custom sound preset state serialization"
         ],
+        prerequisites: [
+            "Modern web browser with Web Audio API support (AudioContext, OscillatorNode)",
+            "React 18+ with state management for musical step sequencers",
+            "Basic acoustics and synthesis theory (Frequency in Hz, Sine / Square / Sawtooth waveforms)",
+            "ADSR (Attack, Decay, Sustain, Release) envelope dynamics",
+            "High-precision web scheduling with AudioContext.currentTime"
+        ],
         milestones: [
             { id: 1, title: "Web AudioContext & Polyphonic Oscillator Graph", testCount: 4 },
             { id: 2, title: "ADSR Gain Envelope Automation", testCount: 5 },
@@ -240,6 +289,13 @@ export const PROJECTS = [
             "Multi-step job matrix parallelization with dependency DAGs",
             "Real-time WebSocket stdout/stderr terminal log streaming",
             "Webhook signature verification and GitHub commit statuses"
+        ],
+        prerequisites: [
+            "Node.js 18+ with child_process and WebSocket server capabilities",
+            "Docker Desktop or Docker Daemon socket (/var/run/docker.sock or Windows named pipe)",
+            "Basic knowledge of GitHub Webhooks and HMAC-SHA256 signature verification",
+            "Topological sorting / Directed Acyclic Graph (DAG) for pipeline step dependencies",
+            "Standard UNIX streams (stdout / stderr) redirection and exit code traps"
         ],
         milestones: [
             { id: 1, title: "GitHub Webhook Event Listener & HMAC-SHA256 Verification", testCount: 4 },

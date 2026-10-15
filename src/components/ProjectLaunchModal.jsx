@@ -340,6 +340,24 @@ export default function ProjectLaunchModal({ project, isOpen, onClose }) {
                                     </div>
                                 </div>
 
+                                {/* Milestone Technical Prerequisites */}
+                                {currentGuide.prerequisites && currentGuide.prerequisites.length > 0 && (
+                                    <div className="space-y-2 pt-1">
+                                        <div className="text-[11px] font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+                                            <Target size={13} />
+                                            <span>Milestone Prerequisites & Core Concepts</span>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            {currentGuide.prerequisites.map((req, qIdx) => (
+                                                <div key={qIdx} className="flex items-center gap-2 p-2 rounded-xl bg-blue-500/5 border border-blue-500/10 text-xs text-blue-200">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0" />
+                                                    <span className="truncate">{req}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Target Test Verification Preview */}
                                 {currentGuide.testCases && currentGuide.testCases.length > 0 && (
                                     <div className="space-y-2 pt-1">
@@ -363,6 +381,29 @@ export default function ProjectLaunchModal({ project, isOpen, onClose }) {
                                     </div>
                                 )}
                             </motion.div>
+
+                            {/* Project-Wide Toolchain & Setup Prerequisites */}
+                            {project.prerequisites && project.prerequisites.length > 0 && (
+                                <div className="p-4 rounded-2xl bg-[#05070B] border border-white/10 space-y-2.5">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                                            <ShieldCheck size={14} className="text-blue-400" />
+                                            <span>Project Toolchain & Setup Prerequisites</span>
+                                        </span>
+                                        <span className="text-[10px] font-mono text-slate-400">
+                                            {project.techStack?.slice(0, 3).join(" • ")}
+                                        </span>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        {project.prerequisites.map((p, pIdx) => (
+                                            <div key={pIdx} className="flex items-start gap-2 p-2.5 rounded-xl bg-white/5 border border-white/5 text-xs text-slate-300">
+                                                <CheckCircle2 size={13} className="text-emerald-400 shrink-0 mt-0.5" />
+                                                <span className="leading-relaxed">{p}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Git Clone Quick Command */}
                             <div className="space-y-2 pt-2">

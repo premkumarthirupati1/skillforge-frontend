@@ -25,7 +25,8 @@ import {
     Minimize2,
     GripHorizontal,
     Code2,
-    Milestone
+    Milestone,
+    Target
 } from "lucide-react";
 import { PROJECTS } from "../../data/projectsData";
 import { getProjectWorkspaceData } from "../../data/projectWorkspacesData";
@@ -93,10 +94,32 @@ export default function ProjectWorkspace() {
 
     const [activeFileName, setActiveFileName] = useState(workspaceData.files[0]?.name || "main.rs");
 
-    // State: Left panel tab ('roadmap' | 'spec' | 'prd' | 'hints')
+    // State: Left panel tab ('roadmap' | 'spec' | 'prereq' | 'prd' | 'hints')
     const [specTab, setSpecTab] = useState("spec");
     const [selectedRoadmapIdx, setSelectedRoadmapIdx] = useState(0);
     const [isSpecsCollapsed, setIsSpecsCollapsed] = useState(false);
+
+    // State: Interactive prerequisites checklist
+    const [checkedPrereqs, setCheckedPrereqs] = useState(() => {
+        try {
+            const saved = localStorage.getItem(`skillforge_prereqs_${project.id}`);
+            return saved ? new Set(JSON.parse(saved)) : new Set();
+        } catch {
+            return new Set();
+        }
+    });
+
+    const togglePrereq = (key) => {
+        setCheckedPrereqs(prev => {
+            const next = new Set(prev);
+            if (next.has(key)) next.delete(key);
+            else next.add(key);
+            try {
+                localStorage.setItem(`skillforge_prereqs_${project.id}`, JSON.stringify([...next]));
+            } catch (e) {}
+            return next;
+        });
+    };
 
     // State: Resizable terminal drawer height
     const [terminalHeight, setTerminalHeight] = useState(250);
@@ -503,6 +526,7 @@ export default function ProjectWorkspace() {
                                 {[
                                     { id: "roadmap", label: "Roadmap", icon: Milestone },
                                     { id: "spec", label: "Spec Guide", icon: BookOpen },
+                                    { id: "prereq", label: "Prereqs", icon: CheckCircle2 },
                                     { id: "prd", label: "Full PRD", icon: Layers },
                                     { id: "hints", label: "Hints", icon: HelpCircle }
                                 ].map(tab => {
@@ -885,6 +909,131 @@ export default function ProjectWorkspace() {
                                         </div>
                                     </div>
 
+                                </div>
+                            )}
+
+                            {/* TAB: PREREQUISITES & ENVIRONMENT READINESS */}
+                            {specTab === "prereq" && (
+                                <div className="space-y-5 animate-in fade-in duration-200">
+                                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                                        <div>
+                                            <h2 className="text-base font-bold text-white flex items-center gap-2">
+                                                <CheckCircle2 size={16} className="text-cyan-400" />
+                                                <span>Prerequisites & Environment</span>
+                                            </h2>
+                                            <p className="text-xs text-slate-400">
+                                                Review toolchain, system dependencies, and technical concepts.
+                                            </p>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="text-xs font-mono font-bold text-cyan-400 px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                                                {checkedPrereqs.size} / {(project.prerequisites?.length || 0) + (milestoneGuide.prerequisites?.length || 0)} Ready
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Runtime Environment Box */}
+                                    <div className="p-3.5 rounded-xl bg-gradient-to-r from-blue-900/20 via-cyan-900/10 to-transparent border border-blue-500/20 space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-cyan-300">
+                                                Execution Engine
+                                            </span>
+                                            <span className="text-[10px] font-mono text-emerald-400 font-bold px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">
+                                                ● Active
+                                            </span>
+                                        </div>
+                                        <div className="text-xs text-slate-200 font-mono">
+                                            {isClientSideLanguage(workspaceData.language || project.language)
+                                                ? "Client-Side In-Browser V8 (0ms server latency, offline ready)"
+                                                : "Backend Sandbox Service (/api/runner/execute - Isolated Process)"}
+                                        </div>
+                                        <div className="text-[11px] text-slate-400">
+                                            Primary Language: <span className="text-white font-bold uppercase font-mono">{workspaceData.language || project.language}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Milestone-Specific Concepts */}
+                                    {milestoneGuide.prerequisites && milestoneGuide.prerequisites.length > 0 && (
+                                        <div className="space-y-2.5">
+                                            <div className="flex items-center gap-1.5 text-xs font-bold text-white uppercase tracking-wider">
+                                                <Target size={13} className="text-cyan-400" />
+                                                <span>Milestone {currentMilestoneIndex + 1} Technical Concepts</span>
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                {milestoneGuide.prerequisites.map((p, pIdx) => {
+                                                    const key = `m_${currentMilestoneIndex}_${pIdx}`;
+                                                    const isChecked = checkedPrereqs.has(key);
+                                                    return (
+                                                        <button
+                                                            key={key}
+                                                            type="button"
+                                                            onClick={() => togglePrereq(key)}
+                                                            className={`w-full text-left p-3 rounded-xl border transition-all flex items-start gap-2.5 text-xs ${
+                                                                isChecked 
+                                                                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-200" 
+                                                                    : "bg-white/5 border-white/10 text-slate-300 hover:border-white/20"
+                                                            }`}
+                                                        >
+                                                            <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
+                                                                isChecked ? "bg-emerald-500 border-emerald-400 text-black" : "border-white/30"
+                                                            }`}>
+                                                                {isChecked && <Check size={11} className="stroke-[3]" />}
+                                                            </div>
+                                                            <span className={isChecked ? "line-through opacity-80" : ""}>{p}</span>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Project-Wide Technical Prerequisites */}
+                                    <div className="space-y-2.5">
+                                        <div className="flex items-center gap-1.5 text-xs font-bold text-white uppercase tracking-wider">
+                                            <ShieldCheck size={13} className="text-blue-400" />
+                                            <span>Project Toolchain & Setup Checklist</span>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            {(project.prerequisites || [
+                                                "Basic proficiency in " + (project.language || "programming"),
+                                                "Understanding of project architecture and data structures"
+                                            ]).map((p, pIdx) => {
+                                                const key = `p_${pIdx}`;
+                                                const isChecked = checkedPrereqs.has(key);
+                                                return (
+                                                    <button
+                                                        key={key}
+                                                        type="button"
+                                                        onClick={() => togglePrereq(key)}
+                                                        className={`w-full text-left p-3 rounded-xl border transition-all flex items-start gap-2.5 text-xs ${
+                                                            isChecked 
+                                                                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-200" 
+                                                                : "bg-white/5 border-white/10 text-slate-300 hover:border-white/20"
+                                                        }`}
+                                                    >
+                                                        <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
+                                                            isChecked ? "bg-emerald-500 border-emerald-400 text-black" : "border-white/30"
+                                                        }`}>
+                                                            {isChecked && <Check size={11} className="stroke-[3]" />}
+                                                        </div>
+                                                        <span className={isChecked ? "line-through opacity-80" : ""}>{p}</span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Action to Jump to Spec */}
+                                    <div className="pt-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setSpecTab("spec")}
+                                            className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold text-xs shadow-lg hover:from-blue-500 hover:to-cyan-400 transition-all flex items-center justify-center gap-2"
+                                        >
+                                            <span>Ready! Go to Milestone Spec</span>
+                                            <ChevronRight size={14} />
+                                        </button>
+                                    </div>
                                 </div>
                             )}
 
