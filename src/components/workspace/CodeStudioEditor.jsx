@@ -1,4 +1,18 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useMemo } from "react";
+import Editor from "react-simple-code-editor";
+import Prism from "prismjs";
+
+// Import Prism core syntax languages
+import "prismjs/components/prism-clike";
+import "prismjs/components/prism-javascript";
+import "prismjs/components/prism-typescript";
+import "prismjs/components/prism-rust";
+import "prismjs/components/prism-python";
+import "prismjs/components/prism-go";
+import "prismjs/components/prism-toml";
+import "prismjs/components/prism-markdown";
+import "prismjs/themes/prism-tomorrow.css";
+
 import { 
     Copy, 
     Check, 
@@ -6,14 +20,10 @@ import {
     Sparkles, 
     Folder, 
     ChevronRight, 
-    Eye,
-    EyeOff,
     CheckCheck,
     Terminal,
-    Code2,
-    FileText
+    Code2
 } from "lucide-react";
-import { highlightLine } from "./syntaxHighlighter";
 import toast from "react-hot-toast";
 
 export default function CodeStudioEditor({
@@ -24,82 +34,47 @@ export default function CodeStudioEditor({
     onResetFile
 }) {
     const activeFile = files.find(f => f.name === activeFileName) || files[0];
-
-    const textareaRef = useRef(null);
+    const [copied, setCopied] = useState(false);
+    const editorScrollRef = useRef(null);
     const gutterRef = useRef(null);
 
-    const [copied, setCopied] = useState(false);
-    const [cursorPos, setCursorPos] = useState({ line: 1, col: 1 });
-    const [viewMode, setViewMode] = useState("editor"); // 'editor' | 'preview'
-
-    // Split content into lines for line numbers and syntax highlighting
+    // Split content into lines for line numbers
     const lines = useMemo(() => {
         return (activeFile?.content || "").split("\n");
     }, [activeFile?.content]);
 
-    // Synchronize scrolling between textarea and gutter
+    // Syntax Highlight function using Prism.js
+    const highlightCode = (code) => {
+        const ext = activeFile.name.split('.').pop().toLowerCase();
+        let grammar = Prism.languages.rust;
+
+        if (ext === "rs") {
+            grammar = Prism.languages.rust || Prism.languages.clike;
+        } else if (ext === "ts" || ext === "tsx") {
+            grammar = Prism.languages.typescript || Prism.languages.javascript;
+        } else if (ext === "js" || ext === "jsx") {
+            grammar = Prism.languages.javascript || Prism.languages.clike;
+        } else if (ext === "py") {
+            grammar = Prism.languages.python;
+        } else if (ext === "go") {
+            grammar = Prism.languages.go || Prism.languages.clike;
+        } else if (ext === "toml") {
+            grammar = Prism.languages.toml;
+        } else if (ext === "md") {
+            grammar = Prism.languages.markdown;
+        }
+
+        try {
+            return Prism.highlight(code || "", grammar || Prism.languages.clike, ext);
+        } catch (e) {
+            return code;
+        }
+    };
+
+    // Synchronize gutter scroll with code editor scroll
     const handleScroll = (e) => {
         if (gutterRef.current) {
             gutterRef.current.scrollTop = e.target.scrollTop;
-        }
-    };
-
-    // Update cursor line and column coordinates
-    const updateCursorPosition = () => {
-        if (!textareaRef.current) return;
-        const selStart = textareaRef.current.selectionStart;
-        const textBefore = activeFile.content.substring(0, selStart);
-        const linesBefore = textBefore.split("\n");
-        const line = linesBefore.length;
-        const col = linesBefore[linesBefore.length - 1].length + 1;
-        setCursorPos({ line, col });
-    };
-
-    // Smart Keyboard Handling: Tab indentation & auto-indent on Enter
-    const handleKeyDown = (e) => {
-        const textarea = textareaRef.current;
-        if (!textarea) return;
-
-        // 1. Tab key -> Insert 4 spaces
-        if (e.key === "Tab") {
-            e.preventDefault();
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
-            const value = textarea.value;
-
-            const updated = value.substring(0, start) + "    " + value.substring(end);
-            onChangeCode(updated);
-
-            setTimeout(() => {
-                textarea.selectionStart = textarea.selectionEnd = start + 4;
-                updateCursorPosition();
-            }, 0);
-            return;
-        }
-
-        // 2. Enter key -> Smart Auto-Indent matching previous line
-        if (e.key === "Enter") {
-            const start = textarea.selectionStart;
-            const value = textarea.value;
-            const lineBeforeCursor = value.substring(0, start).split("\n").pop() || "";
-            const indentMatch = lineBeforeCursor.match(/^\s*/);
-            let indent = indentMatch ? indentMatch[0] : "";
-
-            // If line ended with opening brace '{' or '(', add 4 extra spaces
-            if (lineBeforeCursor.trimEnd().endsWith("{") || lineBeforeCursor.trimEnd().endsWith("(")) {
-                indent += "    ";
-            }
-
-            if (indent.length > 0) {
-                e.preventDefault();
-                const updated = value.substring(0, start) + "\n" + indent + value.substring(textarea.selectionEnd);
-                onChangeCode(updated);
-
-                setTimeout(() => {
-                    textarea.selectionStart = textarea.selectionEnd = start + 1 + indent.length;
-                    updateCursorPosition();
-                }, 0);
-            }
         }
     };
 
@@ -111,7 +86,7 @@ export default function CodeStudioEditor({
         toast.success(`Copied ${activeFile.name} to clipboard`);
     };
 
-    // Format Code (clean trailing whitespaces and normalize indentation)
+    // Format Code
     const handleFormat = () => {
         const formatted = lines
             .map(l => l.replace(/\t/g, "    ").trimEnd())
@@ -134,7 +109,7 @@ export default function CodeStudioEditor({
         <div className="flex-grow flex flex-col h-full bg-[#070A11] overflow-hidden font-mono text-xs select-none">
             
             {/* ======================================================== */}
-            {/* 1. VS CODE STYLE TABS BAR                                */}
+            {/* 1. VS CODE TABS BAR                                      */}
             {/* ======================================================== */}
             <div className="h-10 bg-[#0A0E17] border-b border-white/10 flex items-center justify-between px-2 overflow-x-auto shrink-0 select-none">
                 <div className="flex items-center gap-1 overflow-x-auto">
@@ -165,26 +140,6 @@ export default function CodeStudioEditor({
 
                 {/* Right toolbar controls */}
                 <div className="flex items-center gap-1.5 pr-2">
-                    {/* View Mode Toggle */}
-                    <div className="flex items-center bg-white/5 p-0.5 rounded-lg border border-white/5">
-                        <button
-                            onClick={() => setViewMode("editor")}
-                            className={`px-2 py-1 rounded text-[10px] font-bold flex items-center gap-1 transition-colors ${viewMode === "editor" ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white"}`}
-                            title="Interactive Code Editor"
-                        >
-                            <Code2 size={11} />
-                            <span>Edit</span>
-                        </button>
-                        <button
-                            onClick={() => setViewMode("preview")}
-                            className={`px-2 py-1 rounded text-[10px] font-bold flex items-center gap-1 transition-colors ${viewMode === "preview" ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white"}`}
-                            title="Highlighted Syntax Preview"
-                        >
-                            <FileText size={11} />
-                            <span>Syntax View</span>
-                        </button>
-                    </div>
-
                     <button
                         onClick={handleFormat}
                         className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 text-slate-400 hover:text-amber-300 transition-colors"
@@ -227,7 +182,7 @@ export default function CodeStudioEditor({
                 <div className="flex items-center gap-3 text-[10px] text-slate-500">
                     <span className="flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                        <span>Ready</span>
+                        <span>Live Syntax Active</span>
                     </span>
                     <span>UTF-8</span>
                     <span>Spaces: 4</span>
@@ -235,73 +190,45 @@ export default function CodeStudioEditor({
             </div>
 
             {/* ======================================================== */}
-            {/* 3. CODE EDITOR CANVAS (EDIT MODE VS PREVIEW MODE)        */}
+            {/* 3. CODE EDITOR CANVAS WITH REAL-TIME PRISM SYNTAX HIGHLIGHT*/}
             {/* ======================================================== */}
             <div className="flex-grow flex relative overflow-hidden bg-[#070A11]">
                 
                 {/* Line Numbers Gutter */}
                 <div 
                     ref={gutterRef}
-                    className="w-12 bg-[#090D16] border-r border-white/5 py-4 select-none text-right pr-3 text-slate-600 font-mono text-xs leading-6 overflow-hidden shrink-0"
+                    className="w-12 bg-[#090D16] border-r border-white/5 py-4 select-none text-right pr-3 text-slate-600 font-mono text-xs leading-[24px] overflow-hidden shrink-0"
                 >
-                    {lines.map((_, i) => {
-                        const lineNum = i + 1;
-                        const isCurrentLine = cursorPos.line === lineNum;
-                        return (
-                            <div 
-                                key={lineNum} 
-                                className={`transition-colors ${isCurrentLine ? "text-cyan-400 font-bold" : ""}`}
-                            >
-                                {lineNum}
-                            </div>
-                        );
-                    })}
+                    {lines.map((_, i) => (
+                        <div key={i + 1}>
+                            {i + 1}
+                        </div>
+                    ))}
                 </div>
 
-                {/* Main Interactive Editor View */}
-                {viewMode === "editor" ? (
-                    <div className="relative flex-grow h-full overflow-hidden">
-                        
-                        {/* Active Line Glow */}
-                        <div 
-                            className="absolute left-0 right-0 pointer-events-none bg-blue-500/[0.04] border-y border-blue-500/10 z-0 transition-all duration-75"
-                            style={{
-                                top: `${(cursorPos.line - 1) * 24 + 16}px`,
-                                height: "24px"
-                            }}
-                        />
-
-                        {/* Solid, Visible, High-Performance Textarea */}
-                        <textarea
-                            ref={textareaRef}
-                            value={activeFile.content}
-                            onChange={(e) => onChangeCode(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            onKeyUp={updateCursorPosition}
-                            onClick={updateCursorPosition}
-                            onScroll={handleScroll}
-                            spellCheck={false}
-                            autoCapitalize="off"
-                            autoComplete="off"
-                            autoCorrect="off"
-                            className="absolute inset-0 p-4 font-mono text-xs sm:text-sm leading-6 resize-none bg-transparent text-slate-100 caret-cyan-400 focus:outline-none focus:ring-0 selection:bg-blue-600 selection:text-white border-none z-10 m-0 overflow-auto whitespace-pre font-medium"
-                            style={{
-                                tabSize: 4
-                            }}
-                        />
-                    </div>
-                ) : (
-                    /* Syntax Highlighted Preview View */
-                    <div className="flex-grow h-full overflow-auto p-4 font-mono text-xs sm:text-sm leading-6 select-text whitespace-pre">
-                        {lines.map((line, idx) => (
-                            <div 
-                                key={idx}
-                                dangerouslySetInnerHTML={{ __html: highlightLine(line) }}
-                                className="leading-6"
-                            />
-                        ))}
-                    </div>
-                )}
+                {/* Editor Container with Prism Theme */}
+                <div 
+                    ref={editorScrollRef}
+                    onScroll={handleScroll}
+                    className="flex-grow h-full overflow-auto relative custom-prism-editor font-mono text-xs sm:text-sm selection:bg-blue-600/40 selection:text-white"
+                >
+                    <Editor
+                        value={activeFile.content}
+                        onValueChange={onChangeCode}
+                        highlight={highlightCode}
+                        padding={16}
+                        tabSize={4}
+                        insertSpaces={true}
+                        style={{
+                            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                            fontSize: 13,
+                            lineHeight: "24px",
+                            minHeight: "100%",
+                            backgroundColor: "transparent",
+                            outline: "none"
+                        }}
+                    />
+                </div>
 
             </div>
 
@@ -312,11 +239,7 @@ export default function CodeStudioEditor({
                 <div className="flex items-center gap-3">
                     <span className="flex items-center gap-1.5 text-blue-400 font-bold">
                         <Terminal size={12} />
-                        <span>SkillForge Language Engine</span>
-                    </span>
-                    <span>•</span>
-                    <span className="text-slate-300">
-                        Ln {cursorPos.line}, Col {cursorPos.col}
+                        <span>SkillForge Prism Engine</span>
                     </span>
                     <span>•</span>
                     <span>{lines.length} lines</span>
@@ -325,7 +248,7 @@ export default function CodeStudioEditor({
                 <div className="flex items-center gap-4 text-slate-400">
                     <span className="flex items-center gap-1 text-emerald-400">
                         <CheckCheck size={12} />
-                        <span>Smart Indentation</span>
+                        <span>Syntax Highlighted</span>
                     </span>
                     <span>UTF-8</span>
                     <span className="text-cyan-400 font-bold">{getFileBadge(activeFile.name).label}</span>

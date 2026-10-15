@@ -87,3 +87,45 @@ input[type=range]::-webkit-slider-thumb {
 .group\/volume:hover input[type=range]::-webkit-slider-thumb {
   opacity: 1;
 }
+
+/* Custom CodeStudio Prism Editor Theme Overrides */
+.custom-prism-editor textarea {
+  outline: none !important;
+}
+.custom-prism-editor textarea:focus {
+  outline: none !important;
+}
+.custom-prism-editor pre {
+  pointer-events: none;
+}
+.token.keyword {
+  color: #c084fc !important;
+  font-weight: 600;
+}
+.token.function {
+  color: #60a5fa !important;
+}
+.token.string {
+  color: #34d399 !important;
+}
+.token.number {
+  color: #fb923c !important;
+}
+.token.comment {
+  color: #64748b !important;
+  font-style: italic;
+}
+.token.class-name,
+.token.builtin {
+  color: #38bdf8 !important;
+}
+.token.operator,
+.token.punctuation {
+  color: #94a3b8 !important;
+}
+.token.boolean {
+  color: #f43f5e !important;
+}
+.token.macro {
+  color: #fbbf24 !important;
+}
