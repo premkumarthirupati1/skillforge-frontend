@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import SkillForgeLogo from "./SkillForgeLogo";
 import { getProjectWorkspaceData } from "../data/projectWorkspacesData";
+import toast from "react-hot-toast";
 
 /**
  * ProjectLaunchModal
@@ -555,6 +556,13 @@ export default function ProjectLaunchModal({ project, isOpen, onClose }) {
 
                     <button
                         onClick={() => {
+                            const token = localStorage.getItem("token");
+                            if (!token) {
+                                toast.error("Please sign in to launch the workspace and track your progress", { icon: "🔒" });
+                                onClose();
+                                navigate("/login", { state: { from: `/projects/${project.id}/workspace` } });
+                                return;
+                            }
                             onClose();
                             navigate(`/projects/${project.id}/workspace`);
                         }}

@@ -1,6 +1,8 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import toast from "react-hot-toast";
+import api from "../../api";
 import { 
     Search, 
     Filter, 
@@ -90,6 +92,31 @@ export default function ProjectsGallery() {
         }
     });
 
+    // Synchronize user builds with backend database
+    useEffect(() => {
+        if (!isLoggedIn) return;
+        api.get("/projects/builds")
+            .then(res => {
+                if (res.data?.builds && Array.isArray(res.data.builds) && res.data.builds.length > 0) {
+                    const mapped = res.data.builds.map(b => ({
+                        id: b.projectId,
+                        projectId: b.projectId,
+                        title: b.projectTitle || b.projectId,
+                        track: b.track || "Systems",
+                        currentMilestone: b.currentMilestone || 1,
+                        totalMilestones: 5,
+                        percent: b.percent || 0,
+                        branch: "main",
+                        lastActivity: new Date(b.lastActive || Date.now()).toLocaleDateString(),
+                        status: b.status === "completed" ? "Verified" : "Active Runtime",
+                        tech: []
+                    }));
+                    setUserBuilds(mapped);
+                }
+            })
+            .catch(() => { /* fallback to local storage */ });
+    }, [isLoggedIn]);
+
     const setTab = (tab) => {
         setSearchParams(prev => {
             const next = new URLSearchParams(prev);
@@ -99,34 +126,39 @@ export default function ProjectsGallery() {
     };
 
     const handleStartProject = (project) => {
-        if (isLoggedIn) {
-            setUserBuilds(prev => {
-                const exists = prev.find(b => b.projectId === project.id);
-                if (exists) return prev;
-                const newBuild = {
-                    id: project.id,
-                    projectId: project.id,
-                    title: project.title,
-                    track: project.track,
-                    currentMilestone: 1,
-                    totalMilestones: project.milestones?.length || 5,
-                    percent: 0,
-                    testsPassed: 0,
-                    totalTests: project.milestones?.reduce((acc, m) => acc + (m.testCount || 0), 0) || 25,
-                    branch: "main",
-                    lastActivity: "Just now",
-                    status: "Active Runtime",
-                    tech: project.techStack
-                };
-                const updated = [newBuild, ...prev];
-                try {
-                    localStorage.setItem("skillforge_user_builds", JSON.stringify(updated));
-                } catch (e) {
-                    console.error("Failed to save build to localStorage", e);
-                }
-                return updated;
-            });
+        if (!isLoggedIn) {
+            toast.error("Please sign in to launch the workspace and track your progress", { icon: "🔒" });
+            navigate("/login", { state: { from: `/projects/${project.id}/workspace` } });
+            return;
         }
+
+        setUserBuilds(prev => {
+            const exists = prev.find(b => b.projectId === project.id);
+            if (exists) return prev;
+            const newBuild = {
+                id: project.id,
+                projectId: project.id,
+                title: project.title,
+                track: project.track,
+                currentMilestone: 1,
+                totalMilestones: project.milestones?.length || 5,
+                percent: 0,
+                testsPassed: 0,
+                totalTests: project.milestones?.reduce((acc, m) => acc + (m.testCount || 0), 0) || 25,
+                branch: "main",
+                lastActivity: "Just now",
+                status: "Active Runtime",
+                tech: project.techStack
+            };
+            const updated = [newBuild, ...prev];
+            try {
+                localStorage.setItem("skillforge_user_builds", JSON.stringify(updated));
+            } catch (e) {
+                console.error("Failed to save build to localStorage", e);
+            }
+            return updated;
+        });
+
         setActiveModalProject(project);
     };
 

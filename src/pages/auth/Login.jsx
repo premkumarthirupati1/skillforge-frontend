@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import api from "../../api";
 import NavBar from "../../components/NavBar";
@@ -8,6 +8,7 @@ import { toast } from "react-hot-toast";
 
 function Login() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -62,7 +63,8 @@ function Login() {
             }
 
             toast.success("Welcome back!");
-            navigate("/dashboard");
+            const destination = location.state?.from?.pathname || location.state?.from || "/dashboard";
+            navigate(destination, { replace: true });
         } catch (err) {
             const errorMsg = err.response?.data?.message || "Incorrect credentials. Please check your email and password.";
             setError(errorMsg);

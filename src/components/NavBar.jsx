@@ -130,13 +130,19 @@ function NavBar() {
                             </Link>
                         ))
                     ) : (
-                        ['Courses', 'Tracks', 'Challenges', 'Community'].map((item) => (
+                        [
+                            { name: 'Courses', path: '/courses' },
+                            { name: 'Learning Paths', path: '/tracks' },
+                            { name: 'Challenges', path: '/challenges' },
+                            { name: 'Projects', path: '/projects' },
+                            { name: 'Community', path: '/community' },
+                        ].map((item) => (
                             <Link 
-                                key={item}
-                                to={`/${item.toLowerCase()}`}
+                                key={item.name}
+                                to={item.path}
                                 className="text-sm font-medium text-brand-muted hover:text-brand-text transition-colors duration-200"
                             >
-                                {item}
+                                {item.name}
                             </Link>
                         ))
                     )}
@@ -178,7 +184,7 @@ function NavBar() {
                         </motion.button>
                     )}
 
-                    <div className="hidden lg:flex relative group w-52 xl:w-64">
+                    <div className="hidden lg:flex relative group w-44 xl:w-56">
                         <SearchBar placeholder="Search..." />
                     </div>
 
@@ -228,14 +234,24 @@ function NavBar() {
                             </div>
                         </>
                     ) : (
-                        <motion.button 
-                            whileHover={{ scale: 1.04 }}
-                            whileTap={{ scale: 0.96 }}
-                            onClick={() => navigate("/login")} 
-                            className="bg-brand-text text-brand-bg hover:bg-brand-text/90 px-5 py-1.5 rounded-md text-sm font-semibold transition-all shadow-sm"
-                        >
-                            Sign In
-                        </motion.button>
+                        <div className="flex items-center gap-2 sm:gap-3">
+                            <motion.button 
+                                whileHover={{ scale: 1.03 }}
+                                whileTap={{ scale: 0.97 }}
+                                onClick={() => navigate("/login")} 
+                                className="text-sm font-semibold text-brand-muted hover:text-brand-text px-2.5 py-1.5 transition-colors hidden sm:block"
+                            >
+                                Sign In
+                            </motion.button>
+                            <motion.button 
+                                whileHover={{ scale: 1.03 }}
+                                whileTap={{ scale: 0.97 }}
+                                onClick={() => navigate("/signup")} 
+                                className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-[0_0_15px_rgba(37,99,235,0.3)] shrink-0"
+                            >
+                                Get started
+                            </motion.button>
+                        </div>
                     )}
                 </div>
             </div>

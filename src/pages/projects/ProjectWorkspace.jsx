@@ -48,10 +48,26 @@ import CodeStudioEditor from "../../components/workspace/CodeStudioEditor";
 import CommandPalette from "../../components/workspace/CommandPalette";
 import FileExplorerTree from "../../components/workspace/FileExplorerTree";
 import toast from "react-hot-toast";
+import api from "../../api";
 
 export default function ProjectWorkspace() {
     const { projectId } = useParams();
     const navigate = useNavigate();
+
+    // Strict Authentication Guard: Unauthenticated users are not permitted to enter any project workspace
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        if (!token) {
+            toast.error("Please sign in to access the engineering workspace and track your progress", {
+                icon: "🔒",
+                id: "auth-guard-workspace"
+            });
+            navigate("/login", {
+                replace: true,
+                state: { from: `/projects/${projectId}/workspace` }
+            });
+        }
+    }, [projectId, navigate]);
 
     // Find project metadata
     const project = useMemo(() => {
@@ -243,6 +259,48 @@ export default function ProjectWorkspace() {
         return () => clearInterval(timer);
     }, [project.id]);
 
+    // Remote Progress Synchronization: Fetch user's saved milestones and progress from backend database
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        if (!token || !project?.id) return;
+
+        let isMounted = true;
+        api.get(`/projects/progress/${project.id}`)
+            .then((res) => {
+                if (!isMounted) return;
+                const progress = res.data?.progress;
+                if (progress) {
+                    if (Array.isArray(progress.verifiedMilestones) && progress.verifiedMilestones.length > 0) {
+                        setVerifiedMilestones(new Set(progress.verifiedMilestones));
+                        try {
+                            localStorage.setItem(`skillforge_verified_${project.id}`, JSON.stringify(progress.verifiedMilestones));
+                        } catch (e) {}
+                    }
+                    if (typeof progress.currentMilestone === "number" && progress.currentMilestone >= 0) {
+                        const validIdx = Math.min(progress.currentMilestone, (project.milestones?.length || 5) - 1);
+                        setCurrentMilestoneIndex(validIdx);
+                        setSelectedRoadmapIdx(validIdx);
+                        try {
+                            localStorage.setItem(`skillforge_active_milestone_${project.id}`, validIdx.toString());
+                        } catch (e) {}
+                    }
+                    if (typeof progress.secondsElapsed === "number" && progress.secondsElapsed > 0) {
+                        setSecondsElapsed(progress.secondsElapsed);
+                        try {
+                            localStorage.setItem(`skillforge_timer_${project.id}`, progress.secondsElapsed.toString());
+                        } catch (e) {}
+                    }
+                }
+            })
+            .catch((err) => {
+                console.debug("Remote progress fetch:", err.message);
+            });
+
+        return () => {
+            isMounted = false;
+        };
+    }, [project?.id]);
+
     // Format seconds into HH:MM:SS or MM:SS
     const formattedTime = useMemo(() => {
         const hrs = Math.floor(secondsElapsed / 3600);
@@ -399,6 +457,13 @@ export default function ProjectWorkspace() {
         prompt = null, 
         requestedLevel = null 
     } = {}) => {
+        const token = localStorage.getItem("token");
+        if (!token) {
+            toast.error("Please sign in to access the AI Coding Mentor", { icon: "🔒" });
+            navigate("/login", { state: { from: `/projects/${projectId}/workspace` } });
+            return;
+        }
+
         // Open the AI Mentor panel in the sidebar
         setSpecTab("copilot");
         setIsSpecsCollapsed(false);
@@ -492,6 +557,14 @@ export default function ProjectWorkspace() {
     // Handle Run Tests Action
     const handleRunTests = async () => {
         if (isRunningTests) return;
+
+        const token = localStorage.getItem("token");
+        if (!token) {
+            toast.error("Please sign in to run tests and save project progress", { icon: "🔒" });
+            navigate("/login", { state: { from: `/projects/${projectId}/workspace` } });
+            return;
+        }
+
         setIsRunningTests(true);
 
         const language = (workspaceData.language || project.language || "rust").toLowerCase();
@@ -541,14 +614,21 @@ export default function ProjectWorkspace() {
                 }));
 
                 // Mark current milestone verified!
+                let updatedVerifiedList = [];
                 setVerifiedMilestones(prev => {
                     const next = new Set(prev);
                     next.add(currentMilestoneIndex);
+                    updatedVerifiedList = [...next];
                     try {
-                        localStorage.setItem(`skillforge_verified_${project.id}`, JSON.stringify([...next]));
+                        localStorage.setItem(`skillforge_verified_${project.id}`, JSON.stringify(updatedVerifiedList));
                     } catch (e) {}
                     return next;
                 });
+
+                const totalMilestones = project.milestones?.length || 5;
+                const isFinalMilestone = currentMilestoneIndex + 1 === totalMilestones;
+                const nextMilestone = Math.min(totalMilestones, currentMilestoneIndex + 2);
+                const percent = Math.min(100, Math.round(((currentMilestoneIndex + 1) / totalMilestones) * 100));
 
                 // Persist progress to local user builds
                 try {
@@ -557,9 +637,9 @@ export default function ProjectWorkspace() {
                     const newEntry = {
                         projectId: project.id,
                         title: project.title,
-                        currentMilestone: Math.min((project.milestones?.length || 5), currentMilestoneIndex + 2),
+                        currentMilestone: nextMilestone,
                         lastActive: new Date().toISOString(),
-                        status: currentMilestoneIndex + 1 === (project.milestones?.length || 5) ? "completed" : "in_progress"
+                        status: isFinalMilestone ? "completed" : "in_progress"
                     };
                     if (existingIdx !== -1) {
                         savedBuilds[existingIdx] = newEntry;
@@ -569,6 +649,22 @@ export default function ProjectWorkspace() {
                     localStorage.setItem("skillforge_user_builds", JSON.stringify(savedBuilds));
                 } catch (e) {
                     console.error("Failed to update user builds", e);
+                }
+
+                // Synchronize progress to backend database
+                if (token) {
+                    api.post("/projects/progress", {
+                        projectId: project.id,
+                        projectTitle: project.title,
+                        track: project.track,
+                        currentMilestone: currentMilestoneIndex,
+                        verifiedMilestones: updatedVerifiedList.length > 0 ? updatedVerifiedList : [currentMilestoneIndex],
+                        status: isFinalMilestone ? "completed" : "in_progress",
+                        percent,
+                        secondsElapsed
+                    }).catch(err => {
+                        console.error("Failed to sync progress to database", err);
+                    });
                 }
 
                 toast.success(`Milestone ${currentMilestoneIndex + 1} passed all test assertions!`);

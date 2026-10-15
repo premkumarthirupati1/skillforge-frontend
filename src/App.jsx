@@ -72,8 +72,16 @@ function App() {
         <Route path="/tracks" element={<CourseShowcase />} />
         <Route path="/skills" element={<CourseShowcase />} />
         <Route path="/projects" element={<ProjectsGallery />} />
-        <Route path="/projects/:projectId" element={<ProjectWorkspace />} />
-        <Route path="/projects/:projectId/workspace" element={<ProjectWorkspace />} />
+        <Route path="/projects/:projectId" element={
+          <ProtectedRoute>
+            <ProjectWorkspace />
+          </ProtectedRoute>
+        } />
+        <Route path="/projects/:projectId/workspace" element={
+          <ProtectedRoute>
+            <ProjectWorkspace />
+          </ProtectedRoute>
+        } />
         <Route path="/challenges" element={<ComingSoon title="Coding Challenges" />} />
         <Route path="/community" element={<ComingSoon title="Community Hub" />} />
 
