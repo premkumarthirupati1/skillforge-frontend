@@ -57,11 +57,19 @@ api.interceptors.response.use(
             isRefreshing = true;
             
             try {
-                // Ping the backend refresh endpoint (it reads the HttpOnly cookie automatically)
-                const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, {}, { withCredentials: true });
+                // Ping the backend refresh endpoint (reads HttpOnly cookie with fallback to body token)
+                const storedRefreshToken = localStorage.getItem("refreshToken");
+                const { data } = await axios.post(
+                    `${API_BASE_URL}/auth/refresh`, 
+                    { refreshToken: storedRefreshToken }, 
+                    { withCredentials: true }
+                );
                 
                 const newToken = data.token;
                 localStorage.setItem("token", newToken);
+                if (data.refreshToken) {
+                    localStorage.setItem("refreshToken", data.refreshToken);
+                }
                 
                 // Retry original request with new token
                 originalRequest.headers.Authorization = `Bearer ${newToken}`;
@@ -73,6 +81,7 @@ api.interceptors.response.use(
                 
                 // If refresh fails (e.g. refresh token expired), clear out storage
                 localStorage.removeItem("token");
+                localStorage.removeItem("refreshToken");
                 localStorage.removeItem("userId");
                 localStorage.removeItem("role");
                 window.location.href = "/login";

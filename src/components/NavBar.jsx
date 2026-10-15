@@ -30,8 +30,11 @@ function NavBar() {
             console.error("Logout request failed", err);
         }
         localStorage.removeItem("token");
+        localStorage.removeItem("refreshToken");
         localStorage.removeItem("userId");
         localStorage.removeItem("role");
+        localStorage.removeItem("userName");
+        localStorage.removeItem("userEmail");
         navigate('/');
     };
 

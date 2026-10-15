@@ -118,6 +118,9 @@ function Signup() {
             // Store credentials and auto-login
             if (res.data?.token) {
                 localStorage.setItem("token", res.data.token);
+                if (res.data.refreshToken) {
+                    localStorage.setItem("refreshToken", res.data.refreshToken);
+                }
                 if (res.data.user) {
                     localStorage.setItem("userId", res.data.user.id);
                     localStorage.setItem("role", res.data.user.role);
