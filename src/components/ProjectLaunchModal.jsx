@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
     X, 
@@ -23,6 +24,7 @@ import SkillForgeLogo from "./SkillForgeLogo";
  * into The Code Anvil with compiler startup sequence, blinking anvil, and project brief.
  */
 export default function ProjectLaunchModal({ project, isOpen, onClose }) {
+    const navigate = useNavigate();
     const [bootPhase, setBootPhase] = useState(1); // 1: Main Logo, 2: Morphing to Anvil, 3: Anvil Compiler Blinking / Booting, 4: Ready
     const [terminalLines, setTerminalLines] = useState([]);
     const [copied, setCopied] = useState(false);
@@ -260,7 +262,10 @@ export default function ProjectLaunchModal({ project, isOpen, onClose }) {
                     </button>
 
                     <button
-                        onClick={() => alert(`Launching compiler workspace for "${project.title}"! Phase 2 will bring the live in-browser Monaco IDE.`)}
+                        onClick={() => {
+                            onClose();
+                            navigate(`/projects/${project.id}/workspace`);
+                        }}
                         disabled={bootPhase < 3}
                         className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-[0_0_25px_rgba(37,99,235,0.4)] flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
                     >

@@ -346,7 +346,7 @@ export default function ProjectsGallery() {
                                             </div>
 
                                             <button
-                                                onClick={() => handleStartProject(activeProjectFromBuild(build.projectId))}
+                                                onClick={() => navigate(`/projects/${build.projectId}/workspace`)}
                                                 className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shrink-0 transition-all shadow-sm flex items-center gap-1.5"
                                             >
                                                 <Play size={12} fill="currentColor" />
@@ -650,7 +650,7 @@ export default function ProjectsGallery() {
 
                                             <div className="flex items-center gap-3 shrink-0">
                                                 <button
-                                                    onClick={() => setTab("sandbox")}
+                                                    onClick={() => navigate(`/projects/${build.projectId}/workspace`)}
                                                     className="px-4 py-2.5 rounded-xl bg-brand-elevated hover:bg-brand-surface border border-brand-border text-slate-700 dark:text-slate-200 text-xs font-bold transition-all flex items-center gap-2"
                                                 >
                                                     <Terminal size={14} className="text-blue-500" />
@@ -658,7 +658,7 @@ export default function ProjectsGallery() {
                                                 </button>
 
                                                 <button
-                                                    onClick={() => handleStartProject(activeProjectFromBuild(build.projectId))}
+                                                    onClick={() => navigate(`/projects/${build.projectId}/workspace`)}
                                                     className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md flex items-center gap-2"
                                                 >
                                                     <Play size={13} fill="currentColor" />
@@ -707,11 +707,11 @@ export default function ProjectsGallery() {
                                 <p className="text-xs sm:text-sm text-brand-muted">Isolated Linux microVM container running live automated test runners.</p>
                             </div>
                             <button
-                                onClick={() => setActiveModalProject(PROJECTS[0])}
+                                onClick={() => navigate('/projects/redis-clone/workspace')}
                                 className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all flex items-center gap-2 shadow-md shadow-blue-500/20"
                             >
                                 <Play size={13} fill="currentColor" />
-                                <span>Launch Full Monaco IDE</span>
+                                <span>Launch Full Workspace</span>
                             </button>
                         </div>
 

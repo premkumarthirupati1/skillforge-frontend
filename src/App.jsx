@@ -12,6 +12,7 @@ import CourseShowcase from "./pages/courses/CourseShowcase";
 import CourseDetails from "./pages/courses/CourseDetails";
 import CourseView from "./pages/courses/CourseView";
 import ProjectsGallery from "./pages/projects/ProjectsGallery";
+import ProjectWorkspace from "./pages/projects/ProjectWorkspace";
 
 // Module & Curriculum Management (Studio)
 import ModuleEditor from "./pages/modules/ModuleEditor";
@@ -71,6 +72,8 @@ function App() {
         <Route path="/tracks" element={<CourseShowcase />} />
         <Route path="/skills" element={<CourseShowcase />} />
         <Route path="/projects" element={<ProjectsGallery />} />
+        <Route path="/projects/:projectId" element={<ProjectWorkspace />} />
+        <Route path="/projects/:projectId/workspace" element={<ProjectWorkspace />} />
         <Route path="/challenges" element={<ComingSoon title="Coding Challenges" />} />
         <Route path="/community" element={<ComingSoon title="Community Hub" />} />
 
