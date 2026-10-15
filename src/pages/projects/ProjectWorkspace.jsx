@@ -429,17 +429,43 @@ export default function ProjectWorkspace() {
                 hintLevel: targetLevel
             });
 
+            // Resilient unpacker: If hint or diagnosis is a JSON string, extract individual fields
+            let cleanDiagnosis = advice.diagnosis || "";
+            let cleanHint = advice.hint || "";
+            let cleanPattern = advice.codePattern || "";
+            let cleanLine = line || advice.targetLine || null;
+            let cleanPrompts = advice.quickPrompts || [];
+
+            if (typeof cleanHint === "string" && (cleanHint.trim().startsWith("{") || cleanHint.includes('"diagnosis"') || cleanHint.includes('"hint"'))) {
+                try {
+                    const sanitized = cleanHint.replace(/"(diagnosis|hint|targetLine|codePattern|quickPrompts):\s*/g, '"$1": "');
+                    const inner = JSON.parse(sanitized);
+                    if (inner.hint) cleanHint = inner.hint;
+                    if (inner.diagnosis) cleanDiagnosis = inner.diagnosis;
+                    if (inner.codePattern) cleanPattern = inner.codePattern;
+                    if (inner.targetLine) cleanLine = inner.targetLine;
+                    if (Array.isArray(inner.quickPrompts) && inner.quickPrompts.length > 0) cleanPrompts = inner.quickPrompts;
+                } catch (e) {
+                    const hintM = cleanHint.match(/"hint"\s*:\s*"([^"]+)"/i) || cleanHint.match(/"hint:\s*([^"]+)"/i);
+                    if (hintM) cleanHint = hintM[1];
+                    const diagM = cleanHint.match(/"diagnosis"\s*:\s*"([^"]+)"/i);
+                    if (diagM && !cleanDiagnosis) cleanDiagnosis = diagM[1];
+                    const patM = cleanHint.match(/"codePattern"\s*:\s*"([^"]+)"/i);
+                    if (patM && !cleanPattern) cleanPattern = patM[1].replace(/\\n/g, "\n");
+                }
+            }
+
             setAiMentorState(prev => ({
                 ...prev,
                 isLoading: false,
-                diagnosis: advice.diagnosis,
-                hint: advice.hint,
+                diagnosis: cleanDiagnosis,
+                hint: cleanHint,
                 level: advice.level || targetLevel,
-                targetLine: line || advice.targetLine,
-                codePattern: advice.codePattern || "",
-                quickPrompts: advice.quickPrompts || prev.quickPrompts,
+                targetLine: cleanLine,
+                codePattern: cleanPattern,
+                quickPrompts: cleanPrompts.length > 0 ? cleanPrompts : prev.quickPrompts,
                 modelUsed: advice.modelUsed,
-                history: prompt ? [...prev.history, { query: prompt, reply: advice.hint }] : prev.history
+                history: prompt ? [...prev.history, { query: prompt, reply: cleanHint }] : prev.history
             }));
 
             if ((line || advice.targetLine) && (line > 0 || advice.targetLine > 0)) {
