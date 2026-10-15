@@ -15,7 +15,6 @@ import {
     Code2,
     Play
 } from "lucide-react";
-import CodeAnvilLogo from "./CodeAnvilLogo";
 import SkillForgeLogo from "./SkillForgeLogo";
 
 /**
@@ -147,19 +146,19 @@ export default function ProjectLaunchModal({ project, isOpen, onClose }) {
                                         </span>
                                     </motion.div>
                                 ) : (
-                                    /* Phase 2, 3, 4: The Code Anvil Logo Blinking in Compiler */
+                                    /* Phase 2, 3, 4: SkillForge Logo in Compiler Runtime */
                                     <motion.div
                                         key="step-anvil"
-                                        initial={{ opacity: 0, scale: 0.7, filter: "blur(12px)" }}
+                                        initial={{ opacity: 0, scale: 0.85, filter: "blur(12px)" }}
                                         animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
                                         transition={{ duration: 0.6, type: "spring", stiffness: 120 }}
                                         className="flex flex-col items-center gap-3"
                                     >
                                         <div className="relative">
-                                            {/* Compiler Blinking Anvil Effect */}
-                                            <CodeAnvilLogo 
-                                                size="2xl" 
-                                                pulsing={bootPhase === 2 || bootPhase === 3} 
+                                            <div className="absolute inset-0 bg-blue-500/25 blur-xl rounded-full animate-pulse scale-125" />
+                                            <SkillForgeLogo 
+                                                size="xl" 
+                                                className="relative z-10 drop-shadow-[0_0_20px_rgba(37,99,235,0.7)]" 
                                             />
                                         </div>
                                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-300 text-xs font-mono font-bold uppercase tracking-widest">
@@ -176,7 +175,7 @@ export default function ProjectLaunchModal({ project, isOpen, onClose }) {
                         {/* Status Label Below Logo */}
                         <p className="relative z-10 text-xs text-slate-400 max-w-sm mt-4 font-medium">
                             {bootPhase < 4 
-                                ? "Switching from study mode to interactive compiler sandbox. Blinking Code Anvil indicates container allocation."
+                                ? "Switching from study mode to interactive compiler sandbox. Initializing container allocation."
                                 : "Runtime container synchronized. All automated test suites and specifications ready."
                             }
                         </p>

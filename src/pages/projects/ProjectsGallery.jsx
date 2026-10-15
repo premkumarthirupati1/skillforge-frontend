@@ -16,13 +16,10 @@ import {
     CheckCircle2, 
     Flame,
     Code2,
-    Play,
-    Film,
-    RotateCcw
+    Play
 } from "lucide-react";
 import NavBar from "../../components/NavBar";
-import CodeAnvilLogo from "../../components/CodeAnvilLogo";
-import ForgeHeroVideo from "../../components/ForgeHeroVideo";
+import SkillForgeLogo from "../../components/SkillForgeLogo";
 import ForgeVideoIntro from "../../components/ForgeVideoIntro";
 import ProjectLaunchModal from "../../components/ProjectLaunchModal";
 import { PROJECTS, PROJECT_TRACKS, DIFFICULTY_LEVELS } from "../../data/projectsData";
@@ -33,7 +30,7 @@ export default function ProjectsGallery() {
     const [searchQuery, setSearchQuery] = useState("");
     const [activeModalProject, setActiveModalProject] = useState(null);
 
-    // Play intro video once per session, or allow manual replay
+    // Play pure transition video once on entrance
     const [showIntroVideo, setShowIntroVideo] = useState(() => {
         return !sessionStorage.getItem("sf_has_seen_forge_video");
     });
@@ -73,7 +70,7 @@ export default function ProjectsGallery() {
         <div className="min-h-screen bg-brand-bg text-brand-text flex flex-col selection:bg-blue-600/30 selection:text-white">
             <NavBar />
 
-            {/* Automated Cinematic Video Transition on Entry */}
+            {/* Pure Fullscreen Video Transition (Zero details, only the video) */}
             <ForgeVideoIntro 
                 isOpen={showIntroVideo} 
                 onClose={handleDismissIntro} 
@@ -88,45 +85,24 @@ export default function ProjectsGallery() {
             <main className="relative z-10 flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-12">
                 
                 {/* ======================================================== */}
-                {/* 1. HERO SECTION & EMBEDDED TRANSITION VIDEO             */}
+                {/* 1. HERO SECTION                                         */}
                 {/* ======================================================== */}
-                <div className="space-y-8">
-                    
-                    {/* Hero Header */}
-                    <div className="text-center max-w-3xl mx-auto space-y-4">
-                        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-mono font-bold uppercase tracking-widest shadow-sm">
-                            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                            <span>The Project Forge • Interactive Engineering</span>
-                        </div>
-
-                        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-tight">
-                            Build Real Systems. <br className="hidden sm:inline" />
-                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-cyan-300 to-indigo-400">
-                                Not Just Syntax.
-                            </span>
-                        </h1>
-
-                        <p className="text-brand-muted text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
-                            Graduate from tutorial hell. Work like an engineer at top tech companies with real architectural PRDs, automated test suites, and in-browser sandboxing.
-                        </p>
-
-                        {/* Replay Fullscreen Transition Video Pill */}
-                        <div className="pt-2">
-                            <button
-                                onClick={() => setShowIntroVideo(true)}
-                                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono font-bold text-slate-300 hover:text-white transition-all shadow-sm active:scale-95"
-                            >
-                                <Film size={14} className="text-blue-400" />
-                                <span>Replay Fullscreen Transition Video</span>
-                            </button>
-                        </div>
+                <div className="text-center max-w-3xl mx-auto space-y-4">
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-mono font-bold uppercase tracking-widest shadow-sm">
+                        <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                        <span>The Project Forge • Interactive Engineering</span>
                     </div>
 
-                    {/* EMBEDDED TRANSITION VIDEO PLAYER (Replaces awkward button widget) */}
-                    <div className="max-w-3xl mx-auto">
-                        <ForgeHeroVideo />
-                    </div>
+                    <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-tight">
+                        Build Real Systems. <br className="hidden sm:inline" />
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-cyan-300 to-indigo-400">
+                            Not Just Syntax.
+                        </span>
+                    </h1>
 
+                    <p className="text-brand-muted text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+                        Graduate from tutorial hell. Work like an engineer at top tech companies with real architectural PRDs, automated test suites, and in-browser sandboxing.
+                    </p>
                 </div>
 
                 {/* ======================================================== */}
@@ -339,9 +315,9 @@ export default function ProjectsGallery() {
 
                                         <button
                                             onClick={() => setActiveModalProject(project)}
-                                            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] flex items-center gap-1.5 active:scale-95 group/btn"
+                                            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] flex items-center gap-2 active:scale-95 group/btn"
                                         >
-                                            <CodeAnvilLogo size="sm" className="scale-75 -mr-1" />
+                                            <SkillForgeLogo iconOnly={true} size="sm" className="h-4 w-auto object-contain shrink-0" />
                                             <span>Start Project</span>
                                             <ArrowRight size={13} className="group-hover/btn:translate-x-0.5 transition-transform" />
                                         </button>
