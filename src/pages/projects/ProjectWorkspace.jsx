@@ -24,14 +24,21 @@ import {
     Maximize2,
     Minimize2,
     GripHorizontal,
+    GripVertical,
     Code2,
     Milestone,
-    Target
+    Target,
+    Folder,
+    FolderTree,
+    Search,
+    Command
 } from "lucide-react";
 import { PROJECTS } from "../../data/projectsData";
 import { getProjectWorkspaceData } from "../../data/projectWorkspacesData";
 import { executeProjectTests, isClientSideLanguage } from "../../services/codeRunnerService";
 import CodeStudioEditor from "../../components/workspace/CodeStudioEditor";
+import CommandPalette from "../../components/workspace/CommandPalette";
+import FileExplorerTree from "../../components/workspace/FileExplorerTree";
 import toast from "react-hot-toast";
 
 export default function ProjectWorkspace() {
@@ -78,7 +85,6 @@ export default function ProjectWorkspace() {
             try {
                 const parsed = JSON.parse(saved);
                 // Stale cache migration: check if files have mismatched language syntax
-                // e.g. Python file containing JS comments/exports from old fallback generator
                 const isStale = Array.isArray(parsed) && parsed.some(f => 
                     (f.name?.endsWith('.py') && (f.content?.includes('// SkillForge') || f.content?.includes('module.exports'))) ||
                     (f.name?.endsWith('.rs') && f.content?.includes('console.log')) ||
@@ -94,10 +100,21 @@ export default function ProjectWorkspace() {
 
     const [activeFileName, setActiveFileName] = useState(workspaceData.files[0]?.name || "main.rs");
 
-    // State: Left panel tab ('roadmap' | 'spec' | 'prereq' | 'prd' | 'hints')
+    // State: Active Sidebar Navigation ('explorer' | 'roadmap' | 'spec' | 'prereq' | 'prd' | 'hints')
     const [specTab, setSpecTab] = useState("spec");
     const [selectedRoadmapIdx, setSelectedRoadmapIdx] = useState(0);
     const [isSpecsCollapsed, setIsSpecsCollapsed] = useState(false);
+
+    // State: Resizable Side Panel width (persisted in localStorage)
+    const [panelWidth, setPanelWidth] = useState(() => {
+        try {
+            const saved = localStorage.getItem("skillforge_sidepanel_width");
+            return saved ? parseInt(saved, 10) || 380 : 380;
+        } catch {
+            return 380;
+        }
+    });
+    const [isDraggingPanel, setIsDraggingPanel] = useState(false);
 
     // State: Interactive prerequisites checklist
     const [checkedPrereqs, setCheckedPrereqs] = useState(() => {
@@ -122,7 +139,7 @@ export default function ProjectWorkspace() {
     };
 
     // State: Resizable terminal drawer height
-    const [terminalHeight, setTerminalHeight] = useState(250);
+    const [terminalHeight, setTerminalHeight] = useState(240);
     const [isDraggingTerminal, setIsDraggingTerminal] = useState(false);
 
     // State: Terminal tab ('tests' | 'console')
@@ -131,6 +148,13 @@ export default function ProjectWorkspace() {
     // State: Test Runner execution state
     const [isRunningTests, setIsRunningTests] = useState(false);
     const [testResults, setTestResults] = useState(null);
+
+    // State: Monaco Editor Reference & Cursor Coordinates
+    const editorInstanceRef = useRef(null);
+    const [cursorPosition, setCursorPosition] = useState({ line: 1, col: 1 });
+
+    // State: Command Palette Modal
+    const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
     // State: Terminal console output
     const [consoleLogs, setConsoleLogs] = useState([
@@ -190,7 +214,37 @@ export default function ProjectWorkspace() {
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }, [secondsElapsed]);
 
-    // Handle Terminal Drawer Drag-to-Resize
+    // Handle Horizontal Side Panel Drag-to-Resize
+    useEffect(() => {
+        const handleMouseMove = (e) => {
+            if (!isDraggingPanel) return;
+            // Left activity bar is 48px wide
+            const newWidth = e.clientX - 48;
+            if (newWidth >= 220 && newWidth <= 700) {
+                setPanelWidth(newWidth);
+            }
+        };
+
+        const handleMouseUp = () => {
+            if (isDraggingPanel) {
+                setIsDraggingPanel(false);
+                try {
+                    localStorage.setItem("skillforge_sidepanel_width", panelWidth.toString());
+                } catch (e) {}
+            }
+        };
+
+        if (isDraggingPanel) {
+            window.addEventListener("mousemove", handleMouseMove);
+            window.addEventListener("mouseup", handleMouseUp);
+        }
+        return () => {
+            window.removeEventListener("mousemove", handleMouseMove);
+            window.removeEventListener("mouseup", handleMouseUp);
+        };
+    }, [isDraggingPanel, panelWidth]);
+
+    // Handle Terminal Drawer Vertical Drag-to-Resize
     useEffect(() => {
         const handleMouseMove = (e) => {
             if (!isDraggingTerminal) return;
@@ -236,12 +290,52 @@ export default function ProjectWorkspace() {
         }
     };
 
-    // Run Automated Test Suite (Dual-Engine: In-Browser V8 or Backend Sandbox)
+    // Create New File in Workspace
+    const handleCreateFile = (newFileName) => {
+        if (!newFileName) return;
+        if (files.some(f => f.name === newFileName)) {
+            toast.error(`File ${newFileName} already exists`);
+            setActiveFileName(newFileName);
+            return;
+        }
+        const ext = newFileName.split('.').pop()?.toLowerCase() || "txt";
+        const newFile = {
+            name: newFileName,
+            path: `src/${newFileName}`,
+            language: ext,
+            content: `// ${newFileName}\n`
+        };
+        setFiles(prev => {
+            const next = [...prev, newFile];
+            try {
+                localStorage.setItem(`skillforge_files_${project.id}`, JSON.stringify(next));
+            } catch (e) {}
+            return next;
+        });
+        setActiveFileName(newFileName);
+        toast.success(`Created ${newFileName}`);
+    };
+
+    // Jump to Line in Monaco Editor
+    const jumpToLine = (lineNumber) => {
+        if (editorInstanceRef.current && lineNumber > 0) {
+            editorInstanceRef.current.revealLineInCenter(lineNumber);
+            editorInstanceRef.current.setPosition({ lineNumber, column: 1 });
+            editorInstanceRef.current.focus();
+            toast(`Navigated to line ${lineNumber}`, { icon: "📍" });
+        }
+    };
+
+    // Regex Helper to extract line number from compiler diagnostic output
+    const extractLineNumber = (output = "") => {
+        const match = output.match(/line (\d+)/i) || output.match(/:(\d+)/);
+        return match ? parseInt(match[1], 10) : null;
+    };
+
+    // Handle Run Tests Action
     const handleRunTests = async () => {
         if (isRunningTests) return;
         setIsRunningTests(true);
-        setTerminalTab("tests");
-        setTestResults({ status: "running", steps: [] });
 
         const language = (workspaceData.language || project.language || "rust").toLowerCase();
         const isClient = isClientSideLanguage(language);
@@ -289,11 +383,33 @@ export default function ProjectWorkspace() {
                     return next;
                 });
 
-                // Record milestone completion in user builds
-                updateUserBuildProgress(currentMilestoneIndex + 1);
+                // Persist progress to local user builds
+                try {
+                    const savedBuilds = JSON.parse(localStorage.getItem("skillforge_user_builds") || "[]");
+                    const existingIdx = savedBuilds.findIndex(b => b.projectId === project.id);
+                    const newEntry = {
+                        projectId: project.id,
+                        title: project.title,
+                        currentMilestone: Math.min((project.milestones?.length || 5), currentMilestoneIndex + 2),
+                        lastActive: new Date().toISOString(),
+                        status: currentMilestoneIndex + 1 === (project.milestones?.length || 5) ? "completed" : "in_progress"
+                    };
+                    if (existingIdx !== -1) {
+                        savedBuilds[existingIdx] = newEntry;
+                    } else {
+                        savedBuilds.push(newEntry);
+                    }
+                    localStorage.setItem("skillforge_user_builds", JSON.stringify(savedBuilds));
+                } catch (e) {
+                    console.error("Failed to update user builds", e);
+                }
 
-                setShowCelebration(true);
-                toast.success(`🎉 Milestone ${currentMilestoneIndex + 1} verified! (${result.duration})`);
+                toast.success(`Milestone ${currentMilestoneIndex + 1} passed all test assertions!`);
+
+                // Check if final milestone was passed
+                if (currentMilestoneIndex + 1 === (project.milestones?.length || 5)) {
+                    setShowCelebration(true);
+                }
             } else {
                 setTestResults({
                     status: "failed",
@@ -303,208 +419,149 @@ export default function ProjectWorkspace() {
                     passed: result.passed,
                     duration: result.duration,
                     steps: result.steps,
-                    error: result.stderr || "Test assertions failed"
+                    error: result.error
                 });
-                toast.error(`Tests failed: ${result.passed}/${result.total} assertions passed`);
+                toast.error("Tests failed. Review output in the bottom test drawer.");
             }
+
+            // Ensure test drawer is visible
+            if (terminalHeight < 120) {
+                setTerminalHeight(240);
+            }
+            setTerminalTab("tests");
+
         } catch (err) {
-            console.error("Test execution failed:", err);
-            setTestResults({
-                status: "failed",
-                engineLabel: "Execution Engine",
-                total: milestoneGuide?.testCases?.length || 1,
-                passed: 0,
-                duration: "0ms",
-                steps: [{ name: "Runner Execution", passed: false, duration: "0ms", output: err.message }],
-                error: err.message
-            });
-            toast.error(`Execution failed: ${err.message}`);
+            toast.error(`Execution error: ${err.message}`);
+            setConsoleLogs(prev => [...prev, `[fatal] Execution aborted: ${err.message}`]);
         } finally {
             setIsRunningTests(false);
         }
     };
 
-    // Update build progress in localStorage
-    const updateUserBuildProgress = (milestoneNum) => {
-        try {
-            const token = localStorage.getItem("token");
-            if (!token) return;
-
-            const saved = localStorage.getItem("skillforge_user_builds");
-            let builds = saved ? JSON.parse(saved) : [];
-
-            const totalM = project.milestones?.length || 5;
-            const percent = Math.min(100, Math.round((milestoneNum / totalM) * 100));
-
-            const existingIndex = builds.findIndex(b => b.projectId === project.id);
-            if (existingIndex >= 0) {
-                builds[existingIndex].currentMilestone = milestoneNum;
-                builds[existingIndex].percent = percent;
-                builds[existingIndex].lastActivity = "Just now";
-            } else {
-                builds.unshift({
-                    id: project.id,
-                    projectId: project.id,
-                    title: project.title,
-                    track: project.track,
-                    currentMilestone: milestoneNum,
-                    totalMilestones: totalM,
-                    percent,
-                    testsPassed: milestoneNum * 4,
-                    totalTests: totalM * 4,
-                    branch: `feat/milestone-${milestoneNum}`,
-                    lastActivity: "Just now",
-                    status: percent === 100 ? "Completed" : "Active Runtime",
-                    tech: project.techStack
-                });
-            }
-            localStorage.setItem("skillforge_user_builds", JSON.stringify(builds));
-        } catch (e) {
-            console.error("Failed to update user builds", e);
-        }
-    };
-
-    // Keyboard shortcut: Ctrl+Enter or Cmd+Enter to run tests
+    // Global Keyboard Shortcuts (Ctrl+P, Ctrl+Enter)
     useEffect(() => {
-        const handleKeyDown = (e) => {
+        const handleGlobalKeyDown = (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === "p") {
+                e.preventDefault();
+                setIsCommandPaletteOpen(prev => !prev);
+            }
             if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
                 e.preventDefault();
                 handleRunTests();
             }
         };
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [isRunningTests, milestoneGuide]);
+        window.addEventListener("keydown", handleGlobalKeyDown);
+        return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+    }, [handleRunTests]);
 
-    // Handle Terminal command submission
+    // Handle terminal input command
     const handleTerminalCommand = (e) => {
         e.preventDefault();
-        if (!terminalInput.trim()) return;
-
         const cmd = terminalInput.trim();
-        setConsoleLogs(prev => [...prev, `$ ${cmd}`]);
+        if (!cmd) return;
 
-        if (cmd === "test" || cmd === "npm test" || cmd === "cargo test") {
-            handleRunTests();
-        } else if (cmd === "clear") {
+        setConsoleLogs(prev => [...prev, `$ ${cmd}`]);
+        setTerminalInput("");
+
+        if (cmd === "clear") {
             setConsoleLogs([]);
-        } else if (cmd === "git status") {
-            setConsoleLogs(prev => [
-                ...prev,
-                `On branch feat/milestone-${currentMilestoneIndex + 1}`,
-                `Changes staged for commit:`,
-                `  modified: ${activeFileName}`,
-                `working tree clean`
-            ]);
-        } else {
-            setConsoleLogs(prev => [
-                ...prev,
-                `Executing ${cmd}... command exited with code 0 (8ms)`
-            ]);
+            return;
         }
 
-        setTerminalInput("");
+        if (cmd === "test" || cmd === "run") {
+            handleRunTests();
+            return;
+        }
+
+        if (cmd === "ls") {
+            setConsoleLogs(prev => [...prev, files.map(f => f.name).join("  ")]);
+            return;
+        }
+
+        if (cmd === "help") {
+            setConsoleLogs(prev => [
+                ...prev,
+                "Available commands:",
+                "  test        - Run automated verification test suite",
+                "  ls          - List workspace source files",
+                "  clear       - Clear terminal output",
+                "  help        - Display this reference manual"
+            ]);
+            return;
+        }
+
+        setConsoleLogs(prev => [...prev, `sh: command not found: ${cmd}. Type 'help' for available commands.`]);
+    };
+
+    // Activity Bar Navigation Items
+    const activityNavItems = [
+        { id: "explorer", label: "Files", icon: FolderTree, count: files.length },
+        { id: "roadmap", label: "Roadmap", icon: Milestone, count: project.milestones?.length || 5 },
+        { id: "spec", label: "Spec Guide", icon: BookOpen },
+        { id: "prereq", label: "Prereqs", icon: CheckCircle2, count: (project.prerequisites?.length || 0) },
+        { id: "prd", label: "Full PRD", icon: Layers },
+        { id: "hints", label: "Hints", icon: Sparkles }
+    ];
+
+    const handleActivityNavClick = (tabId) => {
+        if (!isSpecsCollapsed && specTab === tabId) {
+            setIsSpecsCollapsed(true);
+        } else {
+            setIsSpecsCollapsed(false);
+            setSpecTab(tabId);
+        }
     };
 
     return (
-        <div className="min-h-screen h-screen flex flex-col bg-[#070A11] text-slate-100 font-sans select-none overflow-hidden">
+        <div className="h-screen w-screen bg-[#070A11] text-white flex flex-col overflow-hidden font-sans">
             
             {/* ======================================================== */}
-            {/* TOP BAR / WORKSPACE HEADER                               */}
+            {/* TOP NAVIGATION HEADER BAR                                */}
             {/* ======================================================== */}
-            <header className="h-14 border-b border-white/10 bg-[#0A0E17] px-4 flex items-center justify-between shrink-0 z-30">
+            <header className="h-12 border-b border-white/10 bg-[#090D16] px-3 flex items-center justify-between shrink-0 select-none z-30">
                 
-                {/* Left: Brand & Breadcrumbs */}
-                <div className="flex items-center gap-3">
+                {/* Left: Project Brand & Path Breadcrumb */}
+                <div className="flex items-center gap-2 sm:gap-3 truncate">
                     <button
                         onClick={() => navigate("/projects")}
-                        className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors flex items-center gap-1.5 text-xs font-bold"
-                        title="Back to Projects Forge"
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
+                        title="Back to Project Catalog"
                     >
-                        <ArrowLeft size={14} />
-                        <span className="hidden sm:inline">Forge</span>
+                        <ArrowLeft size={16} />
                     </button>
 
-                    <div className="h-4 w-px bg-white/10" />
+                    <div className="h-4 w-px bg-white/10 hidden sm:block" />
 
-                    <div className="flex items-center gap-2">
-                        <div className="w-6 h-5 rounded-md bg-[#05070B] border border-blue-500/40 flex items-center justify-center shrink-0">
-                            <img src="/images/code-anvil-logo.png" alt="Anvil" className="h-3 w-auto object-contain" />
+                    <div className="flex items-center gap-1.5 text-xs truncate">
+                        <span className="text-slate-400 font-mono hidden md:inline">projects</span>
+                        <ChevronRight size={12} className="text-slate-600 hidden md:inline" />
+                        <span className="font-bold text-white truncate max-w-[200px] sm:max-w-xs">{project.title}</span>
+                    </div>
+
+                    {/* Active Milestone Progress Indicator */}
+                    <div className="hidden lg:flex items-center gap-2 pl-2">
+                        <div className="flex items-center gap-1 bg-[#05070B] border border-blue-500/20 px-2.5 py-1 rounded-full text-[11px] font-mono">
+                            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                            <span className="text-slate-300 font-bold">Stage {currentMilestoneIndex + 1}:</span>
+                            <span className="text-cyan-300 truncate max-w-[140px]">{currentMilestone?.title}</span>
                         </div>
-                        <h1 className="text-xs sm:text-sm font-bold text-white truncate max-w-[180px] sm:max-w-xs md:max-w-md">
-                            {project.title}
-                        </h1>
-                        <span className="hidden md:inline text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                            {project.track}
-                        </span>
                     </div>
                 </div>
 
-                {/* Center: System-Gated Milestone Stepper & Roadmap Toggle */}
-                <div className="hidden lg:flex items-center gap-2">
-                    <div className="flex items-center gap-1.5 bg-[#05070B] p-1 rounded-xl border border-white/5 text-xs font-mono">
-                        {project.milestones?.map((m, idx) => {
-                            const active = idx === currentMilestoneIndex;
-                            const isVerified = verifiedMilestones.has(idx);
-                            // Can only navigate to this milestone if it is verified, or is the current active milestone
-                            const isLocked = idx > currentMilestoneIndex && !verifiedMilestones.has(idx - 1);
-
-                            return (
-                                <button
-                                    key={m.id}
-                                    onClick={() => {
-                                        if (isLocked) {
-                                            toast.error(`Milestone ${idx + 1} is locked! Complete Milestone ${idx} tests to proceed.`);
-                                            return;
-                                        }
-                                        setCurrentMilestoneIndex(idx);
-                                        setSelectedRoadmapIdx(idx);
-                                        setTestResults(null);
-                                    }}
-                                    className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-all ${
-                                        active 
-                                            ? "bg-blue-600 text-white font-bold shadow-sm" 
-                                            : isVerified
-                                            ? "text-emerald-400 hover:bg-white/5" 
-                                            : isLocked
-                                            ? "text-slate-600 opacity-60 cursor-not-allowed"
-                                            : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
-                                    }`}
-                                    title={isLocked ? `Locked. Pass Milestone ${idx} first.` : m.title}
-                                >
-                                    {isVerified ? (
-                                        <CheckCircle2 size={12} className="text-emerald-400" />
-                                    ) : isLocked ? (
-                                        <Lock size={11} className="text-slate-600" />
-                                    ) : (
-                                        <span>M{idx + 1}</span>
-                                    )}
-                                    <span className="truncate max-w-[85px]">{m.title.split(" ")[0]}</span>
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    <button
-                        onClick={() => {
-                            setSpecTab("roadmap");
-                            setIsSpecsCollapsed(false);
-                        }}
-                        className={`px-2.5 py-1.5 rounded-xl flex items-center gap-1.5 transition-all text-xs font-bold ${
-                            specTab === "roadmap"
-                                ? "bg-blue-600/20 text-cyan-300 border border-blue-500/40 shadow-sm"
-                                : "bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border border-white/5"
-                        }`}
-                        title="View Full Architectural Roadmap"
-                    >
-                        <Milestone size={13} className="text-cyan-400" />
-                        <span>Roadmap</span>
-                    </button>
-                </div>
-
-                {/* Right: Stats & Run Action */}
-                <div className="flex items-center gap-3">
+                {/* Right: Quick Command Search, Timer & Run Action */}
+                <div className="flex items-center gap-2 sm:gap-3">
                     
+                    {/* Command Palette Trigger */}
+                    <button
+                        onClick={() => setIsCommandPaletteOpen(true)}
+                        className="hidden md:flex items-center gap-2 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 text-xs text-slate-400 hover:text-slate-200 transition-colors"
+                        title="Open Command Palette (Ctrl+P)"
+                    >
+                        <Search size={12} className="text-cyan-400" />
+                        <span className="font-mono text-[11px]">Quick Open</span>
+                        <kbd className="px-1 py-0.2 bg-black/40 rounded text-[10px] font-mono">Ctrl+P</kbd>
+                    </button>
+
                     {/* Session Timer (Auto-persisted) */}
                     <div 
                         className="hidden sm:flex items-center gap-1.5 text-xs font-mono text-slate-400 bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-lg border border-white/5 transition-colors cursor-help"
@@ -530,471 +587,287 @@ export default function ProjectWorkspace() {
             </header>
 
             {/* ======================================================== */}
-            {/* WORKSPACE BODY (3-PANE LAYOUT)                           */}
+            {/* WORKSPACE MIDDLE BODY                                    */}
             {/* ======================================================== */}
-            <div className="flex-grow flex flex-col md:flex-row overflow-hidden relative">
+            <div className="flex-grow flex overflow-hidden relative">
 
                 {/* ---------------------------------------------------- */}
-                {/* PANE 1: SPECIFICATION & ARCHITECTURAL GUIDE (LEFT)   */}
+                {/* 1. ACTIVITY BAR (VS Code Far Left Strip, 48px)       */}
+                {/* ---------------------------------------------------- */}
+                <div className="w-12 bg-[#05070B] border-r border-white/10 shrink-0 flex flex-col justify-between py-2 items-center select-none z-20">
+                    {/* Top Section: Navigation Panes */}
+                    <div className="flex flex-col items-center gap-1.5 w-full">
+                        {activityNavItems.map(item => {
+                            const Icon = item.icon;
+                            const isActive = !isSpecsCollapsed && specTab === item.id;
+                            return (
+                                <button
+                                    key={item.id}
+                                    type="button"
+                                    onClick={() => handleActivityNavClick(item.id)}
+                                    className={`relative w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
+                                        isActive 
+                                            ? "bg-blue-600/20 text-cyan-400 shadow-md" 
+                                            : "text-slate-400 hover:text-white hover:bg-white/5"
+                                    }`}
+                                    title={item.label}
+                                >
+                                    {isActive && (
+                                        <div className="absolute -left-1.5 top-2 bottom-2 w-1 rounded-r bg-cyan-400 shadow-[0_0_8px_#38bdf8]" />
+                                    )}
+                                    <Icon size={16} />
+                                    {item.count !== undefined && (
+                                        <span className="absolute -bottom-0.5 -right-0.5 text-[8px] font-mono px-1 rounded-full bg-blue-500/30 text-cyan-200 border border-blue-500/40">
+                                            {item.count}
+                                        </span>
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* Bottom Section: Command Palette & Settings */}
+                    <div className="flex flex-col items-center gap-1.5 w-full">
+                        <button
+                            type="button"
+                            onClick={() => setIsCommandPaletteOpen(true)}
+                            className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
+                            title="Command Palette (Ctrl+P)"
+                        >
+                            <Command size={15} />
+                        </button>
+                    </div>
+                </div>
+
+                {/* ---------------------------------------------------- */}
+                {/* 2. RESIZABLE SIDE PANEL (Explorer / Spec / Roadmap)  */}
                 {/* ---------------------------------------------------- */}
                 {!isSpecsCollapsed && (
-                    <aside className="w-full md:w-[360px] lg:w-[400px] border-r border-white/10 bg-[#090D16] flex flex-col shrink-0 h-1/3 md:h-auto overflow-hidden">
-                        
-                        {/* Left Pane Header Tabs */}
-                        <div className="flex items-center justify-between border-b border-white/10 bg-[#070A11] px-3 pt-2">
-                            <div className="flex items-center gap-1">
-                                {[
-                                    { id: "roadmap", label: "Roadmap", icon: Milestone },
-                                    { id: "spec", label: "Spec Guide", icon: BookOpen },
-                                    { id: "prereq", label: "Prereqs", icon: CheckCircle2 },
-                                    { id: "prd", label: "Full PRD", icon: Layers },
-                                    { id: "hints", label: "Hints", icon: HelpCircle }
-                                ].map(tab => {
-                                    const Icon = tab.icon;
-                                    const active = specTab === tab.id;
-                                    return (
-                                        <button
-                                            key={tab.id}
-                                            onClick={() => setSpecTab(tab.id)}
-                                            className={`px-3 py-2 text-xs font-bold rounded-t-lg flex items-center gap-1.5 transition-all ${
-                                                active 
-                                                    ? "bg-[#090D16] text-white border-t-2 border-blue-500 shadow-sm" 
-                                                    : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
-                                            }`}
-                                        >
-                                            <Icon size={13} />
-                                            <span>{tab.label}</span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
+                    <aside 
+                        style={{ width: `${panelWidth}px` }}
+                        className="border-r border-white/10 bg-[#090D16] flex flex-col shrink-0 h-full overflow-hidden transition-all duration-75 relative z-10"
+                    >
+                        {/* Header Tabs */}
+                        <div className="flex items-center justify-between border-b border-white/10 bg-[#070A11] px-3 h-10 shrink-0">
+                            <span className="text-xs font-bold uppercase tracking-wider text-slate-300 font-mono flex items-center gap-1.5">
+                                {specTab === "explorer" && <FolderTree size={13} className="text-cyan-400" />}
+                                {specTab === "roadmap" && <Milestone size={13} className="text-cyan-400" />}
+                                {specTab === "spec" && <BookOpen size={13} className="text-cyan-400" />}
+                                {specTab === "prereq" && <CheckCircle2 size={13} className="text-cyan-400" />}
+                                {specTab === "prd" && <Layers size={13} className="text-cyan-400" />}
+                                {specTab === "hints" && <Sparkles size={13} className="text-amber-400" />}
+                                <span>
+                                    {specTab === "explorer" && "Project Files"}
+                                    {specTab === "roadmap" && "Milestone Roadmap"}
+                                    {specTab === "spec" && "Milestone Spec"}
+                                    {specTab === "prereq" && "Prerequisites"}
+                                    {specTab === "prd" && "Architecture PRD"}
+                                    {specTab === "hints" && "Engineering Hints"}
+                                </span>
+                            </span>
 
-                            <div className="flex items-center gap-1.5 pr-1">
-                                <button
-                                    onClick={() => setIsSpecsCollapsed(true)}
-                                    className="p-1 rounded text-slate-500 hover:text-white hover:bg-white/5 transition-colors text-[10px]"
-                                    title="Collapse Spec Panel"
-                                >
-                                    <ChevronLeft size={14} />
-                                </button>
-                            </div>
+                            <button
+                                onClick={() => setIsSpecsCollapsed(true)}
+                                className="p-1 rounded text-slate-500 hover:text-white hover:bg-white/5 transition-colors text-[10px]"
+                                title="Collapse Side Panel"
+                            >
+                                <ChevronLeft size={14} />
+                            </button>
                         </div>
 
-                        {/* Left Pane Content Body */}
-                        <div className="flex-grow overflow-y-auto p-5 space-y-6 select-text text-sm leading-relaxed text-slate-300">
+                        {/* Side Panel Content Body */}
+                        <div className="flex-grow overflow-y-auto">
                             
-                            {/* TAB 0: INTERACTIVE ROADMAP & MILESTONES EXPLORER */}
-                            {specTab === "roadmap" && (
-                                <div className="space-y-6 animate-in fade-in duration-200">
-                                    
-                                    {/* Roadmap Progress Overview Banner */}
-                                    <div className="p-4 rounded-2xl bg-gradient-to-b from-[#0F172A] to-[#090D16] border border-blue-500/20 space-y-3 shadow-inner">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <div className="p-1.5 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                                                    <Milestone size={16} />
-                                                </div>
-                                                <div>
-                                                    <h2 className="text-sm font-bold text-white">Project Architecture Roadmap</h2>
-                                                    <span className="text-[11px] text-slate-400 font-mono">
-                                                        {verifiedMilestones.size} of {project.milestones?.length || 5} Milestones Verified
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <span className="text-xs font-mono font-bold text-cyan-400 px-2 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/20">
-                                                {Math.round((verifiedMilestones.size / (project.milestones?.length || 5)) * 100)}%
-                                            </span>
-                                        </div>
+                            {/* TAB: FILE EXPLORER */}
+                            {specTab === "explorer" && (
+                                <FileExplorerTree
+                                    files={files}
+                                    activeFileName={activeFileName}
+                                    onSelectFile={setActiveFileName}
+                                    onResetFile={handleResetFile}
+                                    onCreateFile={handleCreateFile}
+                                    repoName={workspaceData.repoName}
+                                />
+                            )}
 
-                                        {/* Progress Bar */}
-                                        <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
-                                            <div 
-                                                className="h-full bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400 rounded-full transition-all duration-500"
-                                                style={{ width: `${Math.max(8, (verifiedMilestones.size / (project.milestones?.length || 5)) * 100)}%` }}
-                                            />
+                            {/* TAB: INTERACTIVE ROADMAP */}
+                            {specTab === "roadmap" && (
+                                <div className="p-5 space-y-5 animate-in fade-in duration-200">
+                                    <div className="p-3.5 rounded-xl bg-gradient-to-r from-blue-900/20 via-indigo-950/20 to-transparent border border-blue-500/20 space-y-1">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[10px] font-mono font-bold uppercase text-blue-400">{project.track}</span>
+                                            <span className="text-[10px] font-mono text-cyan-300 font-bold">5 Stages</span>
                                         </div>
-                                        
+                                        <h3 className="text-xs font-bold text-white">Full Architecture Roadmap</h3>
                                         <p className="text-[11px] text-slate-400 leading-normal">
-                                            Click any milestone below to inspect its detailed architecture description, objectives checklist, and automated test requirements.
+                                            Track your implementation progression from foundation to production.
                                         </p>
                                     </div>
 
-                                    {/* Vertical Connected Milestone Roadmap */}
-                                    <div className="space-y-3 relative">
+                                    {/* Stages List */}
+                                    <div className="space-y-2">
                                         {project.milestones?.map((m, idx) => {
-                                            const isSelected = idx === selectedRoadmapIdx;
-                                            const isCurrentActive = idx === currentMilestoneIndex;
                                             const isVerified = verifiedMilestones.has(idx);
-                                            const isLocked = idx > currentMilestoneIndex && !verifiedMilestones.has(idx - 1);
-                                            const guide = workspaceData.milestoneGuides?.[idx] || {
-                                                milestone: idx + 1,
-                                                title: m.title,
-                                                objective: `Implement ${m.title} according to specifications.`,
-                                                specRules: ["Write clean, test-compliant code."],
-                                                testCases: []
-                                            };
-
+                                            const isActive = idx === currentMilestoneIndex;
                                             return (
-                                                <div 
+                                                <button
                                                     key={m.id}
-                                                    className={`rounded-2xl border transition-all overflow-hidden ${
-                                                        isSelected 
-                                                            ? "bg-gradient-to-b from-[#0F172A] to-[#070A11] border-blue-500/50 shadow-lg ring-1 ring-blue-500/20" 
-                                                            : isCurrentActive
-                                                            ? "bg-blue-500/[0.04] border-blue-500/30"
-                                                            : isVerified
-                                                            ? "bg-emerald-500/[0.02] border-emerald-500/20 hover:border-emerald-500/40"
-                                                            : "bg-white/[0.02] border-white/5 hover:border-white/15"
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setCurrentMilestoneIndex(idx);
+                                                        setSpecTab("spec");
+                                                    }}
+                                                    className={`w-full p-3 rounded-xl border text-left transition-all flex items-start gap-3 ${
+                                                        isActive 
+                                                            ? "bg-blue-600/20 border-blue-500/40 text-white shadow-md" 
+                                                            : isVerified 
+                                                            ? "bg-emerald-500/5 border-emerald-500/20 text-slate-300"
+                                                            : "bg-white/5 border-white/5 text-slate-400 hover:border-white/20"
                                                     }`}
                                                 >
-                                                    {/* Milestone Card Header (Click to Select & Inspect) */}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setSelectedRoadmapIdx(idx)}
-                                                        className="w-full p-3.5 flex items-start gap-3 text-left transition-colors"
-                                                    >
-                                                        {/* Step Badge / Status Node */}
-                                                        <div className="shrink-0 mt-0.5">
-                                                            {isVerified ? (
-                                                                <div className="w-7 h-7 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center font-bold text-xs shadow-[0_0_12px_rgba(16,185,129,0.3)]">
-                                                                    <Check size={14} strokeWidth={3} />
-                                                                </div>
-                                                            ) : isCurrentActive ? (
-                                                                <div className="w-7 h-7 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-[0_0_15px_rgba(37,99,235,0.5)]">
-                                                                    {idx + 1}
-                                                                </div>
-                                                            ) : isLocked ? (
-                                                                <div className="w-7 h-7 rounded-xl bg-[#05070B] border border-white/10 text-slate-600 flex items-center justify-center">
-                                                                    <Lock size={12} />
-                                                                </div>
-                                                            ) : (
-                                                                <div className="w-7 h-7 rounded-xl bg-white/5 border border-white/10 text-slate-400 flex items-center justify-center font-bold text-xs">
-                                                                    {idx + 1}
-                                                                </div>
-                                                            )}
+                                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
+                                                        isVerified 
+                                                            ? "bg-emerald-500 text-black" 
+                                                            : isActive 
+                                                            ? "bg-cyan-400 text-black font-extrabold" 
+                                                            : "bg-[#05070B] border border-white/20 text-slate-400"
+                                                    }`}>
+                                                        {isVerified ? <Check size={14} className="stroke-[3]" /> : idx + 1}
+                                                    </div>
+                                                    <div className="flex-grow min-w-0">
+                                                        <div className="flex items-center justify-between gap-1">
+                                                            <div className="font-bold text-xs truncate">{m.title}</div>
+                                                            <span className="text-[10px] font-mono text-cyan-400 shrink-0">{m.testCount || 4} Tests</span>
                                                         </div>
-
-                                                        {/* Milestone Info */}
-                                                        <div className="flex-grow min-w-0 space-y-1">
-                                                            <div className="flex items-center justify-between gap-2">
-                                                                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
-                                                                    Stage {idx + 1}
-                                                                </span>
-                                                                
-                                                                {/* Status Badge */}
-                                                                <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
-                                                                    isVerified 
-                                                                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" 
-                                                                        : isCurrentActive
-                                                                        ? "bg-blue-500/20 text-blue-300 border-blue-500/30 flex items-center gap-1"
-                                                                        : isLocked
-                                                                        ? "bg-white/5 text-slate-500 border-white/5"
-                                                                        : "bg-cyan-500/10 text-cyan-400 border-cyan-500/20"
-                                                                }`}>
-                                                                    {isVerified ? "Verified ✓" : isCurrentActive ? (
-                                                                        <>
-                                                                            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-                                                                            In Progress
-                                                                        </>
-                                                                    ) : isLocked ? "Locked" : "Unlocked"}
-                                                                </span>
-                                                            </div>
-
-                                                            <h3 className={`text-xs sm:text-sm font-bold truncate ${
-                                                                isSelected ? "text-white" : isCurrentActive ? "text-blue-300" : "text-slate-300"
-                                                            }`}>
-                                                                {m.title}
-                                                            </h3>
-
-                                                            <p className="text-[11px] text-slate-400 line-clamp-1 leading-normal">
-                                                                {guide.objective}
-                                                            </p>
+                                                        <div className="text-[10px] text-slate-500 font-mono mt-0.5">
+                                                            {isVerified ? "✓ Completed & Verified" : isActive ? "● In Progress (Active)" : "Locked until Stage " + idx}
                                                         </div>
-                                                    </button>
-
-                                                    {/* Expanded Milestone Details: Description, Architectural Checklist & Test Cases */}
-                                                    {isSelected && (
-                                                        <div className="px-3.5 pb-3.5 pt-1 space-y-3.5 border-t border-white/10 text-xs animate-in fade-in duration-200">
-                                                            
-                                                            {/* Detailed Milestone Description */}
-                                                            <div className="p-3 rounded-xl bg-[#05070B] border border-white/5 space-y-1">
-                                                                <div className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                                                                    <BookOpen size={11} className="text-blue-400" />
-                                                                    <span>Milestone Description</span>
-                                                                </div>
-                                                                <p className="text-xs text-slate-300 leading-relaxed">
-                                                                    {guide.objective}
-                                                                </p>
-                                                            </div>
-
-                                                            {/* Architectural Objectives Checklist */}
-                                                            <div className="space-y-2">
-                                                                <div className="flex items-center justify-between text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
-                                                                    <span className="flex items-center gap-1.5 text-blue-400">
-                                                                        <ShieldCheck size={12} />
-                                                                        <span>Objectives Checklist</span>
-                                                                    </span>
-                                                                    <span>{guide.specRules?.length || 0} requirements</span>
-                                                                </div>
-
-                                                                <div className="space-y-1.5">
-                                                                    {guide.specRules?.map((rule, rIdx) => (
-                                                                        <div 
-                                                                            key={rIdx}
-                                                                            className={`flex items-start gap-2.5 p-2 rounded-lg border text-[11px] ${
-                                                                                isVerified 
-                                                                                    ? "bg-emerald-500/[0.04] border-emerald-500/20 text-emerald-300"
-                                                                                    : "bg-white/[0.02] border-white/5 text-slate-300"
-                                                                            }`}
-                                                                        >
-                                                                            <div className="shrink-0 mt-0.5">
-                                                                                {isVerified ? (
-                                                                                    <Check size={11} className="text-emerald-400" />
-                                                                                ) : (
-                                                                                    <span className="w-3.5 h-3.5 rounded-full border border-slate-600 flex items-center justify-center text-[8px] text-slate-500 font-mono">
-                                                                                        {rIdx + 1}
-                                                                                    </span>
-                                                                                )}
-                                                                            </div>
-                                                                            <div className="flex-grow">
-                                                                                <span className={isVerified ? "line-through text-slate-400" : ""}>{rule}</span>
-                                                                            </div>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            </div>
-
-                                                            {/* Automated Test Assertions Preview */}
-                                                            {guide.testCases && guide.testCases.length > 0 && (
-                                                                <div className="space-y-1.5">
-                                                                    <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                                                                        <Terminal size={11} className="text-cyan-400" />
-                                                                        <span>Target Automated Test Assertions ({guide.testCases.length})</span>
-                                                                    </div>
-                                                                    <div className="space-y-1">
-                                                                        {guide.testCases.map((tc, tIdx) => (
-                                                                            <div key={tIdx} className="p-2 rounded-lg bg-[#05070B] border border-white/5 font-mono text-[10px] text-slate-300 flex items-center justify-between">
-                                                                                <span className="truncate pr-2">✓ {tc.name}</span>
-                                                                                <span className="text-[9px] text-blue-400 uppercase shrink-0">Harness</span>
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
-                                                                </div>
-                                                            )}
-
-                                                            {/* Jump to Workspace Milestone Action */}
-                                                            <div className="pt-1">
-                                                                {isCurrentActive ? (
-                                                                    <div className="w-full py-2 px-3 rounded-xl bg-blue-500/10 border border-blue-500/30 text-center font-bold text-xs text-blue-300 flex items-center justify-center gap-1.5">
-                                                                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-                                                                        <span>Currently Active in Code Studio</span>
-                                                                    </div>
-                                                                ) : isLocked ? (
-                                                                    <div className="w-full py-2 px-3 rounded-xl bg-white/5 border border-white/5 text-center text-xs text-slate-500 flex items-center justify-center gap-1.5 font-mono">
-                                                                        <Lock size={12} />
-                                                                        <span>Pass Milestone {idx} tests to unlock</span>
-                                                                    </div>
-                                                                ) : (
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            setCurrentMilestoneIndex(idx);
-                                                                            setSelectedRoadmapIdx(idx);
-                                                                            setSpecTab("spec");
-                                                                            setTestResults(null);
-                                                                            toast.success(`Switched workspace to Stage ${idx + 1}: ${m.title}`);
-                                                                        }}
-                                                                        className="w-full py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95"
-                                                                    >
-                                                                        <BookOpen size={12} />
-                                                                        <span>Open Stage {idx + 1} in Spec Guide</span>
-                                                                        <ChevronRight size={12} />
-                                                                    </button>
-                                                                )}
-                                                            </div>
-
-                                                        </div>
-                                                    )}
-                                                </div>
+                                                    </div>
+                                                </button>
                                             );
                                         })}
                                     </div>
                                 </div>
                             )}
 
-                            {/* TAB 1: MILESTONE SPEC */}
+                            {/* TAB: SPEC GUIDE */}
                             {specTab === "spec" && (
-                                <div className="space-y-6 animate-in fade-in duration-200">
-                                    
-                                    {/* Milestone Title & Objective */}
-                                    <div className="space-y-2">
+                                <div className="p-5 space-y-5 animate-in fade-in duration-200">
+                                    <div className="space-y-1 border-b border-white/10 pb-3">
                                         <div className="flex items-center gap-2">
-                                            <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] font-mono font-bold uppercase">
-                                                Stage {currentMilestoneIndex + 1}
+                                            <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px] font-mono font-bold uppercase">
+                                                Stage {currentMilestoneIndex + 1} of {project.milestones?.length || 5}
                                             </span>
-                                            <span className="text-xs text-slate-400">
-                                                {milestoneGuide.testCases?.length || 4} automated assertions
+                                            <span className="text-[11px] text-slate-400 font-mono">
+                                                {milestoneGuide.testCases?.length || 4} Test Assertions
                                             </span>
                                         </div>
-                                        <h2 className="text-base sm:text-lg font-bold text-white">
+                                        <h2 className="text-sm font-bold text-white">
                                             {milestoneGuide.title}
                                         </h2>
-                                        <p className="text-xs text-slate-400 leading-normal">
-                                            {milestoneGuide.objective}
-                                        </p>
                                     </div>
 
-                                    {/* Spec Rules & Architectural Checklist (SYSTEM VERIFIED ONLY) */}
-                                    <div className="space-y-3 pt-2 border-t border-white/10">
-                                        <div className="flex items-center justify-between">
-                                            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                                                <ShieldCheck size={14} className="text-blue-400" />
-                                                <span>Architectural Objectives</span>
-                                            </h3>
-                                            <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
-                                                isCurrentMilestoneVerified 
-                                                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" 
-                                                    : "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                                            }`}>
-                                                {isCurrentMilestoneVerified ? "Verified ✓" : "Pending Test Run"}
+                                    {/* Objective */}
+                                    <div className="p-3 rounded-xl bg-blue-500/5 border border-blue-500/15 text-xs text-blue-200 leading-relaxed">
+                                        {milestoneGuide.objective}
+                                    </div>
+
+                                    {/* Specification Rules Checklist */}
+                                    <div className="space-y-2">
+                                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                                            <span className="flex items-center gap-1.5 text-blue-400">
+                                                <ShieldCheck size={13} />
+                                                <span>Production Rules & Spec</span>
+                                            </span>
+                                            <span className="text-[10px] font-mono text-cyan-400">
+                                                {milestoneGuide.specRules?.length || 0} constraints
                                             </span>
                                         </div>
 
-                                        <div className="space-y-2">
+                                        <div className="space-y-1.5">
                                             {milestoneGuide.specRules?.map((rule, idx) => (
-                                                <div 
-                                                    key={idx}
-                                                    className={`flex items-start gap-3 p-3 rounded-xl border transition-all text-xs ${
-                                                        isCurrentMilestoneVerified
-                                                            ? "bg-emerald-500/[0.04] border-emerald-500/20 text-emerald-300"
-                                                            : "bg-white/[0.02] border-white/5 text-slate-300"
-                                                    }`}
-                                                >
-                                                    <div className="shrink-0 mt-0.5">
-                                                        {isCurrentMilestoneVerified ? (
-                                                            <div className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                                                                <Check size={11} strokeWidth={3} />
-                                                            </div>
-                                                        ) : (
-                                                            <div className="w-4 h-4 rounded-full border border-slate-600 flex items-center justify-center text-[9px] text-slate-500 font-mono">
-                                                                {idx + 1}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <div className="space-y-1 flex-grow">
-                                                        <div className={isCurrentMilestoneVerified ? "line-through text-slate-400" : "text-slate-200"}>
-                                                            {rule}
-                                                        </div>
-                                                        <div className="text-[10px] font-mono">
-                                                            {isCurrentMilestoneVerified ? (
-                                                                <span className="text-emerald-400 font-bold flex items-center gap-1">
-                                                                    <CheckCircle2 size={11} /> Verified by automated test runner
-                                                                </span>
-                                                            ) : (
-                                                                <span className="text-slate-500 flex items-center gap-1">
-                                                                    <Clock size={11} /> Pass tests to verify this requirement
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </div>
+                                                <div key={idx} className="flex items-start gap-2 p-2.5 rounded-xl bg-white/5 border border-white/5 text-xs text-slate-300">
+                                                    <CheckCircle2 size={13} className="text-cyan-400 shrink-0 mt-0.5" />
+                                                    <span className="leading-relaxed">{rule}</span>
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
 
-                                    {/* Test Cases Requirements Breakdown */}
-                                    <div className="space-y-3 pt-2 border-t border-white/10">
-                                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                                            <Terminal size={14} className="text-cyan-400" />
-                                            <span>Target Test Assertions</span>
-                                        </h3>
-
-                                        <div className="space-y-2 font-mono text-xs">
+                                    {/* Test Assertions Target Table */}
+                                    <div className="space-y-2">
+                                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                                            <Terminal size={13} className="text-cyan-400" />
+                                            <span>Target Verification Test Harness</span>
+                                        </div>
+                                        <div className="space-y-1.5 font-mono text-xs">
                                             {milestoneGuide.testCases?.map((tc, idx) => (
-                                                <div key={idx} className="p-2.5 rounded-xl bg-[#05070B] border border-white/5 space-y-1">
-                                                    <div className="flex items-center justify-between text-slate-300 font-bold">
-                                                        <span>{idx + 1}. {tc.name}</span>
-                                                        <span className="text-[10px] text-blue-400 uppercase">Harness</span>
+                                                <div key={idx} className="p-2.5 rounded-xl bg-[#05070B] border border-white/10 space-y-1">
+                                                    <div className="flex items-center justify-between font-bold text-slate-200">
+                                                        <span className="truncate pr-1">✓ {tc.name}</span>
+                                                        <span className="text-[9px] text-blue-400 uppercase">Harness</span>
                                                     </div>
-                                                    {tc.cmd && (
-                                                        <div className="text-[11px] text-cyan-300/80">
-                                                            $ {tc.cmd}
-                                                        </div>
-                                                    )}
-                                                    <div className="text-[11px] text-slate-400">
+                                                    <div className="text-[10px] text-slate-400 truncate">
                                                         Expects: <span className="text-emerald-400">{tc.expected}</span>
                                                     </div>
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
-
                                 </div>
                             )}
 
-                            {/* TAB: PREREQUISITES & ENVIRONMENT READINESS */}
+                            {/* TAB: PREREQUISITES */}
                             {specTab === "prereq" && (
-                                <div className="space-y-5 animate-in fade-in duration-200">
+                                <div className="p-5 space-y-5 animate-in fade-in duration-200">
                                     <div className="flex items-center justify-between border-b border-white/10 pb-3">
                                         <div>
-                                            <h2 className="text-base font-bold text-white flex items-center gap-2">
-                                                <CheckCircle2 size={16} className="text-cyan-400" />
+                                            <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                                                <CheckCircle2 size={15} className="text-cyan-400" />
                                                 <span>Prerequisites & Environment</span>
                                             </h2>
-                                            <p className="text-xs text-slate-400">
-                                                Review toolchain, system dependencies, and technical concepts.
+                                            <p className="text-[11px] text-slate-400">
+                                                Review toolchain & technical concepts.
                                             </p>
                                         </div>
-                                        <div className="text-right">
-                                            <span className="text-xs font-mono font-bold text-cyan-400 px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                                                {checkedPrereqs.size} / {(project.prerequisites?.length || 0) + (milestoneGuide.prerequisites?.length || 0)} Ready
-                                            </span>
-                                        </div>
+                                        <span className="text-[11px] font-mono font-bold text-cyan-400 px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">
+                                            {checkedPrereqs.size} / {(project.prerequisites?.length || 0) + (milestoneGuide.prerequisites?.length || 0)}
+                                        </span>
                                     </div>
 
-                                    {/* Runtime Environment Box */}
-                                    <div className="p-3.5 rounded-xl bg-gradient-to-r from-blue-900/20 via-cyan-900/10 to-transparent border border-blue-500/20 space-y-2">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-cyan-300">
-                                                Execution Engine
-                                            </span>
-                                            <span className="text-[10px] font-mono text-emerald-400 font-bold px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">
-                                                ● Active
-                                            </span>
-                                        </div>
+                                    {/* System Runtime Box */}
+                                    <div className="p-3 rounded-xl bg-gradient-to-r from-blue-900/20 via-cyan-900/10 to-transparent border border-blue-500/20 space-y-1.5">
+                                        <span className="text-[10px] font-mono font-bold uppercase text-cyan-300">Active Compiler Sandbox</span>
                                         <div className="text-xs text-slate-200 font-mono">
                                             {isClientSideLanguage(workspaceData.language || project.language)
-                                                ? "Client-Side In-Browser V8 (0ms server latency, offline ready)"
-                                                : "Backend Sandbox Service (/api/runner/execute - Isolated Process)"}
-                                        </div>
-                                        <div className="text-[11px] text-slate-400">
-                                            Primary Language: <span className="text-white font-bold uppercase font-mono">{workspaceData.language || project.language}</span>
+                                                ? "Client-Side In-Browser V8 (0ms server latency)"
+                                                : "Backend Sandbox Service (/api/runner/execute)"}
                                         </div>
                                     </div>
 
                                     {/* Milestone-Specific Concepts */}
                                     {milestoneGuide.prerequisites && milestoneGuide.prerequisites.length > 0 && (
-                                        <div className="space-y-2.5">
-                                            <div className="flex items-center gap-1.5 text-xs font-bold text-white uppercase tracking-wider">
+                                        <div className="space-y-2">
+                                            <div className="text-[11px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
                                                 <Target size={13} className="text-cyan-400" />
-                                                <span>Milestone {currentMilestoneIndex + 1} Technical Concepts</span>
+                                                <span>Milestone {currentMilestoneIndex + 1} Concepts</span>
                                             </div>
                                             <div className="space-y-1.5">
-                                                {milestoneGuide.prerequisites.map((p, pIdx) => {
-                                                    const key = `m_${currentMilestoneIndex}_${pIdx}`;
+                                                {milestoneGuide.prerequisites.map((p, idx) => {
+                                                    const key = `m_${currentMilestoneIndex}_${idx}`;
                                                     const isChecked = checkedPrereqs.has(key);
                                                     return (
                                                         <button
                                                             key={key}
                                                             type="button"
                                                             onClick={() => togglePrereq(key)}
-                                                            className={`w-full text-left p-3 rounded-xl border transition-all flex items-start gap-2.5 text-xs ${
+                                                            className={`w-full text-left p-2.5 rounded-xl border transition-all flex items-start gap-2.5 text-xs ${
                                                                 isChecked 
                                                                     ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-200" 
                                                                     : "bg-white/5 border-white/10 text-slate-300 hover:border-white/20"
                                                             }`}
                                                         >
-                                                            <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
+                                                            <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
                                                                 isChecked ? "bg-emerald-500 border-emerald-400 text-black" : "border-white/30"
                                                             }`}>
                                                                 {isChecked && <Check size={11} className="stroke-[3]" />}
@@ -1007,31 +880,28 @@ export default function ProjectWorkspace() {
                                         </div>
                                     )}
 
-                                    {/* Project-Wide Technical Prerequisites */}
-                                    <div className="space-y-2.5">
-                                        <div className="flex items-center gap-1.5 text-xs font-bold text-white uppercase tracking-wider">
+                                    {/* Project-Wide Toolchain */}
+                                    <div className="space-y-2">
+                                        <div className="text-[11px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
                                             <ShieldCheck size={13} className="text-blue-400" />
-                                            <span>Project Toolchain & Setup Checklist</span>
+                                            <span>Project Toolchain Checklist</span>
                                         </div>
                                         <div className="space-y-1.5">
-                                            {(project.prerequisites || [
-                                                "Basic proficiency in " + (project.language || "programming"),
-                                                "Understanding of project architecture and data structures"
-                                            ]).map((p, pIdx) => {
-                                                const key = `p_${pIdx}`;
+                                            {(project.prerequisites || []).map((p, idx) => {
+                                                const key = `p_${idx}`;
                                                 const isChecked = checkedPrereqs.has(key);
                                                 return (
                                                     <button
                                                         key={key}
                                                         type="button"
                                                         onClick={() => togglePrereq(key)}
-                                                        className={`w-full text-left p-3 rounded-xl border transition-all flex items-start gap-2.5 text-xs ${
+                                                        className={`w-full text-left p-2.5 rounded-xl border transition-all flex items-start gap-2.5 text-xs ${
                                                             isChecked 
                                                                 ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-200" 
                                                                 : "bg-white/5 border-white/10 text-slate-300 hover:border-white/20"
                                                         }`}
                                                     >
-                                                        <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
+                                                        <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
                                                             isChecked ? "bg-emerald-500 border-emerald-400 text-black" : "border-white/30"
                                                         }`}>
                                                             {isChecked && <Check size={11} className="stroke-[3]" />}
@@ -1042,32 +912,17 @@ export default function ProjectWorkspace() {
                                             })}
                                         </div>
                                     </div>
-
-                                    {/* Action to Jump to Spec */}
-                                    <div className="pt-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => setSpecTab("spec")}
-                                            className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold text-xs shadow-lg hover:from-blue-500 hover:to-cyan-400 transition-all flex items-center justify-center gap-2"
-                                        >
-                                            <span>Ready! Go to Milestone Spec</span>
-                                            <ChevronRight size={14} />
-                                        </button>
-                                    </div>
                                 </div>
                             )}
 
-                            {/* TAB 2: FULL PRD */}
+                            {/* TAB: PRD */}
                             {specTab === "prd" && (
-                                <div className="space-y-4 animate-in fade-in duration-200">
-                                    <h2 className="text-base font-bold text-white">Production Requirement Document (PRD)</h2>
-                                    <p className="text-xs text-slate-400 leading-relaxed">
-                                        {project.description}
-                                    </p>
-
+                                <div className="p-5 space-y-4 animate-in fade-in duration-200">
+                                    <h2 className="text-sm font-bold text-white">Product Requirements Document (PRD)</h2>
+                                    <p className="text-xs text-slate-400 leading-relaxed">{project.description}</p>
                                     <div className="space-y-2 pt-2">
                                         <h3 className="text-xs font-bold text-white uppercase tracking-wider">Key Skills Mastered</h3>
-                                        <ul className="space-y-1 text-xs">
+                                        <ul className="space-y-1.5 text-xs">
                                             {project.keySkills?.map((skill, i) => (
                                                 <li key={i} className="flex items-center gap-2">
                                                     <CheckCircle2 size={13} className="text-blue-400 shrink-0" />
@@ -1079,20 +934,21 @@ export default function ProjectWorkspace() {
                                 </div>
                             )}
 
-                            {/* TAB 3: HINTS */}
+                            {/* TAB: HINTS */}
                             {specTab === "hints" && (
-                                <div className="space-y-3 animate-in fade-in duration-200">
-                                    <h2 className="text-base font-bold text-white flex items-center gap-2">
-                                        <Sparkles size={16} className="text-amber-400" />
-                                        <span>Engineering Hints & Walkthrough</span>
-                                    </h2>
-                                    <p className="text-xs text-slate-400">
-                                        Stuck? Use these architectural hints to unblock your implementation without giving away the entire solution.
-                                    </p>
-
+                                <div className="p-5 space-y-3 animate-in fade-in duration-200">
+                                    <div className="space-y-1">
+                                        <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                                            <Sparkles size={15} className="text-amber-400" />
+                                            <span>Engineering Hints & Walkthrough</span>
+                                        </h2>
+                                        <p className="text-[11px] text-slate-400">
+                                            Tactical hints to unblock your implementation.
+                                        </p>
+                                    </div>
                                     <div className="space-y-2.5 pt-2">
                                         {milestoneGuide.hints?.map((hint, idx) => (
-                                            <div key={idx} className="p-3.5 rounded-xl bg-blue-500/5 border border-blue-500/20 text-xs text-blue-200 leading-relaxed space-y-1">
+                                            <div key={idx} className="p-3 rounded-xl bg-blue-500/5 border border-blue-500/20 text-xs text-blue-200 leading-relaxed space-y-1">
                                                 <div className="font-bold text-blue-300">Hint #{idx + 1}</div>
                                                 <div>{hint}</div>
                                             </div>
@@ -1105,25 +961,26 @@ export default function ProjectWorkspace() {
                     </aside>
                 )}
 
-                {/* Collapsed Specs Floating Pill */}
-                {isSpecsCollapsed && (
-                    <button
-                        onClick={() => setIsSpecsCollapsed(false)}
-                        className="absolute left-3 top-3 z-20 px-3 py-1.5 rounded-xl bg-[#0A0E17] border border-blue-500/30 text-white text-xs font-bold shadow-xl flex items-center gap-1.5 hover:bg-blue-600 transition-colors"
-                        title="Expand Architectural Specs"
+                {/* ---------------------------------------------------- */}
+                {/* 3. HORIZONTAL DRAGGABLE RESIZER HANDLE               */}
+                {/* ---------------------------------------------------- */}
+                {!isSpecsCollapsed && (
+                    <div
+                        onMouseDown={() => setIsDraggingPanel(true)}
+                        onDoubleClick={() => setPanelWidth(380)}
+                        className="w-1.5 hover:w-2 bg-[#05070B] hover:bg-blue-500/40 active:bg-blue-500 transition-colors cursor-col-resize flex items-center justify-center shrink-0 select-none group z-10"
+                        title="Drag to resize panel (Double-click to reset)"
                     >
-                        <BookOpen size={13} className="text-cyan-400" />
-                        <span>Specs</span>
-                        <ChevronRight size={13} />
-                    </button>
+                        <div className="h-8 w-0.5 rounded-full bg-white/20 group-hover:bg-blue-400 transition-colors" />
+                    </div>
                 )}
 
                 {/* ---------------------------------------------------- */}
-                {/* PANE 2 & 3: CODE EDITOR & RESIZABLE TEST DRAWER      */}
+                {/* 4. CENTER CODE EDITOR & RESIZABLE TEST DRAWER        */}
                 {/* ---------------------------------------------------- */}
-                <main className="flex-grow flex flex-col h-2/3 md:h-auto overflow-hidden bg-[#070A11] relative">
+                <main className="flex-grow flex flex-col h-full overflow-hidden bg-[#070A11] relative">
                     
-                    {/* Interactive CodeStudio Editor */}
+                    {/* Monaco Code Studio Editor */}
                     <div className="flex-grow flex flex-col overflow-hidden min-h-0">
                         <CodeStudioEditor
                             files={files}
@@ -1131,29 +988,28 @@ export default function ProjectWorkspace() {
                             onSelectFile={setActiveFileName}
                             onChangeCode={handleCodeChange}
                             onResetFile={handleResetFile}
+                            onCursorChange={setCursorPosition}
+                            onRunTests={handleRunTests}
+                            onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+                            editorInstanceRef={editorInstanceRef}
                         />
                     </div>
 
-                    {/* ======================================================== */}
-                    {/* DRAGGABLE RESIZER HANDLE                                 */}
-                    {/* ======================================================== */}
+                    {/* Draggable Terminal Drawer Resizer */}
                     <div
                         onMouseDown={() => setIsDraggingTerminal(true)}
-                        className="h-2 bg-[#0A0E17] hover:bg-blue-500/30 active:bg-blue-500 transition-colors cursor-row-resize flex items-center justify-center border-y border-white/10 shrink-0 select-none group"
-                        title="Click and drag to resize test & terminal drawer"
+                        className="h-1.5 hover:h-2 bg-[#0A0E17] hover:bg-blue-500/40 active:bg-blue-500 transition-colors cursor-row-resize flex items-center justify-center border-t border-white/10 shrink-0 select-none group z-10"
+                        title="Drag to resize test runner drawer"
                     >
-                        <div className="w-12 h-1 rounded-full bg-white/20 group-hover:bg-blue-400 transition-colors" />
+                        <div className="w-12 h-0.5 rounded-full bg-white/20 group-hover:bg-blue-400 transition-colors" />
                     </div>
 
-                    {/* ======================================================== */}
-                    {/* PANE 3: INTEGRATED TERMINAL & TEST RUNNER DRAWER         */}
-                    {/* ======================================================== */}
+                    {/* Integrated Terminal & Test Runner Drawer */}
                     <div 
                         className="bg-[#05070B] flex flex-col shrink-0 overflow-hidden transition-all duration-75"
                         style={{ height: `${terminalHeight}px` }}
                     >
-                        
-                        {/* Terminal Tab Bar */}
+                        {/* Drawer Tabs */}
                         <div className="h-9 border-b border-white/10 bg-[#0A0E17] px-4 flex items-center justify-between shrink-0">
                             <div className="flex items-center gap-2">
                                 <button
@@ -1170,11 +1026,9 @@ export default function ProjectWorkspace() {
                                         <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${
                                             testResults.status === "passed" 
                                                 ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" 
-                                                : testResults.status === "failed"
-                                                ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
-                                                : "bg-blue-500/20 text-blue-400"
+                                                : "bg-rose-500/20 text-rose-400 border border-rose-500/30"
                                         }`}>
-                                            {testResults.passed || 0}/{testResults.total || milestoneGuide.testCases?.length || 4}
+                                            {testResults.passed}/{testResults.total}
                                         </span>
                                     )}
                                 </button>
@@ -1188,37 +1042,22 @@ export default function ProjectWorkspace() {
                                     }`}
                                 >
                                     <Terminal size={13} />
-                                    <span>Console Terminal</span>
+                                    <span>Terminal & Logs</span>
                                 </button>
                             </div>
 
-                            {/* Size Presets: Minimize / Default / Maximize */}
-                            <div className="flex items-center gap-2 text-slate-500 text-xs font-mono">
+                            <div className="flex items-center gap-2">
                                 <button
-                                    onClick={() => setTerminalHeight(36)}
-                                    className="p-1 rounded hover:bg-white/5 hover:text-white transition-colors"
-                                    title="Minimize Drawer"
+                                    onClick={() => setTerminalHeight(prev => prev > 100 ? 50 : 260)}
+                                    className="p-1 rounded text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
+                                    title={terminalHeight > 100 ? "Minimize Drawer" : "Expand Drawer"}
                                 >
-                                    <Minimize2 size={12} />
-                                </button>
-                                <button
-                                    onClick={() => setTerminalHeight(260)}
-                                    className="px-1.5 py-0.5 rounded text-[10px] hover:bg-white/5 hover:text-white transition-colors"
-                                    title="Default Height"
-                                >
-                                    Default
-                                </button>
-                                <button
-                                    onClick={() => setTerminalHeight(480)}
-                                    className="p-1 rounded hover:bg-white/5 hover:text-white transition-colors"
-                                    title="Maximize Drawer"
-                                >
-                                    <Maximize2 size={12} />
+                                    {terminalHeight > 100 ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
                                 </button>
                             </div>
                         </div>
 
-                        {/* Terminal Body */}
+                        {/* Drawer Body */}
                         <div className="flex-grow p-4 overflow-y-auto font-mono text-xs space-y-2 select-text">
                             
                             {/* TESTS TAB */}
@@ -1233,48 +1072,74 @@ export default function ProjectWorkspace() {
                                         <div className="space-y-2.5">
                                             <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-white/5 text-[11px] text-slate-400 gap-1.5">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-bold text-slate-300">Test Suite: {milestoneGuide.title}</span>
+                                                    <span className="font-bold text-slate-300">Suite: {milestoneGuide.title}</span>
                                                     {testResults.engineLabel && (
                                                         <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-cyan-400 border border-blue-500/20 text-[10px] font-mono">
                                                             {testResults.engineLabel}
                                                         </span>
                                                     )}
                                                 </div>
-                                                <span className="font-mono text-cyan-300">Duration: {testResults.duration || "Running..."}</span>
+                                                <span className="font-mono text-cyan-300">Duration: {testResults.duration || "0ms"}</span>
                                             </div>
 
-                                            {testResults.steps?.map((step, idx) => (
+                                            {/* Progress Bar */}
+                                            <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
                                                 <div 
-                                                    key={idx} 
-                                                    className={`flex items-start sm:items-center justify-between p-2.5 rounded-xl border transition-all gap-2 ${
-                                                        step.passed 
-                                                            ? "bg-emerald-500/[0.04] border-emerald-500/20 text-slate-200" 
-                                                            : "bg-rose-500/[0.06] border-rose-500/30 text-rose-200"
-                                                    }`}
-                                                >
-                                                    <div className="flex items-start sm:items-center gap-2.5 flex-grow min-w-0">
-                                                        <div className="shrink-0 mt-0.5 sm:mt-0">
-                                                            {step.passed ? (
-                                                                <CheckCircle2 size={15} className="text-emerald-400" />
-                                                            ) : (
-                                                                <XCircle size={15} className="text-rose-400" />
-                                                            )}
-                                                        </div>
-                                                        <div className="min-w-0 flex-grow">
-                                                            <span className="font-bold text-xs">{step.name}</span>
-                                                            {step.output && (
-                                                                <div className={`text-[11px] font-mono truncate max-w-xl ${step.passed ? "text-slate-400" : "text-rose-300 font-bold"}`}>
-                                                                    {step.output}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                    <span className={`text-[11px] font-mono shrink-0 ${step.passed ? "text-emerald-400" : "text-rose-400"}`}>
-                                                        {step.duration}
-                                                    </span>
-                                                </div>
-                                            ))}
+                                                    className={`h-full transition-all duration-300 ${testResults.status === "passed" ? "bg-emerald-500" : "bg-rose-500"}`} 
+                                                    style={{ width: `${Math.round(((testResults.passed || 0) / (testResults.total || 1)) * 100)}%` }}
+                                                />
+                                            </div>
 
+                                            {/* Steps */}
+                                            {testResults.steps?.map((step, idx) => {
+                                                const lineNum = extractLineNumber(step.output);
+                                                return (
+                                                    <div 
+                                                        key={idx} 
+                                                        className={`flex items-start sm:items-center justify-between p-2.5 rounded-xl border transition-all gap-2 ${
+                                                            step.passed 
+                                                                ? "bg-emerald-500/[0.04] border-emerald-500/20 text-slate-200" 
+                                                                : "bg-rose-500/[0.06] border-rose-500/30 text-rose-200"
+                                                        }`}
+                                                    >
+                                                        <div className="flex items-start sm:items-center gap-2.5 flex-grow min-w-0">
+                                                            <div className="shrink-0 mt-0.5 sm:mt-0">
+                                                                {step.passed ? (
+                                                                    <CheckCircle2 size={15} className="text-emerald-400" />
+                                                                ) : (
+                                                                    <XCircle size={15} className="text-rose-400" />
+                                                                )}
+                                                            </div>
+                                                            <div className="min-w-0 flex-grow">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="font-bold text-xs">{step.name}</span>
+                                                                    {lineNum && (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => jumpToLine(lineNum)}
+                                                                            className="px-1.5 py-0.5 rounded bg-blue-500/20 hover:bg-blue-500/40 text-cyan-300 text-[10px] font-mono flex items-center gap-1 transition-colors"
+                                                                            title={`Jump to line ${lineNum} in editor`}
+                                                                        >
+                                                                            <Target size={11} />
+                                                                            <span>Line {lineNum}</span>
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                                {step.output && (
+                                                                    <div className={`text-[11px] font-mono truncate max-w-xl ${step.passed ? "text-slate-400" : "text-rose-300 font-bold"}`}>
+                                                                        {step.output}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <span className={`text-[11px] font-mono shrink-0 ${step.passed ? "text-emerald-400" : "text-rose-400"}`}>
+                                                            {step.duration}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })}
+
+                                            {/* Results Footer Message */}
                                             {testResults.status === "failed" && (
                                                 <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 flex items-center justify-between flex-wrap gap-2">
                                                     <div className="flex items-center gap-2 font-bold text-xs">
@@ -1286,7 +1151,7 @@ export default function ProjectWorkspace() {
                                                         className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 text-xs font-mono font-bold transition-colors flex items-center gap-1.5"
                                                     >
                                                         <Terminal size={12} />
-                                                        <span>View Compiler Log</span>
+                                                        <span>View Raw Logs</span>
                                                     </button>
                                                 </div>
                                             )}
@@ -1327,12 +1192,12 @@ export default function ProjectWorkspace() {
                                     ))}
                                     
                                     <form onSubmit={handleTerminalCommand} className="flex items-center gap-2 pt-2">
-                                        <span className="text-emerald-400 font-bold">skillforge@microvm:~$</span>
+                                        <span className="text-emerald-400 font-bold">skillforge@sandbox:~$</span>
                                         <input 
                                             type="text"
                                             value={terminalInput}
                                             onChange={(e) => setTerminalInput(e.target.value)}
-                                            placeholder="Type command (test, git status, clear)..."
+                                            placeholder="Type command (test, ls, clear)..."
                                             className="flex-grow bg-transparent text-white focus:outline-none border-none font-mono text-xs"
                                         />
                                     </form>
@@ -1347,70 +1212,132 @@ export default function ProjectWorkspace() {
             </div>
 
             {/* ======================================================== */}
+            {/* 5. VS CODE-STYLE STATUS BAR (Bottom 24px)                 */}
+            {/* ======================================================== */}
+            <footer className="h-6 bg-[#04060A] border-t border-white/10 px-3 flex items-center justify-between text-[11px] font-mono select-none text-slate-400 shrink-0 z-30">
+                <div className="flex items-center gap-3">
+                    <div 
+                        className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer" 
+                        onClick={() => setIsCommandPaletteOpen(true)} 
+                        title="Git Branch (Ctrl+P)"
+                    >
+                        <GitBranch size={12} className="text-cyan-400" />
+                        <span>main</span>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={() => {
+                            if (terminalHeight < 100) setTerminalHeight(240);
+                            setTerminalTab("tests");
+                        }}
+                        className={`flex items-center gap-1.5 px-1.5 py-0.5 rounded transition-all ${
+                            testResults?.status === "passed"
+                                ? "text-emerald-400 hover:bg-emerald-500/10"
+                                : testResults?.status === "failed"
+                                ? "text-rose-400 hover:bg-rose-500/10"
+                                : "text-slate-400 hover:text-white"
+                        }`}
+                        title="Click to view test suite"
+                    >
+                        {testResults?.status === "passed" ? (
+                            <CheckCircle2 size={12} className="text-emerald-400" />
+                        ) : testResults?.status === "failed" ? (
+                            <XCircle size={12} className="text-rose-400" />
+                        ) : (
+                            <Terminal size={12} className="text-blue-400" />
+                        )}
+                        <span>
+                            {testResults
+                                ? `${testResults.passed}/${testResults.total} Tests (${testResults.duration || "0ms"})`
+                                : "Test Runner: Ready"}
+                        </span>
+                    </button>
+                </div>
+
+                <div className="flex items-center gap-4">
+                    <span className="hover:text-white" title="Cursor Line and Column">
+                        Ln {cursorPosition.line}, Col {cursorPosition.col}
+                    </span>
+                    <span className="hidden md:inline hover:text-white" title="Indentation">Spaces: 4</span>
+                    <span className="hidden sm:inline hover:text-white" title="Encoding">UTF-8</span>
+                    <span className="hover:text-cyan-300 font-bold uppercase" title="Language Mode">
+                        {workspaceData.language || project.language || "code"}
+                    </span>
+                    <span className="hidden lg:inline text-[10px] text-slate-500 font-mono" title="Execution Engine">
+                        {isClientSideLanguage(workspaceData.language || project.language)
+                            ? "Client-Side V8"
+                            : "Backend Sandbox Service"}
+                    </span>
+                </div>
+            </footer>
+
+            {/* ======================================================== */}
+            {/* COMMAND PALETTE MODAL                                    */}
+            {/* ======================================================== */}
+            <CommandPalette
+                isOpen={isCommandPaletteOpen}
+                onClose={() => setIsCommandPaletteOpen(false)}
+                files={files}
+                activeFileName={activeFileName}
+                onSelectFile={setActiveFileName}
+                onRunTests={handleRunTests}
+                onResetFile={handleResetFile}
+                onSelectTab={(tab) => {
+                    setIsSpecsCollapsed(false);
+                    setSpecTab(tab);
+                }}
+            />
+
+            {/* ======================================================== */}
             {/* CELEBRATION MODAL ON MILESTONE COMPLETION                */}
             {/* ======================================================== */}
             <AnimatePresence>
                 {showCelebration && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+                    >
                         <motion.div 
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            className="w-full max-w-md p-6 rounded-3xl bg-[#090D16] border border-blue-500/30 text-white text-center space-y-5 shadow-2xl"
+                            initial={{ scale: 0.9, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.9, y: 20 }}
+                            className="w-full max-w-md p-6 rounded-3xl bg-[#090D16] border border-blue-500/30 text-center space-y-4 shadow-2xl relative overflow-hidden"
                         >
-                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center mx-auto shadow-lg shadow-blue-500/30">
-                                <Award size={32} className="text-white" />
+                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-400 mx-auto flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+                                <Award size={32} />
                             </div>
 
-                            <div className="space-y-1.5">
-                                <h3 className="text-xl font-black">
-                                    Milestone {currentMilestoneIndex + 1} Verified!
-                                </h3>
-                                <p className="text-xs text-slate-400">
-                                    All automated test suites executed cleanly. Your architectural objectives have been marked as verified.
+                            <div className="space-y-1">
+                                <h3 className="text-xl font-bold text-white">Project Complete!</h3>
+                                <p className="text-xs text-slate-400 leading-relaxed">
+                                    You have completed all 5 architectural milestones for <strong>{project.title}</strong>.
                                 </p>
                             </div>
 
-                            <div className="p-3 rounded-2xl bg-white/5 border border-white/5 text-xs font-mono flex items-center justify-between">
-                                <span className="text-slate-400">Overall Progress</span>
-                                <span className="text-cyan-400 font-bold">
-                                    {Math.round(((currentMilestoneIndex + 1) / (project.milestones?.length || 5)) * 100)}%
-                                </span>
+                            <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-300 font-mono space-y-1">
+                                <div>Total Session Time: <span className="text-cyan-400 font-bold">{formattedTime}</span></div>
+                                <div>Total Passed Assertions: <span className="text-emerald-400 font-bold">{project.milestones?.reduce((acc, m) => acc + (m.testCount || 4), 0)} Tests</span></div>
                             </div>
 
                             <div className="flex items-center gap-3 pt-2">
                                 <button
                                     onClick={() => setShowCelebration(false)}
-                                    className="flex-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold transition-colors"
+                                    className="flex-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-bold text-white transition-colors"
                                 >
-                                    Stay on Milestone
+                                    Stay in Workspace
                                 </button>
-                                {currentMilestoneIndex + 1 < (project.milestones?.length || 5) ? (
-                                    <button
-                                        onClick={() => {
-                                            setShowCelebration(false);
-                                            setCurrentMilestoneIndex(prev => prev + 1);
-                                            setTestResults(null);
-                                        }}
-                                        className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md flex items-center justify-center gap-1.5"
-                                    >
-                                        <span>Next Milestone</span>
-                                        <ChevronRight size={14} />
-                                    </button>
-                                ) : (
-                                    <button
-                                        onClick={() => {
-                                            setShowCelebration(false);
-                                            navigate("/projects?tab=builds");
-                                        }}
-                                        className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md"
-                                    >
-                                        View in Portfolio
-                                    </button>
-                                )}
+                                <button
+                                    onClick={() => navigate("/projects")}
+                                    className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-xs font-bold text-white transition-all shadow-lg hover:from-blue-500 hover:to-cyan-400"
+                                >
+                                    Forge Next Project
+                                </button>
                             </div>
                         </motion.div>
-                    </div>
+                    </motion.div>
                 )}
             </AnimatePresence>
 
