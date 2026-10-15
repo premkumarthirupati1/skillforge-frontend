@@ -31,11 +31,18 @@ import {
     Folder,
     FolderTree,
     Search,
-    Command
+    Command,
+    Bot,
+    Send,
+    BrainCircuit,
+    Lightbulb,
+    Zap,
+    RefreshCw
 } from "lucide-react";
 import { PROJECTS } from "../../data/projectsData";
 import { getProjectWorkspaceData } from "../../data/projectWorkspacesData";
 import { executeProjectTests, isClientSideLanguage } from "../../services/codeRunnerService";
+import { fetchAiMentorAdvice } from "../../services/aiMentorService";
 import CodeStudioEditor from "../../components/workspace/CodeStudioEditor";
 import CommandPalette from "../../components/workspace/CommandPalette";
 import FileExplorerTree from "../../components/workspace/FileExplorerTree";
@@ -187,6 +194,26 @@ export default function ProjectWorkspace() {
         }
     });
     const [showCelebration, setShowCelebration] = useState(false);
+
+    // State: AI Mentor (Forge Copilot)
+    const [aiMentorState, setAiMentorState] = useState({
+        isLoading: false,
+        diagnosis: null,
+        hint: null,
+        level: 1, // 1: Nudge, 2: Pinpoint, 3: Fix Structure
+        targetLine: null,
+        codePattern: "",
+        quickPrompts: [
+            "Why did my test fail?",
+            "Give me a subtle hint",
+            "Explain milestone architecture",
+            "Check my code for edge cases"
+        ],
+        modelUsed: null,
+        activeFailingTest: null,
+        history: []
+    });
+    const [aiMentorInput, setAiMentorInput] = useState("");
 
     // Active milestone guide data
     const milestoneGuide = workspaceData.milestoneGuides?.[currentMilestoneIndex] || {
@@ -363,6 +390,75 @@ export default function ProjectWorkspace() {
         return match ? parseInt(match[1], 10) : null;
     };
 
+    // Trigger Forge Copilot / AI Coding Mentor
+    const handleAskAiMentor = async ({ 
+        testCase = null, 
+        error = null, 
+        line = null, 
+        prompt = null, 
+        requestedLevel = null 
+    } = {}) => {
+        // Open the AI Mentor panel in the sidebar
+        setSpecTab("copilot");
+        setIsSpecsCollapsed(false);
+
+        const targetLevel = requestedLevel !== null ? requestedLevel : (aiMentorState.level || 1);
+        const failingName = testCase || aiMentorState.activeFailingTest || (testResults?.steps?.find(s => !s.passed)?.name) || "Active Milestone Tests";
+        const failingErr = error || (testResults?.steps?.find(s => !s.passed)?.output) || testResults?.error || "";
+
+        setAiMentorState(prev => ({
+            ...prev,
+            isLoading: true,
+            activeFailingTest: failingName,
+            level: targetLevel
+        }));
+
+        try {
+            const activeCode = files.find(f => f.name === activeFileName)?.content || "";
+            const advice = await fetchAiMentorAdvice({
+                projectId: project.id,
+                projectTitle: project.title,
+                language: workspaceData.language || project.language || "rust",
+                milestoneIndex: currentMilestoneIndex,
+                milestoneTitle: milestoneGuide.title,
+                milestoneObjective: milestoneGuide.objective,
+                activeFileName,
+                userCode: activeCode,
+                testResults: testResults || (failingErr ? { steps: [{ name: failingName, passed: false, output: failingErr }] } : null),
+                userQuery: prompt || (failingName ? `Why is test '${failingName}' failing: ${failingErr}` : ""),
+                hintLevel: targetLevel
+            });
+
+            setAiMentorState(prev => ({
+                ...prev,
+                isLoading: false,
+                diagnosis: advice.diagnosis,
+                hint: advice.hint,
+                level: advice.level || targetLevel,
+                targetLine: line || advice.targetLine,
+                codePattern: advice.codePattern || "",
+                quickPrompts: advice.quickPrompts || prev.quickPrompts,
+                modelUsed: advice.modelUsed,
+                history: prompt ? [...prev.history, { query: prompt, reply: advice.hint }] : prev.history
+            }));
+
+            if ((line || advice.targetLine) && (line > 0 || advice.targetLine > 0)) {
+                const targetL = line || advice.targetLine;
+                jumpToLine(targetL);
+            }
+            toast("Forge Copilot ready with insights", { icon: "🤖" });
+        } catch (err) {
+            console.error("AI Mentor request error:", err);
+            setAiMentorState(prev => ({
+                ...prev,
+                isLoading: false,
+                diagnosis: "Diagnosis could not be loaded.",
+                hint: "Inspect your active file structure and verify types match the milestone spec."
+            }));
+            toast.error("Could not reach Forge AI service.");
+        }
+    };
+
     // Handle Run Tests Action
     const handleRunTests = async () => {
         if (isRunningTests) return;
@@ -455,6 +551,20 @@ export default function ProjectWorkspace() {
                     steps: result.steps,
                     error: result.error
                 });
+
+                // Pre-seed AI Mentor with the first failing step
+                const firstFailed = result.steps?.find(s => !s.passed);
+                if (firstFailed) {
+                    setAiMentorState(prev => ({
+                        ...prev,
+                        activeFailingTest: firstFailed.name,
+                        diagnosis: firstFailed.output || "Test assertion failed",
+                        targetLine: extractLineNumber(firstFailed.output),
+                        hint: null,
+                        codePattern: ""
+                    }));
+                }
+
                 toast.error("Tests failed. Review output in the bottom test drawer.");
             }
 
@@ -532,9 +642,9 @@ export default function ProjectWorkspace() {
         { id: "explorer", label: "Files", icon: FolderTree, count: files.length },
         { id: "roadmap", label: "Roadmap", icon: Milestone, count: project.milestones?.length || 5 },
         { id: "spec", label: "Spec Guide", icon: BookOpen },
+        { id: "copilot", label: "Forge AI", icon: Bot, count: testResults?.status === "failed" ? "!" : null },
         { id: "prereq", label: "Prereqs", icon: CheckCircle2, count: (project.prerequisites?.length || 0) },
-        { id: "prd", label: "Full PRD", icon: Layers },
-        { id: "hints", label: "Hints", icon: Sparkles }
+        { id: "prd", label: "Full PRD", icon: Layers }
     ];
 
     const handleActivityNavClick = (tabId) => {
@@ -650,8 +760,12 @@ export default function ProjectWorkspace() {
                                         <div className="absolute -left-1.5 top-2 bottom-2 w-1 rounded-r bg-cyan-400 shadow-[0_0_8px_#38bdf8]" />
                                     )}
                                     <Icon size={16} />
-                                    {item.count !== undefined && (
-                                        <span className="absolute -bottom-0.5 -right-0.5 text-[8px] font-mono px-1 rounded-full bg-blue-500/30 text-cyan-200 border border-blue-500/40">
+                                    {item.count !== undefined && item.count !== null && (
+                                        <span className={`absolute -bottom-0.5 -right-0.5 text-[8px] font-mono px-1 rounded-full border ${
+                                            item.count === "!" 
+                                                ? "bg-purple-600 text-white border-purple-400 font-extrabold animate-pulse shadow-[0_0_8px_#c084fc]" 
+                                                : "bg-blue-500/30 text-cyan-200 border-blue-500/40"
+                                        }`}>
                                             {item.count}
                                         </span>
                                     )}
@@ -689,16 +803,16 @@ export default function ProjectWorkspace() {
                                 {specTab === "explorer" && <FolderTree size={13} className="text-cyan-400" />}
                                 {specTab === "roadmap" && <Milestone size={13} className="text-cyan-400" />}
                                 {specTab === "spec" && <BookOpen size={13} className="text-cyan-400" />}
+                                {(specTab === "copilot" || specTab === "hints") && <Bot size={13} className="text-purple-400" />}
                                 {specTab === "prereq" && <CheckCircle2 size={13} className="text-cyan-400" />}
                                 {specTab === "prd" && <Layers size={13} className="text-cyan-400" />}
-                                {specTab === "hints" && <Sparkles size={13} className="text-amber-400" />}
                                 <span>
                                     {specTab === "explorer" && "Project Files"}
                                     {specTab === "roadmap" && "Milestone Roadmap"}
                                     {specTab === "spec" && "Milestone Spec"}
+                                    {(specTab === "copilot" || specTab === "hints") && "Forge AI Copilot"}
                                     {specTab === "prereq" && "Prerequisites"}
                                     {specTab === "prd" && "Architecture PRD"}
-                                    {specTab === "hints" && "Engineering Hints"}
                                 </span>
                             </span>
 
@@ -1123,26 +1237,247 @@ export default function ProjectWorkspace() {
                                 </div>
                             )}
 
-                            {/* TAB: HINTS */}
-                            {specTab === "hints" && (
-                                <div className="p-5 space-y-3 animate-in fade-in duration-200">
-                                    <div className="space-y-1">
-                                        <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                                            <Sparkles size={15} className="text-amber-400" />
-                                            <span>Engineering Hints & Walkthrough</span>
-                                        </h2>
-                                        <p className="text-[11px] text-slate-400">
-                                            Tactical hints to unblock your implementation.
+                            {/* TAB: FORGE AI COPILOT / AI MENTOR */}
+                            {(specTab === "copilot" || specTab === "hints") && (
+                                <div className="p-4 space-y-4 animate-in fade-in duration-200">
+                                    
+                                    {/* Mentor Header Card */}
+                                    <div className="p-3.5 rounded-2xl bg-gradient-to-br from-purple-950/40 via-[#0E0F1E] to-[#070A11] border border-purple-500/30 space-y-2 relative overflow-hidden shadow-lg">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-7 h-7 rounded-lg bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-300">
+                                                    <Bot size={16} />
+                                                </div>
+                                                <div>
+                                                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                                                        <span>Forge Copilot</span>
+                                                        <span className="text-[9px] uppercase px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 font-mono font-bold">
+                                                            Staff AI
+                                                        </span>
+                                                    </div>
+                                                    <div className="text-[10px] text-slate-400 font-mono">
+                                                        Pedagogical Senior Debugger
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
+                                                <span className="text-[10px] font-mono text-purple-300">
+                                                    {aiMentorState.modelUsed ? (aiMentorState.modelUsed.includes("Gemini") ? "Gemini 1.5" : "Diagnostic Engine") : "Ready"}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <p className="text-[11px] text-purple-200/80 leading-relaxed">
+                                            Analyzes failing assertions, unblocks architecture, and provides graduated hints without spoiling your solution.
                                         </p>
                                     </div>
-                                    <div className="space-y-2.5 pt-2">
-                                        {milestoneGuide.hints?.map((hint, idx) => (
-                                            <div key={idx} className="p-3 rounded-xl bg-blue-500/5 border border-blue-500/20 text-xs text-blue-200 leading-relaxed space-y-1">
-                                                <div className="font-bold text-blue-300">Hint #{idx + 1}</div>
-                                                <div>{hint}</div>
+
+                                    {/* Active Test Case Context Bar */}
+                                    {aiMentorState.activeFailingTest && (
+                                        <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-200 flex items-center justify-between gap-2">
+                                            <div className="flex items-center gap-2 truncate">
+                                                <XCircle size={14} className="text-rose-400 shrink-0" />
+                                                <span className="font-bold font-mono truncate">{aiMentorState.activeFailingTest}</span>
                                             </div>
-                                        ))}
+                                            {aiMentorState.targetLine && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => jumpToLine(aiMentorState.targetLine)}
+                                                    className="px-2 py-0.5 rounded bg-rose-500/20 hover:bg-rose-500/30 text-[10px] font-mono text-rose-200 flex items-center gap-1 transition-colors shrink-0"
+                                                >
+                                                    <Target size={10} />
+                                                    <span>Line {aiMentorState.targetLine}</span>
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Graduated Hint Level Selector */}
+                                    <div className="space-y-1.5">
+                                        <div className="text-[10px] uppercase font-bold tracking-wider text-slate-400 flex items-center justify-between">
+                                            <span>Guidance Level</span>
+                                            <span className="text-[9px] font-mono text-purple-400">Graduated Hinting</span>
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-1 bg-[#05070B] p-1 rounded-xl border border-white/5 text-[11px] font-mono">
+                                            {[
+                                                { lvl: 1, label: "1. Nudge", title: "Conceptual guidance" },
+                                                { lvl: 2, label: "2. Pinpoint", title: "Pinpoints exact flaw" },
+                                                { lvl: 3, label: "3. Structure", title: "Code pattern" }
+                                            ].map(tab => (
+                                                <button
+                                                    key={tab.lvl}
+                                                    type="button"
+                                                    onClick={() => handleAskAiMentor({ requestedLevel: tab.lvl })}
+                                                    className={`py-1.5 px-2 rounded-lg text-center transition-all ${
+                                                        aiMentorState.level === tab.lvl
+                                                            ? "bg-purple-600 text-white font-bold shadow"
+                                                            : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                                                    }`}
+                                                    title={tab.title}
+                                                >
+                                                    {tab.label}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
+
+                                    {/* Diagnosis & Hint Box */}
+                                    <div className="p-3.5 rounded-2xl bg-[#05070B] border border-white/10 space-y-3">
+                                        {aiMentorState.isLoading ? (
+                                            <div className="py-6 flex flex-col items-center justify-center gap-2 text-purple-300">
+                                                <RefreshCw size={20} className="animate-spin text-purple-400" />
+                                                <span className="text-xs font-mono">Consulting Forge Copilot...</span>
+                                            </div>
+                                        ) : aiMentorState.hint || aiMentorState.diagnosis ? (
+                                            <div className="space-y-3">
+                                                {/* Diagnosis summary */}
+                                                {aiMentorState.diagnosis && (
+                                                    <div className="space-y-1 border-b border-white/10 pb-2.5">
+                                                        <div className="text-[10px] font-mono uppercase text-purple-400 font-bold flex items-center gap-1.5">
+                                                            <Sparkles size={11} />
+                                                            <span>Diagnosis</span>
+                                                        </div>
+                                                        <p className="text-xs text-slate-200 leading-relaxed font-sans">
+                                                            {aiMentorState.diagnosis}
+                                                        </p>
+                                                    </div>
+                                                )}
+
+                                                {/* Hint Body */}
+                                                {aiMentorState.hint && (
+                                                    <div className="space-y-1.5">
+                                                        <div className="text-[10px] font-mono uppercase text-cyan-400 font-bold flex items-center justify-between">
+                                                            <span className="flex items-center gap-1.5">
+                                                                <Lightbulb size={12} />
+                                                                <span>Level {aiMentorState.level} Hint</span>
+                                                            </span>
+                                                            {aiMentorState.targetLine && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => jumpToLine(aiMentorState.targetLine)}
+                                                                    className="text-[10px] text-cyan-300 hover:underline flex items-center gap-1"
+                                                                >
+                                                                    <Target size={10} />
+                                                                    <span>Jump to Line {aiMentorState.targetLine}</span>
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                        <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-100 leading-relaxed">
+                                                            {aiMentorState.hint}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Code Pattern Snippet (if available) */}
+                                                {aiMentorState.codePattern && (
+                                                    <div className="space-y-1">
+                                                        <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
+                                                            <span>Suggested Structural Pattern:</span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    navigator.clipboard.writeText(aiMentorState.codePattern);
+                                                                    toast.success("Snippet copied to clipboard");
+                                                                }}
+                                                                className="hover:text-white flex items-center gap-1 transition-colors"
+                                                            >
+                                                                <Copy size={11} />
+                                                                <span>Copy</span>
+                                                            </button>
+                                                        </div>
+                                                        <pre className="p-2.5 rounded-xl bg-[#090D16] border border-white/10 text-[11px] font-mono text-cyan-200 overflow-x-auto leading-relaxed">
+                                                            <code>{aiMentorState.codePattern}</code>
+                                                        </pre>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div className="py-4 text-center space-y-2">
+                                                <Bot size={28} className="mx-auto text-purple-400/60" />
+                                                <p className="text-xs text-slate-300">
+                                                    No active errors detected yet. Run tests or choose a quick prompt below to analyze your code.
+                                                </p>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleAskAiMentor({ prompt: "Review my code architecture for this milestone" })}
+                                                    className="px-3 py-1.5 rounded-xl bg-purple-600/30 hover:bg-purple-600/40 border border-purple-500/40 text-purple-200 font-mono text-xs font-bold transition-all"
+                                                >
+                                                    ✨ Ask Copilot to Review Code
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Quick Action Prompts */}
+                                    <div className="space-y-2">
+                                        <div className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                                            Quick Prompts
+                                        </div>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {(aiMentorState.quickPrompts || [
+                                                "Why did my test fail?",
+                                                "Give me a subtle hint",
+                                                "Explain milestone architecture",
+                                                "Check my code for edge cases"
+                                            ]).map((q, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    type="button"
+                                                    onClick={() => handleAskAiMentor({ prompt: q })}
+                                                    className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-purple-600/20 border border-white/10 hover:border-purple-500/30 text-[11px] text-slate-300 hover:text-purple-200 transition-all text-left"
+                                                >
+                                                    {q}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Interactive Chat Input */}
+                                    <form
+                                        onSubmit={(e) => {
+                                            e.preventDefault();
+                                            if (!aiMentorInput.trim() || aiMentorState.isLoading) return;
+                                            const query = aiMentorInput.trim();
+                                            setAiMentorInput("");
+                                            handleAskAiMentor({ prompt: query });
+                                        }}
+                                        className="flex items-center gap-1.5 pt-1"
+                                    >
+                                        <input
+                                            type="text"
+                                            value={aiMentorInput}
+                                            onChange={(e) => setAiMentorInput(e.target.value)}
+                                            placeholder="Ask Forge Copilot a question..."
+                                            className="flex-grow px-3 py-2 rounded-xl bg-[#05070B] border border-white/10 text-white placeholder-slate-500 text-xs focus:outline-none focus:border-purple-500/50 transition-colors"
+                                        />
+                                        <button
+                                            type="submit"
+                                            disabled={aiMentorState.isLoading || !aiMentorInput.trim()}
+                                            className="p-2 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-40 text-white transition-all shrink-0 active:scale-95"
+                                            title="Send query to Forge Copilot"
+                                        >
+                                            <Send size={14} />
+                                        </button>
+                                    </form>
+
+                                    {/* Static Milestone Reference Accordion */}
+                                    <div className="space-y-2 pt-2 border-t border-white/10">
+                                        <div className="text-[10px] uppercase font-bold tracking-wider text-slate-400 flex items-center gap-1.5">
+                                            <BookOpen size={12} className="text-blue-400" />
+                                            <span>Curated Spec Hints</span>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            {milestoneGuide.hints?.map((hint, idx) => (
+                                                <div key={idx} className="p-2.5 rounded-xl bg-white/[0.03] border border-white/5 text-xs text-slate-300 leading-relaxed">
+                                                    <span className="font-bold text-blue-300 font-mono mr-1.5">#{idx + 1}</span>
+                                                    <span>{hint}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
                                 </div>
                             )}
 
@@ -1304,7 +1639,7 @@ export default function ProjectWorkspace() {
                                                                 )}
                                                             </div>
                                                             <div className="min-w-0 flex-grow">
-                                                                <div className="flex items-center gap-2">
+                                                                <div className="flex items-center gap-2 flex-wrap">
                                                                     <span className="font-bold text-xs">{step.name}</span>
                                                                     {lineNum && (
                                                                         <button
@@ -1315,6 +1650,22 @@ export default function ProjectWorkspace() {
                                                                         >
                                                                             <Target size={11} />
                                                                             <span>Line {lineNum}</span>
+                                                                        </button>
+                                                                    )}
+                                                                    {!step.passed && (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => handleAskAiMentor({
+                                                                                testCase: step.name,
+                                                                                error: step.output,
+                                                                                line: lineNum,
+                                                                                requestedLevel: 1
+                                                                            })}
+                                                                            className="px-2 py-0.5 rounded-md bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 border border-purple-500/30 text-[10px] font-mono flex items-center gap-1 transition-all shadow-sm active:scale-95"
+                                                                            title="Get AI diagnosis & graduated hints for this test"
+                                                                        >
+                                                                            <Sparkles size={11} className="text-purple-300 animate-pulse" />
+                                                                            <span>Explain & Get Hint</span>
                                                                         </button>
                                                                     )}
                                                                 </div>
@@ -1339,13 +1690,27 @@ export default function ProjectWorkspace() {
                                                         <XCircle size={16} className="text-rose-400 shrink-0" />
                                                         <span>Tests Failed ({testResults.passed}/{testResults.total} passed). Fix errors to verify this milestone.</span>
                                                     </div>
-                                                    <button
-                                                        onClick={() => setTerminalTab("console")}
-                                                        className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 text-xs font-mono font-bold transition-colors flex items-center gap-1.5"
-                                                    >
-                                                        <Terminal size={12} />
-                                                        <span>View Raw Logs</span>
-                                                    </button>
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleAskAiMentor({
+                                                                testCase: testResults.steps?.find(s => !s.passed)?.name || "Milestone Tests",
+                                                                error: testResults.steps?.find(s => !s.passed)?.output || "Tests failed",
+                                                                requestedLevel: 1
+                                                            })}
+                                                            className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-purple-600/30 to-indigo-600/30 hover:from-purple-600/50 hover:to-indigo-600/50 border border-purple-500/40 text-purple-200 text-xs font-mono font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                                                        >
+                                                            <Bot size={13} className="text-purple-300 animate-pulse" />
+                                                            <span>Forge Copilot: Diagnose All Failures</span>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setTerminalTab("console")}
+                                                            className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 text-xs font-mono font-bold transition-colors flex items-center gap-1.5"
+                                                        >
+                                                            <Terminal size={12} />
+                                                            <span>View Raw Logs</span>
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             )}
 
