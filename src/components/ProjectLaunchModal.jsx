@@ -154,11 +154,12 @@ export default function ProjectLaunchModal({ project, isOpen, onClose }) {
                                         transition={{ duration: 0.6, type: "spring", stiffness: 120 }}
                                         className="flex flex-col items-center gap-3"
                                     >
-                                        <div className="relative">
-                                            <div className="absolute inset-0 bg-blue-500/25 blur-xl rounded-full animate-pulse scale-125" />
-                                            <SkillForgeLogo 
-                                                size="xl" 
-                                                className="relative z-10 drop-shadow-[0_0_20px_rgba(37,99,235,0.7)]" 
+                                        <div className="relative p-3.5 rounded-2xl bg-[#070A11] border border-blue-500/40 shadow-[0_0_30px_rgba(37,99,235,0.3)]">
+                                            <div className="absolute inset-0 bg-blue-500/20 blur-xl rounded-2xl animate-pulse" />
+                                            <img 
+                                                src="/images/code-anvil-logo.png" 
+                                                alt="The Code Anvil" 
+                                                className="h-14 w-auto object-contain relative z-10 drop-shadow-[0_0_15px_rgba(56,189,248,0.8)]" 
                                             />
                                         </div>
                                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-300 text-xs font-mono font-bold uppercase tracking-widest">

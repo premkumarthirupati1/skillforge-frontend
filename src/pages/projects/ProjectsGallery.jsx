@@ -88,8 +88,10 @@ export default function ProjectsGallery() {
                 {/* 1. HERO SECTION                                         */}
                 {/* ======================================================== */}
                 <div className="text-center max-w-3xl mx-auto space-y-4">
-                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-mono font-bold uppercase tracking-widest shadow-sm">
-                        <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                    <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-mono font-bold uppercase tracking-widest shadow-sm">
+                        <div className="w-5 h-4 rounded bg-[#070A11] border border-blue-400/30 flex items-center justify-center shrink-0">
+                            <img src="/images/code-anvil-logo.png" alt="Anvil" className="h-2.5 w-auto object-contain" />
+                        </div>
                         <span>The Project Forge • Interactive Engineering</span>
                     </div>
 
@@ -315,9 +317,16 @@ export default function ProjectsGallery() {
 
                                         <button
                                             onClick={() => setActiveModalProject(project)}
-                                            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] flex items-center gap-2 active:scale-95 group/btn"
+                                            className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] flex items-center gap-2.5 active:scale-95 group/btn"
                                         >
-                                            <SkillForgeLogo iconOnly={true} size="sm" className="h-4 w-auto object-contain shrink-0" />
+                                            {/* High-contrast dark chip ensures white anvil and electric blue bracket NEVER mix with the button */}
+                                            <div className="w-6 h-5 rounded-md bg-[#070A11] border border-blue-400/40 flex items-center justify-center shrink-0 shadow-sm group-hover/btn:border-cyan-300 transition-colors">
+                                                <img 
+                                                    src="/images/code-anvil-logo.png" 
+                                                    alt="The Code Anvil" 
+                                                    className="h-3 w-auto object-contain drop-shadow-[0_0_4px_rgba(56,189,248,0.8)]" 
+                                                />
+                                            </div>
                                             <span>Start Project</span>
                                             <ArrowRight size={13} className="group-hover/btn:translate-x-0.5 transition-transform" />
                                         </button>

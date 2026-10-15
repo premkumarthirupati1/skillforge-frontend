@@ -75,9 +75,27 @@ function NavBar() {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         className="cursor-pointer shrink-0 flex items-center"
-                        onClick={() => navigate("/dashboard")}
+                        onClick={() => navigate(location.pathname.startsWith('/project') ? "/projects" : "/dashboard")}
                     >
-                        <SkillForgeLogo size="md" />
+                        {location.pathname.startsWith('/project') ? (
+                            <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-2xl bg-blue-500/10 border border-blue-500/30 shadow-[0_0_15px_rgba(37,99,235,0.2)]">
+                                <img 
+                                    src="/images/code-anvil-logo.png" 
+                                    alt="SkillForge Projects - The Code Anvil" 
+                                    className="h-6 w-auto object-contain drop-shadow-[0_0_8px_rgba(56,189,248,0.6)]"
+                                />
+                                <div className="flex items-center gap-1.5 border-l border-white/15 pl-2.5">
+                                    <span className="text-sm font-bold text-white tracking-tight hidden sm:inline">
+                                        SkillForge
+                                    </span>
+                                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-400 bg-blue-500/20 px-2 py-0.5 rounded-md">
+                                        Projects
+                                    </span>
+                                </div>
+                            </div>
+                        ) : (
+                            <SkillForgeLogo size="md" />
+                        )}
                     </motion.div>
                 </div>
 
