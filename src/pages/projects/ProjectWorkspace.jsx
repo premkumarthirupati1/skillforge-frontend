@@ -58,12 +58,17 @@ export default function ProjectWorkspace() {
     // State: Current active milestone (0-indexed, restored from saved progress)
     const [currentMilestoneIndex, setCurrentMilestoneIndex] = useState(() => {
         try {
-            const savedBuilds = JSON.parse(localStorage.getItem("skillforge_user_builds") || "[]");
-            const b = savedBuilds.find(build => build.projectId === project.id);
-            if (b && typeof b.currentMilestone === "number" && b.currentMilestone >= 1) {
-                return Math.min(b.currentMilestone - 1, (project.milestones?.length || 5) - 1);
+            const saved = localStorage.getItem(`skillforge_active_milestone_${project.id}`);
+            if (saved !== null) {
+                const idx = parseInt(saved, 10);
+                if (!isNaN(idx) && idx >= 0 && idx < (project.milestones?.length || 5)) {
+                    const verified = new Set(JSON.parse(localStorage.getItem(`skillforge_verified_${project.id}`) || "[]"));
+                    if (idx === 0 || verified.has(idx - 1)) {
+                        return idx;
+                    }
+                }
             }
-        } catch {}
+        } catch (e) {}
         return 0;
     });
     const currentMilestone = project.milestones?.[currentMilestoneIndex] || project.milestones?.[0];
@@ -71,26 +76,20 @@ export default function ProjectWorkspace() {
     // State: Verified Milestones set (Milestones unlocked and passed by test suite)
     const [verifiedMilestones, setVerifiedMilestones] = useState(() => {
         try {
-            const savedBuilds = JSON.parse(localStorage.getItem("skillforge_user_builds") || "[]");
-            const b = savedBuilds.find(build => build.projectId === project.id);
-            const set = new Set();
-            if (b && b.currentMilestone > 1) {
-                for (let i = 0; i < b.currentMilestone - 1; i++) {
-                    set.add(i);
-                }
+            const saved = localStorage.getItem(`skillforge_verified_${project.id}`);
+            if (saved) {
+                return new Set(JSON.parse(saved));
             }
-            return set;
-        } catch {
-            return new Set();
-        }
+        } catch (e) {}
+        return new Set();
     });
 
     const isCurrentMilestoneVerified = verifiedMilestones.has(currentMilestoneIndex);
 
-    // Guard: Check if a given milestone is unlocked
+    // Strict Progression Rule: Stage 1 is unlocked. Stage N requires Stage N-1 to be verified!
     const isMilestoneUnlocked = (idx) => {
         if (idx === 0) return true;
-        return verifiedMilestones.has(idx - 1) || verifiedMilestones.has(idx);
+        return verifiedMilestones.has(idx - 1);
     };
 
     // Safe milestone switcher that strictly prevents jumping ahead
@@ -105,6 +104,9 @@ export default function ProjectWorkspace() {
         setCurrentMilestoneIndex(targetIdx);
         setSelectedRoadmapIdx(targetIdx);
         setSpecTab("spec");
+        try {
+            localStorage.setItem(`skillforge_active_milestone_${project.id}`, targetIdx.toString());
+        } catch (e) {}
         return true;
     };
 
@@ -146,27 +148,7 @@ export default function ProjectWorkspace() {
     });
     const [isDraggingPanel, setIsDraggingPanel] = useState(false);
 
-    // State: Interactive prerequisites checklist
-    const [checkedPrereqs, setCheckedPrereqs] = useState(() => {
-        try {
-            const saved = localStorage.getItem(`skillforge_prereqs_${project.id}`);
-            return saved ? new Set(JSON.parse(saved)) : new Set();
-        } catch {
-            return new Set();
-        }
-    });
-
-    const togglePrereq = (key) => {
-        setCheckedPrereqs(prev => {
-            const next = new Set(prev);
-            if (next.has(key)) next.delete(key);
-            else next.add(key);
-            try {
-                localStorage.setItem(`skillforge_prereqs_${project.id}`, JSON.stringify([...next]));
-            } catch (e) {}
-            return next;
-        });
-    };
+    // Note: Prerequisites & Objectives are verified automatically by compiler test assertions, not manual user clicks
 
     // State: Resizable terminal drawer height
     const [terminalHeight, setTerminalHeight] = useState(240);
@@ -429,6 +411,9 @@ export default function ProjectWorkspace() {
                 setVerifiedMilestones(prev => {
                     const next = new Set(prev);
                     next.add(currentMilestoneIndex);
+                    try {
+                        localStorage.setItem(`skillforge_verified_${project.id}`, JSON.stringify([...next]));
+                    } catch (e) {}
                     return next;
                 });
 
@@ -1008,22 +993,37 @@ export default function ProjectWorkspace() {
                                 </div>
                             )}
 
-                            {/* TAB: PREREQUISITES */}
+                            {/* TAB: PREREQUISITES & OBJECTIVES (AUTOMATED VERIFICATION ONLY) */}
                             {specTab === "prereq" && (
-                                <div className="p-5 space-y-5 animate-in fade-in duration-200">
+                                <div className="p-5 space-y-4 animate-in fade-in duration-200">
                                     <div className="flex items-center justify-between border-b border-white/10 pb-3">
                                         <div>
                                             <h2 className="text-sm font-bold text-white flex items-center gap-2">
                                                 <CheckCircle2 size={15} className="text-cyan-400" />
-                                                <span>Prerequisites & Environment</span>
+                                                <span>Objectives & Toolchain</span>
                                             </h2>
                                             <p className="text-[11px] text-slate-400">
-                                                Review toolchain & technical concepts.
+                                                Stage {currentMilestoneIndex + 1} validation criteria & environment.
                                             </p>
                                         </div>
-                                        <span className="text-[11px] font-mono font-bold text-cyan-400 px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">
-                                            {checkedPrereqs.size} / {(project.prerequisites?.length || 0) + (milestoneGuide.prerequisites?.length || 0)}
+                                        <span className={`text-[11px] font-mono font-bold px-2.5 py-0.5 rounded ${
+                                            isCurrentMilestoneVerified 
+                                                ? "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20" 
+                                                : "text-amber-400 bg-amber-500/10 border border-amber-500/20"
+                                        }`}>
+                                            {isCurrentMilestoneVerified ? "All Verified" : "Pending Tests"}
                                         </span>
+                                    </div>
+
+                                    {/* Automated Verification Notice Banner */}
+                                    <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-200 flex items-start gap-2.5">
+                                        <ShieldCheck size={16} className="text-cyan-400 shrink-0 mt-0.5" />
+                                        <div>
+                                            <span className="font-bold text-white block">Automated Verification</span>
+                                            <span className="text-[11px] text-slate-300">
+                                                Objectives cannot be checked manually. Write code in the editor and click <b>Run Tests</b> to verify milestone completion.
+                                            </span>
+                                        </div>
                                     </div>
 
                                     {/* System Runtime Box */}
@@ -1036,37 +1036,47 @@ export default function ProjectWorkspace() {
                                         </div>
                                     </div>
 
-                                    {/* Milestone-Specific Concepts */}
+                                    {/* Milestone-Specific Concepts & Objectives */}
                                     {milestoneGuide.prerequisites && milestoneGuide.prerequisites.length > 0 && (
                                         <div className="space-y-2">
-                                            <div className="text-[11px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-                                                <Target size={13} className="text-cyan-400" />
-                                                <span>Milestone {currentMilestoneIndex + 1} Concepts</span>
+                                            <div className="text-[11px] font-bold text-white uppercase tracking-wider flex items-center justify-between">
+                                                <span className="flex items-center gap-1.5">
+                                                    <Target size={13} className="text-cyan-400" />
+                                                    <span>Stage {currentMilestoneIndex + 1} Objectives</span>
+                                                </span>
+                                                <span className={`text-[10px] font-mono ${isCurrentMilestoneVerified ? "text-emerald-400" : "text-amber-400"}`}>
+                                                    {isCurrentMilestoneVerified ? "Verified" : "Run Tests to verify"}
+                                                </span>
                                             </div>
                                             <div className="space-y-1.5">
-                                                {milestoneGuide.prerequisites.map((p, idx) => {
-                                                    const key = `m_${currentMilestoneIndex}_${idx}`;
-                                                    const isChecked = checkedPrereqs.has(key);
-                                                    return (
-                                                        <button
-                                                            key={key}
-                                                            type="button"
-                                                            onClick={() => togglePrereq(key)}
-                                                            className={`w-full text-left p-2.5 rounded-xl border transition-all flex items-start gap-2.5 text-xs ${
-                                                                isChecked 
-                                                                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-200" 
-                                                                    : "bg-white/5 border-white/10 text-slate-300 hover:border-white/20"
-                                                            }`}
-                                                        >
-                                                            <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
-                                                                isChecked ? "bg-emerald-500 border-emerald-400 text-black" : "border-white/30"
-                                                            }`}>
-                                                                {isChecked && <Check size={11} className="stroke-[3]" />}
-                                                            </div>
-                                                            <span className={isChecked ? "line-through opacity-80" : ""}>{p}</span>
-                                                        </button>
-                                                    );
-                                                })}
+                                                {milestoneGuide.prerequisites.map((p, idx) => (
+                                                    <div
+                                                        key={idx}
+                                                        className={`w-full p-2.5 rounded-xl border transition-all flex items-start gap-2.5 text-xs ${
+                                                            isCurrentMilestoneVerified
+                                                                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-200" 
+                                                                : "bg-white/5 border-white/10 text-slate-300"
+                                                        }`}
+                                                    >
+                                                        <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
+                                                            isCurrentMilestoneVerified 
+                                                                ? "bg-emerald-500 border-emerald-400 text-black" 
+                                                                : "border-white/20 bg-[#05070B] text-slate-500"
+                                                        }`}>
+                                                            {isCurrentMilestoneVerified ? (
+                                                                <Check size={11} className="stroke-[3]" />
+                                                            ) : (
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-slate-600" />
+                                                            )}
+                                                        </div>
+                                                        <span className="flex-grow">{p}</span>
+                                                        <span className={`text-[10px] font-mono shrink-0 ${
+                                                            isCurrentMilestoneVerified ? "text-emerald-400 font-bold" : "text-slate-500"
+                                                        }`}>
+                                                            {isCurrentMilestoneVerified ? "✓ Passed" : "Pending"}
+                                                        </span>
+                                                    </div>
+                                                ))}
                                             </div>
                                         </div>
                                     )}
@@ -1075,32 +1085,20 @@ export default function ProjectWorkspace() {
                                     <div className="space-y-2">
                                         <div className="text-[11px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
                                             <ShieldCheck size={13} className="text-blue-400" />
-                                            <span>Project Toolchain Checklist</span>
+                                            <span>Required Toolchain & Knowledge</span>
                                         </div>
                                         <div className="space-y-1.5">
-                                            {(project.prerequisites || []).map((p, idx) => {
-                                                const key = `p_${idx}`;
-                                                const isChecked = checkedPrereqs.has(key);
-                                                return (
-                                                    <button
-                                                        key={key}
-                                                        type="button"
-                                                        onClick={() => togglePrereq(key)}
-                                                        className={`w-full text-left p-2.5 rounded-xl border transition-all flex items-start gap-2.5 text-xs ${
-                                                            isChecked 
-                                                                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-200" 
-                                                                : "bg-white/5 border-white/10 text-slate-300 hover:border-white/20"
-                                                        }`}
-                                                    >
-                                                        <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
-                                                            isChecked ? "bg-emerald-500 border-emerald-400 text-black" : "border-white/30"
-                                                        }`}>
-                                                            {isChecked && <Check size={11} className="stroke-[3]" />}
-                                                        </div>
-                                                        <span className={isChecked ? "line-through opacity-80" : ""}>{p}</span>
-                                                    </button>
-                                                );
-                                            })}
+                                            {(project.prerequisites || []).map((p, idx) => (
+                                                <div
+                                                    key={idx}
+                                                    className="w-full p-2.5 rounded-xl border border-white/5 bg-white/[0.03] flex items-start gap-2.5 text-xs text-slate-300"
+                                                >
+                                                    <div className="mt-0.5 w-4 h-4 rounded bg-blue-500/20 border border-blue-500/30 text-cyan-300 flex items-center justify-center shrink-0 text-[10px] font-mono font-bold">
+                                                        {idx + 1}
+                                                    </div>
+                                                    <span>{p}</span>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
                                 </div>
@@ -1360,8 +1358,7 @@ export default function ProjectWorkspace() {
                                                     {currentMilestoneIndex + 1 < (project.milestones?.length || 5) && (
                                                         <button
                                                             onClick={() => {
-                                                                setCurrentMilestoneIndex(prev => prev + 1);
-                                                                setSelectedRoadmapIdx(prev => prev + 1);
+                                                                handleSelectMilestone(currentMilestoneIndex + 1);
                                                                 setTestResults(null);
                                                             }}
                                                             className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all flex items-center gap-1.5 shadow-md active:scale-95"

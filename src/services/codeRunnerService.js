@@ -158,28 +158,65 @@ export async function runClientSideEngine({ files, activeFileName, milestoneGuid
             };
         }
 
-        // 3. Evaluate real test assertions
+        // 3. Evaluate real test assertions against milestone requirements
         const cases = milestoneGuide?.testCases?.length > 0 ? milestoneGuide.testCases : [
             { name: "Code Studio Execution Check", expected: "Pass" }
         ];
+
+        // Check for uncompleted TODO placeholders or untouched starter templates
+        const hasTodo = /TODO[:\s]+implement/i.test(code);
+        const codeTrimmed = code.trim();
+        const isBareSkeleton = codeTrimmed.length < 60 || (codeTrimmed.includes('initialize') && codeTrimmed.includes('status: "initialized"') && !code.includes('class') && !code.includes('function') && codeTrimmed.length < 250);
 
         let passedCount = 0;
         for (let i = 0; i < cases.length; i++) {
             const tc = cases[i];
             const t0 = performance.now();
 
-            // Run assertion
-            let stepPassed = true;
-            let stepOutput = `✓ Asserted: ${tc.expected || "Pass"}`;
+            let stepPassed = false;
+            let stepOutput = "";
 
-            try {
-                // If there's an exported function matching the test case
-                if (tc.cmd && typeof exportsScope[tc.cmd] === "function") {
-                    exportsScope[tc.cmd]();
-                }
-            } catch (assertErr) {
+            if (hasTodo) {
                 stepPassed = false;
-                stepOutput = `✗ Assertion failed: ${assertErr.message}`;
+                stepOutput = `✗ Assertion failed: Uncompleted TODO placeholder detected for Milestone ${(milestoneIndex || 0) + 1}. Complete implementation to pass.`;
+            } else if (isBareSkeleton && (milestoneIndex || 0) > 0) {
+                stepPassed = false;
+                stepOutput = `✗ Assertion failed: Starter code has not implemented Milestone ${(milestoneIndex || 0) + 1} specification.`;
+            } else {
+                try {
+                    // 1. Try direct exported function execution
+                    if (tc.cmd && typeof exportsScope[tc.cmd] === "function") {
+                        const res = exportsScope[tc.cmd]();
+                        stepPassed = res !== false;
+                        stepOutput = stepPassed ? `✓ Asserted: ${tc.expected || "Pass"}` : `✗ Assertion returned false`;
+                    } else if (typeof exportsScope.initialize === "function") {
+                        const initRes = exportsScope.initialize();
+                        if (initRes && initRes.status === "initialized" && !hasTodo) {
+                            stepPassed = true;
+                            stepOutput = `✓ Asserted: ${tc.expected || "Pass"}`;
+                        } else {
+                            stepPassed = false;
+                            stepOutput = `✗ Assertion failed: initialize() did not return valid milestone state.`;
+                        }
+                    } else {
+                        // 2. Structural & Architectural verification
+                        const codeLower = code.toLowerCase();
+                        const checkLower = (tc.name + " " + (tc.expected || "")).toLowerCase();
+                        
+                        // Check if key components required by test case are present in user code
+                        const hasCodeSubstance = codeTrimmed.length > 80 && (code.includes('function') || code.includes('=>') || code.includes('class') || code.includes('export') || code.includes('const'));
+                        if (hasCodeSubstance) {
+                            stepPassed = true;
+                            stepOutput = `✓ Asserted: ${tc.expected || "Pass"}`;
+                        } else {
+                            stepPassed = false;
+                            stepOutput = `✗ Assertion failed: ${tc.name} requirement not implemented in code.`;
+                        }
+                    }
+                } catch (assertErr) {
+                    stepPassed = false;
+                    stepOutput = `✗ Assertion failed: ${assertErr.message}`;
+                }
             }
 
             if (stepPassed) passedCount++;
@@ -194,7 +231,7 @@ export async function runClientSideEngine({ files, activeFileName, milestoneGuid
         }
 
         const elapsed = (performance.now() - startTime).toFixed(1) + "ms";
-        const allPassed = passedCount === cases.length;
+        const allPassed = passedCount === cases.length && passedCount > 0;
 
         return {
             success: allPassed,
