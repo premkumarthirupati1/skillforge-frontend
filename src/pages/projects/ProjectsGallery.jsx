@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
     Search, 
@@ -27,45 +27,12 @@ import {
     Zap,
     ShieldCheck,
     Award,
-    ChevronRight
+    ChevronRight,
+    User
 } from "lucide-react";
 import NavBar from "../../components/NavBar";
 import ProjectLaunchModal from "../../components/ProjectLaunchModal";
 import { PROJECTS, PROJECT_TRACKS, DIFFICULTY_LEVELS } from "../../data/projectsData";
-
-// Active user builds in-progress
-const MOCK_ACTIVE_BUILDS = [
-    {
-        id: "distributed-queue",
-        projectId: "distributed-queue",
-        title: "Distributed Task Queue & Background Worker",
-        track: "Systems & Cloud",
-        currentMilestone: 3,
-        totalMilestones: 5,
-        percent: 60,
-        testsPassed: 28,
-        totalTests: 45,
-        branch: "feat/exponential-backoff",
-        lastActivity: "25m ago",
-        status: "Active Runtime",
-        tech: ["Node.js", "Redis", "TypeScript"]
-    },
-    {
-        id: "redis-clone",
-        projectId: "redis-clone",
-        title: "Build Your Own Redis Server",
-        track: "Systems Core",
-        currentMilestone: 2,
-        totalMilestones: 5,
-        percent: 40,
-        testsPassed: 18,
-        totalTests: 30,
-        branch: "feat/resp-bulk-parser",
-        lastActivity: "2h ago",
-        status: "Paused Container",
-        tech: ["Go", "TCP", "RESP"]
-    }
-];
 
 // Community project submissions & showcases
 const COMMUNITY_SHOWCASE = [
@@ -105,8 +72,23 @@ const COMMUNITY_SHOWCASE = [
 ];
 
 export default function ProjectsGallery() {
+    const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const currentTab = searchParams.get("tab") || "specs";
+
+    const token = localStorage.getItem("token");
+    const isLoggedIn = !!token;
+
+    // Load active user builds only if authenticated
+    const [userBuilds, setUserBuilds] = useState(() => {
+        if (!isLoggedIn) return [];
+        try {
+            const saved = localStorage.getItem("skillforge_user_builds");
+            return saved ? JSON.parse(saved) : [];
+        } catch {
+            return [];
+        }
+    });
 
     const setTab = (tab) => {
         setSearchParams(prev => {
@@ -114,6 +96,38 @@ export default function ProjectsGallery() {
             next.set("tab", tab);
             return next;
         });
+    };
+
+    const handleStartProject = (project) => {
+        if (isLoggedIn) {
+            setUserBuilds(prev => {
+                const exists = prev.find(b => b.projectId === project.id);
+                if (exists) return prev;
+                const newBuild = {
+                    id: project.id,
+                    projectId: project.id,
+                    title: project.title,
+                    track: project.track,
+                    currentMilestone: 1,
+                    totalMilestones: project.milestones?.length || 5,
+                    percent: 20,
+                    testsPassed: 4,
+                    totalTests: project.milestones?.reduce((acc, m) => acc + (m.testCount || 0), 0) || 25,
+                    branch: "main",
+                    lastActivity: "Just now",
+                    status: "Active Runtime",
+                    tech: project.techStack
+                };
+                const updated = [newBuild, ...prev];
+                try {
+                    localStorage.setItem("skillforge_user_builds", JSON.stringify(updated));
+                } catch (e) {
+                    console.error("Failed to save build to localStorage", e);
+                }
+                return updated;
+            });
+        }
+        setActiveModalProject(project);
     };
 
     const [selectedTrack, setSelectedTrack] = useState("all");
@@ -256,7 +270,7 @@ export default function ProjectsGallery() {
                     <div className="inline-flex p-1.5 rounded-2xl bg-brand-surface border border-brand-border shadow-sm gap-1.5 overflow-x-auto max-w-full">
                         {[
                             { id: "specs", label: "Engineering Specs", count: PROJECTS.length, icon: Layers },
-                            { id: "builds", label: "My Active Builds", count: MOCK_ACTIVE_BUILDS.length, icon: Cpu },
+                            { id: "builds", label: "My Active Builds", count: isLoggedIn ? userBuilds.length : 0, icon: Cpu },
                             { id: "sandbox", label: "Sandbox IDE", count: "Online", icon: Terminal },
                             { id: "showcase", label: "Showcase & Reviews", count: COMMUNITY_SHOWCASE.length, icon: Sparkles },
                         ].map(tab => {
@@ -291,56 +305,58 @@ export default function ProjectsGallery() {
                 {currentTab === "specs" && (
                     <div className="space-y-10 animate-in fade-in duration-300">
                         
-                        {/* Quick Resume Tray: Shows Active In-Progress Projects */}
-                        <div className="p-5 rounded-3xl bg-gradient-to-r from-blue-500/5 via-indigo-500/5 to-cyan-500/5 border border-blue-500/20 space-y-3">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-                                    <Hammer size={14} />
-                                    <span>In-Progress Workspaces ({MOCK_ACTIVE_BUILDS.length})</span>
-                                </div>
-                                <button 
-                                    onClick={() => setTab("builds")}
-                                    className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                                >
-                                    <span>View All Builds</span>
-                                    <ChevronRight size={13} />
-                                </button>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {MOCK_ACTIVE_BUILDS.map(build => (
-                                    <div 
-                                        key={build.id}
-                                        className="p-4 rounded-2xl bg-brand-surface border border-brand-border flex items-center justify-between gap-4 shadow-sm hover:border-blue-500/40 transition-colors"
-                                    >
-                                        <div className="space-y-1.5 min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                                                <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 truncate">
-                                                    {build.branch}
-                                                </span>
-                                            </div>
-                                            <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                                                {build.title}
-                                            </h4>
-                                            <div className="flex items-center gap-3 text-xs text-brand-muted">
-                                                <span>Milestone {build.currentMilestone}/{build.totalMilestones} ({build.percent}%)</span>
-                                                <span>•</span>
-                                                <span className="text-emerald-600 dark:text-emerald-400 font-bold">{build.testsPassed}/{build.totalTests} tests passed</span>
-                                            </div>
-                                        </div>
-
-                                        <button
-                                            onClick={() => setActiveModalProject(activeProjectFromBuild(build.projectId))}
-                                            className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shrink-0 transition-all shadow-sm flex items-center gap-1.5"
-                                        >
-                                            <Play size={12} fill="currentColor" />
-                                            <span>Resume</span>
-                                        </button>
+                        {/* Quick Resume Tray: ONLY renders if user is signed in AND has active builds */}
+                        {isLoggedIn && userBuilds.length > 0 && (
+                            <div className="p-5 rounded-3xl bg-gradient-to-r from-blue-500/5 via-indigo-500/5 to-cyan-500/5 border border-blue-500/20 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                                        <Hammer size={14} />
+                                        <span>In-Progress Workspaces ({userBuilds.length})</span>
                                     </div>
-                                ))}
+                                    <button 
+                                        onClick={() => setTab("builds")}
+                                        className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                                    >
+                                        <span>View All Builds</span>
+                                        <ChevronRight size={13} />
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {userBuilds.map(build => (
+                                        <div 
+                                            key={build.id}
+                                            className="p-4 rounded-2xl bg-brand-surface border border-brand-border flex items-center justify-between gap-4 shadow-sm hover:border-blue-500/40 transition-colors"
+                                        >
+                                            <div className="space-y-1.5 min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                                                    <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 truncate">
+                                                        {build.branch}
+                                                    </span>
+                                                </div>
+                                                <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                                                    {build.title}
+                                                </h4>
+                                                <div className="flex items-center gap-3 text-xs text-brand-muted">
+                                                    <span>Milestone {build.currentMilestone}/{build.totalMilestones} ({build.percent}%)</span>
+                                                    <span>•</span>
+                                                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">{build.testsPassed}/{build.totalTests} tests passed</span>
+                                                </div>
+                                            </div>
+
+                                            <button
+                                                onClick={() => handleStartProject(activeProjectFromBuild(build.projectId))}
+                                                className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shrink-0 transition-all shadow-sm flex items-center gap-1.5"
+                                            >
+                                                <Play size={12} fill="currentColor" />
+                                                <span>Resume</span>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* Search and Difficulty Filter Controls */}
                         <div className="space-y-4">
@@ -510,7 +526,7 @@ export default function ProjectsGallery() {
                                                 </div>
 
                                                 <button
-                                                    onClick={() => setActiveModalProject(project)}
+                                                    onClick={() => handleStartProject(project)}
                                                     className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] flex items-center gap-2.5 active:scale-95 group/btn"
                                                 >
                                                     <div className="w-6 h-5 rounded-md bg-[#070A11] border border-blue-400/40 flex items-center justify-center shrink-0 shadow-sm group-hover/btn:border-cyan-300 transition-colors">
@@ -552,75 +568,128 @@ export default function ProjectsGallery() {
                             </button>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-4">
-                            {MOCK_ACTIVE_BUILDS.map(build => (
-                                <div 
-                                    key={build.id}
-                                    className="p-6 rounded-3xl bg-brand-surface border border-brand-border shadow-sm hover:border-blue-500/40 transition-all space-y-4"
-                                >
-                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                        <div className="space-y-1">
-                                            <div className="flex items-center gap-2.5">
-                                                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-mono font-bold uppercase">
-                                                    {build.status}
-                                                </span>
-                                                <span className="text-xs text-brand-muted font-mono flex items-center gap-1">
-                                                    <GitBranch size={12} /> {build.branch}
-                                                </span>
-                                            </div>
-                                            <h4 className="text-lg font-bold text-slate-900 dark:text-white">
-                                                {build.title}
-                                            </h4>
-                                            <div className="flex flex-wrap gap-1.5 pt-1">
-                                                {build.tech.map(t => (
-                                                    <span key={t} className="text-[11px] font-mono px-2 py-0.5 rounded bg-brand-elevated text-brand-muted border border-brand-border">
-                                                        {t}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-3 shrink-0">
-                                            <button
-                                                onClick={() => setTab("sandbox")}
-                                                className="px-4 py-2.5 rounded-xl bg-brand-elevated hover:bg-brand-surface border border-brand-border text-slate-700 dark:text-slate-200 text-xs font-bold transition-all flex items-center gap-2"
-                                            >
-                                                <Terminal size={14} className="text-blue-500" />
-                                                <span>Open Terminal</span>
-                                            </button>
-
-                                            <button
-                                                onClick={() => setActiveModalProject(activeProjectFromBuild(build.projectId))}
-                                                className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md flex items-center gap-2"
-                                            >
-                                                <Play size={13} fill="currentColor" />
-                                                <span>Resume Workspace</span>
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    {/* Progress Bar & Test Suite Breakdown */}
-                                    <div className="pt-4 border-t border-brand-border/60 space-y-2">
-                                        <div className="flex items-center justify-between text-xs font-mono">
-                                            <span className="text-slate-500 dark:text-slate-400">Milestone {build.currentMilestone} of {build.totalMilestones} Completed</span>
-                                            <span className="text-blue-600 dark:text-blue-400 font-bold">{build.percent}% Overall Progress</span>
-                                        </div>
-                                        <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
-                                            <div 
-                                                className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full transition-all duration-500"
-                                                style={{ width: `${build.percent}%` }}
-                                            />
-                                        </div>
-                                        <div className="flex items-center justify-between text-[11px] text-brand-muted pt-1">
-                                            <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
-                                                <CheckCircle2 size={12} /> {build.testsPassed} of {build.totalTests} automated test harnesses verified
-                                            </span>
-                                            <span>Last modified {build.lastActivity}</span>
-                                        </div>
-                                    </div>
+                        {!isLoggedIn ? (
+                            <div className="py-16 px-6 rounded-3xl bg-brand-surface border border-brand-border text-center space-y-6 max-w-xl mx-auto shadow-sm">
+                                <div className="w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 mx-auto flex items-center justify-center">
+                                    <ShieldCheck size={32} />
                                 </div>
-                            ))}
-                        </div>
+                                <div className="space-y-2">
+                                    <h4 className="text-xl font-bold text-slate-900 dark:text-white">
+                                        Sign In to Save Your Workspaces
+                                    </h4>
+                                    <p className="text-sm text-brand-muted max-w-md mx-auto leading-relaxed">
+                                        Your container builds, milestone test verifications, and custom code commits are tied to your SkillForge account. Sign in to start or resume your active builds.
+                                    </p>
+                                </div>
+                                <div className="flex items-center justify-center gap-3 pt-2">
+                                    <button
+                                        onClick={() => navigate("/login")}
+                                        className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20"
+                                    >
+                                        Sign In
+                                    </button>
+                                    <button
+                                        onClick={() => navigate("/signup")}
+                                        className="px-6 py-2.5 rounded-xl bg-brand-elevated hover:bg-brand-surface border border-brand-border text-slate-800 dark:text-slate-200 text-xs font-bold transition-all"
+                                    >
+                                        Create Free Account
+                                    </button>
+                                </div>
+                            </div>
+                        ) : userBuilds.length === 0 ? (
+                            <div className="py-16 px-6 rounded-3xl bg-brand-surface border border-brand-border text-center space-y-6 max-w-xl mx-auto shadow-sm">
+                                <div className="w-16 h-16 rounded-2xl bg-brand-elevated border border-brand-border text-brand-muted mx-auto flex items-center justify-center">
+                                    <Layers size={32} />
+                                </div>
+                                <div className="space-y-2">
+                                    <h4 className="text-xl font-bold text-slate-900 dark:text-white">
+                                        No Active Builds Yet
+                                    </h4>
+                                    <p className="text-sm text-brand-muted max-w-md mx-auto leading-relaxed">
+                                        You don't have any ongoing builds. Pick an engineering specification from our catalog to launch your first cloud sandbox.
+                                    </p>
+                                </div>
+                                <div className="pt-2">
+                                    <button
+                                        onClick={() => setTab("specs")}
+                                        className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 inline-flex items-center gap-2"
+                                    >
+                                        <Play size={13} fill="currentColor" />
+                                        <span>Browse Engineering Specs</span>
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 gap-4">
+                                {userBuilds.map(build => (
+                                    <div 
+                                        key={build.id}
+                                        className="p-6 rounded-3xl bg-brand-surface border border-brand-border shadow-sm hover:border-blue-500/40 transition-all space-y-4"
+                                    >
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-2.5">
+                                                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-mono font-bold uppercase">
+                                                        {build.status}
+                                                    </span>
+                                                    <span className="text-xs text-brand-muted font-mono flex items-center gap-1">
+                                                        <GitBranch size={12} /> {build.branch}
+                                                    </span>
+                                                </div>
+                                                <h4 className="text-lg font-bold text-slate-900 dark:text-white">
+                                                    {build.title}
+                                                </h4>
+                                                <div className="flex flex-wrap gap-1.5 pt-1">
+                                                    {build.tech.map(t => (
+                                                        <span key={t} className="text-[11px] font-mono px-2 py-0.5 rounded bg-brand-elevated text-brand-muted border border-brand-border">
+                                                            {t}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-3 shrink-0">
+                                                <button
+                                                    onClick={() => setTab("sandbox")}
+                                                    className="px-4 py-2.5 rounded-xl bg-brand-elevated hover:bg-brand-surface border border-brand-border text-slate-700 dark:text-slate-200 text-xs font-bold transition-all flex items-center gap-2"
+                                                >
+                                                    <Terminal size={14} className="text-blue-500" />
+                                                    <span>Open Terminal</span>
+                                                </button>
+
+                                                <button
+                                                    onClick={() => handleStartProject(activeProjectFromBuild(build.projectId))}
+                                                    className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md flex items-center gap-2"
+                                                >
+                                                    <Play size={13} fill="currentColor" />
+                                                    <span>Resume Workspace</span>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Progress Bar & Test Suite Breakdown */}
+                                        <div className="pt-4 border-t border-brand-border/60 space-y-2">
+                                            <div className="flex items-center justify-between text-xs font-mono">
+                                                <span className="text-slate-500 dark:text-slate-400">Milestone {build.currentMilestone} of {build.totalMilestones} Completed</span>
+                                                <span className="text-blue-600 dark:text-blue-400 font-bold">{build.percent}% Overall Progress</span>
+                                            </div>
+                                            <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
+                                                <div 
+                                                    className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full transition-all duration-500"
+                                                    style={{ width: `${build.percent}%` }}
+                                                />
+                                            </div>
+                                            <div className="flex items-center justify-between text-[11px] text-brand-muted pt-1">
+                                                <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+                                                    <CheckCircle2 size={12} /> {build.testsPassed} of {build.totalTests} automated test harnesses verified
+                                                </span>
+                                                <span>Last modified {build.lastActivity}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
 
