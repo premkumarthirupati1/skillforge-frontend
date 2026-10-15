@@ -547,6 +547,222 @@ module.exports = { cacheUrl, getCachedUrl };`
                 ]
             }
         ]
+    },
+    "local-rag-agent": {
+        language: "python",
+        repoName: "skillforge/local-rag-agent-py",
+        files: [
+            {
+                name: "main.py",
+                path: "src/main.py",
+                language: "python",
+                content: `"""
+SkillForge Project Workspace: Autonomous Local RAG & Codebase Assistant
+Track: AI & Machine Learning Systems
+Milestone 1: AST Code Chunking & Semantic Boundary Extractor
+"""
+import ast
+import json
+from typing import List, Dict, Any
+
+class CodeChunker:
+    """
+    Extracts semantic function and class boundaries from source code using AST.
+    Avoids arbitrary token slicing to preserve complete logical context.
+    """
+    def __init__(self, language: str = "python"):
+        self.language = language
+
+    def chunk_python(self, source_code: str) -> List[Dict[str, Any]]:
+        """
+        Parses Python code into an Abstract Syntax Tree (AST) and
+        returns a list of structured chunks with metadata.
+        """
+        try:
+            tree = ast.parse(source_code)
+        except SyntaxError as e:
+            return [{"error": f"Invalid Python syntax: {e}", "chunks": []}]
+
+        chunks = []
+        lines = source_code.splitlines()
+
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                start_line = node.lineno
+                end_line = getattr(node, "end_lineno", start_line)
+                chunk_lines = lines[start_line - 1:end_line]
+                
+                chunks.append({
+                    "type": "function",
+                    "name": node.name,
+                    "start_line": start_line,
+                    "end_line": end_line,
+                    "docstring": ast.get_docstring(node) or "",
+                    "content": "\\n".join(chunk_lines)
+                })
+            elif isinstance(node, ast.ClassDef):
+                start_line = node.lineno
+                end_line = getattr(node, "end_lineno", start_line)
+                chunk_lines = lines[start_line - 1:end_line]
+
+                chunks.append({
+                    "type": "class",
+                    "name": node.name,
+                    "start_line": start_line,
+                    "end_line": end_line,
+                    "docstring": ast.get_docstring(node) or "",
+                    "content": "\\n".join(chunk_lines)
+                })
+
+        return sorted(chunks, key=lambda c: c["start_line"])
+
+def initialize() -> Dict[str, Any]:
+    """Milestone 1 entrypoint initializing the chunking pipeline."""
+    chunker = CodeChunker(language="python")
+    sample_code = '''def calculate_metrics(data):
+    """Calculates precision and recall."""
+    return {"status": "ok", "items": len(data)}
+'''
+    result = chunker.chunk_python(sample_code)
+    return {
+        "status": "initialized",
+        "ready": True,
+        "sample_chunks": len(result)
+    }
+
+if __name__ == "__main__":
+    print("⚡ Autonomous Local RAG & Codebase Assistant initializing...")
+    init_state = initialize()
+    print(f"✓ Chunker engine online: {init_state}")
+`
+            },
+            {
+                name: "retriever.py",
+                path: "src/retriever.py",
+                language: "python",
+                content: `"""
+Semantic Vector Retrieval & Hybrid Search Engine
+"""
+from typing import List, Dict, Any
+
+class HybridRetriever:
+    def __init__(self, collection_name: str = "codebase_index"):
+        self.collection_name = collection_name
+        self.index = {}
+
+    def index_chunks(self, chunks: List[Dict[str, Any]]) -> int:
+        for idx, chunk in enumerate(chunks):
+            self.index[f"chunk_{idx}"] = chunk
+        return len(self.index)
+
+    def query(self, query_text: str, top_k: int = 3) -> List[Dict[str, Any]]:
+        # Milestone 2 & 3: Dense vector cosine similarity + BM25 keyword fusion
+        matches = []
+        for key, chunk in self.index.items():
+            if any(word.lower() in chunk.get("content", "").lower() for word in query_text.split()):
+                matches.append(chunk)
+            if len(matches) >= top_k:
+                break
+        return matches
+`
+            },
+            {
+                name: "requirements.txt",
+                path: "requirements.txt",
+                language: "text",
+                content: `fastapi>=0.110.0
+chromadb>=0.4.24
+langchain>=0.1.14
+uvicorn>=0.28.0
+pydantic>=2.6.4
+`
+            }
+        ],
+        milestoneGuides: [
+            {
+                milestone: 1,
+                title: "AST Python/JS Code Chunking & Boundary Extractor",
+                objective: "Parse source code into Abstract Syntax Trees (AST) and extract discrete, syntactically whole function and class chunks.",
+                specRules: [
+                    "Parse valid Python scripts using standard library `ast.parse`.",
+                    "Preserve full function signatures, docstrings, and decorators.",
+                    "Tag each extracted chunk with its starting and ending line coordinates.",
+                    "Ensure syntax errors in target files are gracefully captured with informative diagnostics."
+                ],
+                hints: [
+                    "Use `ast.walk()` or `ast.NodeVisitor` to traverse tree nodes without missing nested definitions.",
+                    "The `ast.get_docstring(node)` helper extracts raw docstrings cleanly."
+                ],
+                testCases: [
+                    { name: "AST Parse Single Function", cmd: "chunker.chunk_python('def foo(): pass')", expected: "1 function chunk extracted" },
+                    { name: "Class Hierarchy Extraction", cmd: "chunker.chunk_python('class VectorStore: pass')", expected: "1 class chunk extracted" },
+                    { name: "Line Number Boundary Accuracy", cmd: "chunk['start_line'] <= chunk['end_line']", expected: "Valid line intervals" },
+                    { name: "Docstring Extraction Fidelity", cmd: "chunk['docstring'] matches function header", expected: "Docstring preserved" },
+                    { name: "Syntax Error Boundary Catching", cmd: "chunker.chunk_python('def unclosed(')", expected: "Handled gracefully" }
+                ]
+            },
+            {
+                milestone: 2,
+                title: "ChromaDB Vector Store Ingestion & Embeddings",
+                objective: "Compute dense vector embeddings and persist code chunks into a local ChromaDB collection.",
+                specRules: [
+                    "Initialize ChromaDB persistent client pointing to `./chroma_db`.",
+                    "Generate embeddings with consistent dimensionality (384 or 1536 dims).",
+                    "Store source file path, chunk type, and start line in chunk metadata dictionary."
+                ],
+                hints: [
+                    "Batch chunk insertions to optimize embedding throughput."
+                ],
+                testCases: [
+                    { name: "ChromaDB Client Initialization", cmd: "chromadb.PersistentClient()", expected: "Collection handle acquired" },
+                    { name: "Chunk Metadata Serialization", cmd: "collection.add(documents, metadatas)", expected: "Chunks persisted" }
+                ]
+            },
+            {
+                milestone: 3,
+                title: "Hybrid Lexical + Dense Semantic Search Engine",
+                objective: "Combine dense vector similarity search with BM25 lexical keyword matching using Reciprocal Rank Fusion (RRF).",
+                specRules: [
+                    "Perform cosine distance query across vector embeddings.",
+                    "Execute BM25 lexical token match across codebase chunks.",
+                    "Merge rank lists using RRF formula: RRF_score = sum(1 / (60 + rank))."
+                ],
+                hints: ["Tune k=60 in RRF to balance exact symbol matches against conceptual semantic similarity."],
+                testCases: [
+                    { name: "Cosine Vector Match", cmd: "vector_search('database connection pool')", expected: "Pool chunks ranked highest" },
+                    { name: "Exact Symbol Lexical Search", cmd: "bm25_search('def parse_resp')", expected: "Exact definition retrieved" }
+                ]
+            },
+            {
+                milestone: 4,
+                title: "Agent Reasoning Loop with Context Window Truncation",
+                objective: "Construct prompt assembly pipeline with dynamic token budget truncation to fit local context limits.",
+                specRules: [
+                    "Enforce maximum 4096 context token ceiling.",
+                    "Sort retrieved chunks by relevance score and greedily fill prompt budget.",
+                    "Inject system prompt instructing concise architectural guidance."
+                ],
+                hints: ["Use tiktoken or token length heuristics (len(text) // 4) to estimate token usage."],
+                testCases: [
+                    { name: "Context Ceiling Protection", cmd: "assemble_prompt(chunks, max_tokens=2048)", expected: "Total tokens <= 2048" }
+                ]
+            },
+            {
+                milestone: 5,
+                title: "Real-Time SSE Streaming Output & Syntax Highlighter",
+                objective: "Stream AI response tokens to frontend subscribers using Server-Sent Events (SSE).",
+                specRules: [
+                    "Expose FastAPI endpoint `GET /api/agent/stream?query=...` with `text/event-stream` media type.",
+                    "Yield tokens as `data: {\"token\": \"...\"}\\n\\n` chunks.",
+                    "Signal stream termination with `data: [DONE]\\n\\n`."
+                ],
+                hints: ["In FastAPI, return a `StreamingResponse(event_generator(), media_type='text/event-stream')`."],
+                testCases: [
+                    { name: "SSE Content-Type Header", cmd: "curl -I /api/agent/stream", expected: "Content-Type: text/event-stream" },
+                    { name: "Token Stream Termination", cmd: "Read full stream until EOF", expected: "Received [DONE] event" }
+                ]
+            }
+        ]
     }
 };
 
@@ -559,21 +775,107 @@ export function getProjectWorkspaceData(projectId, projectMeta) {
     }
 
     // Dynamic fallback starter skeleton for any other project in the catalog
-    const primaryTech = projectMeta?.techStack?.[0] || "javascript";
-    const ext = primaryTech.toLowerCase() === "rust" ? "rs" :
-                primaryTech.toLowerCase() === "python" ? "py" :
-                primaryTech.toLowerCase() === "go" ? "go" : "js";
+    const primaryTech = (projectMeta?.techStack?.[0] || "javascript").toLowerCase();
+    const ext = primaryTech === "rust" ? "rs" :
+                primaryTech === "python" ? "py" :
+                primaryTech === "go" || primaryTech === "golang" ? "go" : "js";
 
-    return {
-        language: primaryTech.toLowerCase(),
-        repoName: `skillforge/${projectId}-starter`,
-        files: [
-            {
-                name: `main.${ext}`,
-                path: `src/main.${ext}`,
-                language: primaryTech.toLowerCase(),
-                content: `// SkillForge Project Workspace: ${projectMeta?.title || "Engineering Spec"}
+    let starterMain = "";
+    let starterTests = "";
+
+    if (ext === "py") {
+        starterMain = `"""
+SkillForge Project Workspace: ${projectMeta?.title || "Engineering Spec"}
+Track: ${projectMeta?.track || "Systems Core"}
+Milestone 1 Implementation
+"""
+
+def initialize():
+    """TODO: Implement Milestone 1 logic"""
+    return {"status": "initialized", "ready": True}
+
+if __name__ == "__main__":
+    print("⚡ Welcome to ${projectMeta?.title || "Project Forge"}")
+    print("Follow the Milestone specification guide on the left panel to begin.")
+    status = initialize()
+    print(f"✓ System status: {status}")
+`;
+        starterTests = `# Automated Test Suite for ${projectMeta?.title || "Project"}
+# Run tests using the 'Run Tests' button in the toolbar
+
+import unittest
+
+class Milestone1Tests(unittest.TestCase):
+    def test_initialization(self):
+        """Verify runtime initialization"""
+        self.assertTrue(True)
+
+if __name__ == "__main__":
+    unittest.main()
+`;
+    } else if (ext === "rs") {
+        starterMain = `// SkillForge Project Workspace: ${projectMeta?.title || "Engineering Spec"}
 // Track: ${projectMeta?.track || "Systems Core"}
+// Milestone 1 Implementation
+
+pub fn initialize() -> bool {
+    // TODO: Implement Milestone 1 logic
+    true
+}
+
+fn main() {
+    println!("⚡ Welcome to ${projectMeta?.title || "Project Forge"}");
+    println!("Follow the Milestone specification guide on the left panel to begin.");
+    let ready = initialize();
+    println!("✓ System status initialized: {}", ready);
+}
+`;
+        starterTests = `// Automated Test Suite for ${projectMeta?.title || "Project"}
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_initialization() {
+        assert!(true);
+    }
+}
+`;
+    } else if (ext === "go") {
+        starterMain = `// SkillForge Project Workspace: ${projectMeta?.title || "Engineering Spec"}
+// Track: ${projectMeta?.track || "Systems Core"}
+// Milestone 1 Implementation
+
+package main
+
+import "fmt"
+
+func Initialize() bool {
+    // TODO: Implement Milestone 1 logic
+    return true
+}
+
+func main() {
+    fmt.Println("⚡ Welcome to ${projectMeta?.title || "Project Forge"}")
+    fmt.Println("Follow the Milestone specification guide on the left panel to begin.")
+    ready := Initialize()
+    fmt.Printf("✓ System status initialized: %v\\n", ready)
+}
+`;
+        starterTests = `// Automated Test Suite for ${projectMeta?.title || "Project"}
+package main
+
+import "testing"
+
+func TestInitialization(t *testing.T) {
+    if !Initialize() {
+        t.Errorf("Initialize() returned false")
+    }
+}
+`;
+    } else {
+        starterMain = `// SkillForge Project Workspace: ${projectMeta?.title || "Engineering Spec"}
+// Track: ${projectMeta?.track || "Frontend & Web Systems"}
 // Milestone 1 Implementation
 
 console.log("⚡ Welcome to ${projectMeta?.title || "Project Forge"}");
@@ -584,28 +886,42 @@ function initialize() {
     return { status: "initialized", ready: true };
 }
 
-module.exports = { initialize };`
-            },
-            {
-                name: `tests.${ext}`,
-                path: `tests/spec_test.${ext}`,
-                language: primaryTech.toLowerCase(),
-                content: `// Automated Test Suite for ${projectMeta?.title || "Project"}
+module.exports = { initialize };
+`;
+        starterTests = `// Automated Test Suite for ${projectMeta?.title || "Project"}
 // Run tests using the 'Run Tests' button in the toolbar
 
 describe("Milestone 1 Verification", () => {
     it("should initialize runtime successfully", () => {
         expect(true).toBe(true);
     });
-});`
+});
+`;
+    }
+
+    return {
+        language: primaryTech,
+        repoName: `skillforge/${projectId}-starter`,
+        files: [
+            {
+                name: `main.${ext}`,
+                path: `src/main.${ext}`,
+                language: primaryTech,
+                content: starterMain
+            },
+            {
+                name: `tests.${ext}`,
+                path: `tests/spec_test.${ext}`,
+                language: primaryTech,
+                content: starterTests
             },
             {
                 name: "README.md",
                 path: "README.md",
                 language: "markdown",
-                content: `# ${projectMeta?.title}
+                content: `# ${projectMeta?.title || "Project Specification"}
 
-> ${projectMeta?.tagline}
+> ${projectMeta?.tagline || ""}
 
 ## Architectural Instructions
 1. Review the milestone objectives in the left navigation tab.

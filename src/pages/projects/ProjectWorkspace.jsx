@@ -74,7 +74,19 @@ export default function ProjectWorkspace() {
     const [files, setFiles] = useState(() => {
         const saved = localStorage.getItem(`skillforge_files_${project.id}`);
         if (saved) {
-            try { return JSON.parse(saved); } catch (e) { /* fallback */ }
+            try {
+                const parsed = JSON.parse(saved);
+                // Stale cache migration: check if files have mismatched language syntax
+                // e.g. Python file containing JS comments/exports from old fallback generator
+                const isStale = Array.isArray(parsed) && parsed.some(f => 
+                    (f.name?.endsWith('.py') && (f.content?.includes('// SkillForge') || f.content?.includes('module.exports'))) ||
+                    (f.name?.endsWith('.rs') && f.content?.includes('console.log')) ||
+                    (f.name?.endsWith('.go') && f.content?.includes('console.log'))
+                );
+                if (!isStale && parsed.length > 0) {
+                    return parsed;
+                }
+            } catch (e) { /* fallback */ }
         }
         return workspaceData.files;
     });
