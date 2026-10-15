@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -14,9 +14,16 @@ import {
     Clock, 
     Award,
     Code2,
-    Play
+    Play,
+    ChevronLeft,
+    ChevronRight,
+    ShieldCheck,
+    Target,
+    Milestone,
+    BookOpen
 } from "lucide-react";
 import SkillForgeLogo from "./SkillForgeLogo";
+import { getProjectWorkspaceData } from "../data/projectWorkspacesData";
 
 /**
  * ProjectLaunchModal
@@ -25,9 +32,23 @@ import SkillForgeLogo from "./SkillForgeLogo";
  */
 export default function ProjectLaunchModal({ project, isOpen, onClose }) {
     const navigate = useNavigate();
+    const [activeModalTab, setActiveModalTab] = useState("roadmap"); // "roadmap" | "runtime"
     const [bootPhase, setBootPhase] = useState(1); // 1: Main Logo, 2: Morphing to Anvil, 3: Anvil Compiler Blinking / Booting, 4: Ready
     const [terminalLines, setTerminalLines] = useState([]);
     const [copied, setCopied] = useState(false);
+    const [selectedRoadmapIdx, setSelectedRoadmapIdx] = useState(0);
+
+    const workspaceData = useMemo(() => {
+        return project ? getProjectWorkspaceData(project.id, project) : null;
+    }, [project]);
+
+    const currentGuide = workspaceData?.milestoneGuides?.[selectedRoadmapIdx] || {
+        milestone: selectedRoadmapIdx + 1,
+        title: project?.milestones?.[selectedRoadmapIdx]?.title || `Milestone ${selectedRoadmapIdx + 1}`,
+        objective: "Implement required architecture according to specification.",
+        specRules: ["Write clean, test-compliant code."],
+        testCases: []
+    };
 
     useEffect(() => {
         if (!isOpen) {
@@ -110,146 +131,376 @@ export default function ProjectLaunchModal({ project, isOpen, onClose }) {
                     </button>
                 </div>
 
-                <div className="p-6 sm:p-8 space-y-8 flex-grow">
+                {/* Modal Navigation Switcher */}
+                <div className="flex items-center justify-between px-6 pt-3 border-b border-white/10 bg-[#070A11]">
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setActiveModalTab("roadmap")}
+                            className={`px-4 py-2.5 text-xs font-bold rounded-t-xl flex items-center gap-2 transition-all ${
+                                activeModalTab === "roadmap"
+                                    ? "bg-[#090D16] text-white border-t-2 border-blue-500 shadow-sm"
+                                    : "text-slate-400 hover:text-white hover:bg-white/5"
+                            }`}
+                        >
+                            <Milestone size={14} className="text-cyan-400" />
+                            <span>Milestone Roadmap & Objectives</span>
+                            <span className="px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-mono">
+                                {project.milestones?.length || 5} Stages
+                            </span>
+                        </button>
+
+                        <button
+                            onClick={() => setActiveModalTab("runtime")}
+                            className={`px-4 py-2.5 text-xs font-bold rounded-t-xl flex items-center gap-2 transition-all ${
+                                activeModalTab === "runtime"
+                                    ? "bg-[#090D16] text-white border-t-2 border-blue-500 shadow-sm"
+                                    : "text-slate-400 hover:text-white hover:bg-white/5"
+                            }`}
+                        >
+                            <Terminal size={14} className="text-blue-400" />
+                            <span>Compiler Runtime & Logs</span>
+                            <span className={`w-2 h-2 rounded-full ${bootPhase === 4 ? "bg-emerald-400" : "bg-cyan-400 animate-pulse"}`} />
+                        </button>
+                    </div>
+
+                    <div className="hidden sm:flex items-center gap-2 pb-2">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase border ${
+                            bootPhase === 4 
+                                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" 
+                                : "bg-blue-500/10 text-cyan-400 border-blue-500/20"
+                        }`}>
+                            {bootPhase === 4 ? "● Runtime Ready" : "○ Runtime Allocating"}
+                        </span>
+                    </div>
+                </div>
+
+                <div className="p-6 sm:p-8 space-y-6 flex-grow">
                     
-                    {/* ======================================================== */}
-                    {/* DRAMATIC LOGO TRANSITION & COMPILER BOOTUP STAGE        */}
-                    {/* ======================================================== */}
-                    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-[#111827] to-[#0A0E17] border border-blue-500/20 p-8 flex flex-col items-center justify-center min-h-[260px] shadow-inner text-center">
-                        
-                        {/* Ambient Radial Energy Glow */}
-                        <div className="absolute inset-0 bg-blue-600/10 blur-[60px] pointer-events-none" />
-
-                        {/* Particle Ring Shockwaves */}
-                        {(bootPhase === 2 || bootPhase === 3) && (
-                            <motion.div
-                                initial={{ scale: 0.8, opacity: 0.9 }}
-                                animate={{ scale: 2.3, opacity: 0 }}
-                                transition={{ duration: 1.5, repeat: Infinity, ease: "easeOut" }}
-                                className="absolute w-40 h-40 rounded-full border-2 border-blue-400/50 pointer-events-none"
-                            />
-                        )}
-
-                        <div className="relative z-10 min-h-[100px] flex items-center justify-center">
-                            <AnimatePresence mode="wait">
-                                {bootPhase === 1 ? (
-                                    /* Phase 1: Main Platform Logo */
-                                    <motion.div
-                                        key="step-main"
-                                        initial={{ opacity: 0, scale: 0.8 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 1.3, filter: "blur(8px)" }}
-                                        transition={{ duration: 0.5 }}
-                                        className="flex flex-col items-center gap-2"
-                                    >
-                                        <SkillForgeLogo size="lg" />
-                                        <span className="text-[11px] font-mono text-slate-400 tracking-wider">
-                                            Platform Curriculum Mode
+                    {/* TAB 1: INTERACTIVE MILESTONE ROADMAP & OBJECTIVES */}
+                    {activeModalTab === "roadmap" && (
+                        <div className="space-y-6 animate-in fade-in duration-200">
+                            
+                            {/* Project Header Overview */}
+                            <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-900/20 via-indigo-950/20 to-transparent border border-blue-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                                            {project.track}
                                         </span>
-                                    </motion.div>
-                                ) : (
-                                    /* Phase 2, 3, 4: SkillForge Logo in Compiler Runtime */
-                                    <motion.div
-                                        key="step-anvil"
-                                        initial={{ opacity: 0, scale: 0.85, filter: "blur(12px)" }}
-                                        animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-                                        transition={{ duration: 0.6, type: "spring", stiffness: 120 }}
-                                        className="flex flex-col items-center gap-3"
-                                    >
-                                        <div className="relative p-3.5 rounded-2xl bg-[#070A11] border border-blue-500/40 shadow-[0_0_30px_rgba(37,99,235,0.3)]">
-                                            <div className="absolute inset-0 bg-blue-500/20 blur-xl rounded-2xl animate-pulse" />
-                                            <img 
-                                                src="/images/code-anvil-logo.png" 
-                                                alt="The Code Anvil" 
-                                                className="h-14 w-auto object-contain relative z-10 drop-shadow-[0_0_15px_rgba(56,189,248,0.8)]" 
-                                            />
-                                        </div>
-                                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-300 text-xs font-mono font-bold uppercase tracking-widest">
-                                            <span className={`w-2 h-2 rounded-full ${bootPhase === 4 ? "bg-emerald-400" : "bg-cyan-400 animate-ping"}`} />
-                                            <span>
-                                                {bootPhase === 4 ? "Compiler Ready" : "Compiler Booting..."}
-                                            </span>
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
-
-                        {/* Status Label Below Logo */}
-                        <p className="relative z-10 text-xs text-slate-400 max-w-sm mt-4 font-medium">
-                            {bootPhase < 4 
-                                ? "Switching from study mode to interactive compiler sandbox. Initializing container allocation."
-                                : "Runtime container synchronized. All automated test suites and specifications ready."
-                            }
-                        </p>
-                    </div>
-
-                    {/* Terminal Boot Log */}
-                    <div className="bg-[#05070B] border border-white/10 rounded-xl p-4 font-mono text-xs text-slate-300 space-y-1 shadow-inner">
-                        <div className="flex items-center justify-between text-slate-500 pb-2 border-b border-white/5 mb-2 text-[10px] uppercase tracking-wider">
-                            <span className="flex items-center gap-1.5 text-blue-400">
-                                <Terminal size={12} /> skillforge-sandbox-runtime
-                            </span>
-                            <span>x86_64 Linux</span>
-                        </div>
-                        {terminalLines.map((line, idx) => (
-                            <div key={idx} className="flex items-start gap-2">
-                                <span className="text-blue-500 select-none">&gt;</span>
-                                <span className={idx === terminalLines.length - 1 ? "text-cyan-300 font-bold" : "text-slate-400"}>
-                                    {line}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Project Specifications & Milestones Preview */}
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h4 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                                <Layers size={15} className="text-blue-400" />
-                                <span>Milestones & Test Verification</span>
-                            </h4>
-                            <span className="text-xs text-slate-400">
-                                {project.milestones?.length || 5} Progressive Stages
-                            </span>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {project.milestones?.map((m, index) => (
-                                <div key={m.id} className="p-3.5 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between text-xs">
-                                    <div className="flex items-center gap-2.5 truncate">
-                                        <div className="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 font-bold flex items-center justify-center text-[10px] shrink-0">
-                                            {index + 1}
-                                        </div>
-                                        <span className="text-slate-200 truncate">{m.title}</span>
+                                        <span className="text-xs text-slate-400 font-mono">
+                                            Estimated {project.timeEstimate}
+                                        </span>
                                     </div>
-                                    <span className="text-[10px] font-mono text-slate-400 bg-white/5 px-2 py-0.5 rounded shrink-0">
-                                        {m.testCount} tests
+                                    <h4 className="text-base font-bold text-white">
+                                        Architecture Roadmap: 5 Stages to Production
+                                    </h4>
+                                    <p className="text-xs text-slate-400 leading-normal max-w-xl">
+                                        Select any milestone on the roadmap to inspect its architectural objectives and automated test requirements before starting.
+                                    </p>
+                                </div>
+
+                                <div className="text-right sm:self-center shrink-0">
+                                    <span className="text-xs font-mono text-cyan-400 font-bold px-3 py-1.5 rounded-xl bg-[#05070B] border border-blue-500/30 inline-block">
+                                        Stage {selectedRoadmapIdx + 1} of {project.milestones?.length || 5}
                                     </span>
                                 </div>
-                            ))}
-                        </div>
-                    </div>
+                            </div>
 
-                    {/* Git Clone Quick Command */}
-                    <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
-                            Clone Locally or Forge Online
-                        </label>
-                        <div className="flex items-center gap-2 bg-[#05070B] border border-white/10 rounded-xl p-2.5">
-                            <code className="text-xs font-mono text-cyan-300 truncate flex-grow pl-2">
-                                {gitCloneCommand}
-                            </code>
-                            <button
-                                onClick={handleCopy}
-                                className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold text-white transition-all flex items-center gap-1.5 shrink-0"
+                            {/* Horizontal Connected Roadmap Pipeline */}
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between text-xs font-mono font-bold text-slate-400 uppercase tracking-wider">
+                                    <span className="flex items-center gap-1.5 text-blue-400">
+                                        <Layers size={13} />
+                                        <span>Pipeline Roadmap</span>
+                                    </span>
+                                    <span className="text-[11px] text-cyan-400 lowercase font-normal">
+                                        Click a stage to view objectives
+                                    </span>
+                                </div>
+
+                                <div className="p-4 rounded-2xl bg-[#05070B] border border-white/10 overflow-x-auto">
+                                    <div className="flex items-center justify-between min-w-[550px] relative px-4 py-2">
+                                        
+                                        {/* Background Connection Line */}
+                                        <div className="absolute left-10 right-10 top-6 h-0.5 bg-white/10 z-0" />
+                                        
+                                        {project.milestones?.map((m, idx) => {
+                                            const isSelected = idx === selectedRoadmapIdx;
+                                            return (
+                                                <button
+                                                    key={m.id}
+                                                    type="button"
+                                                    onClick={() => setSelectedRoadmapIdx(idx)}
+                                                    className={`relative z-10 flex flex-col items-center gap-1.5 transition-all ${
+                                                        isSelected 
+                                                            ? "scale-105" 
+                                                            : "opacity-75 hover:opacity-100"
+                                                    }`}
+                                                >
+                                                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-xs transition-all ${
+                                                        isSelected 
+                                                            ? "bg-gradient-to-tr from-blue-600 to-cyan-500 text-white ring-4 ring-blue-500/30 shadow-[0_0_25px_rgba(37,99,235,0.8)]" 
+                                                            : "bg-[#090D16] border border-white/20 text-slate-400 hover:border-blue-400 hover:text-white"
+                                                    }`}>
+                                                        {idx + 1}
+                                                    </div>
+                                                    <span className={`text-[11px] font-mono whitespace-nowrap font-bold ${
+                                                        isSelected ? "text-cyan-300" : "text-slate-400"
+                                                    }`}>
+                                                        Stage {idx + 1}
+                                                    </span>
+                                                    <span className="text-[10px] text-slate-500 truncate max-w-[85px] text-center">
+                                                        {m.title.split(" ").slice(0, 2).join(" ")}
+                                                    </span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Selected Milestone Objectives & Description Card */}
+                            <motion.div
+                                key={selectedRoadmapIdx}
+                                initial={{ opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="p-5 sm:p-6 rounded-2xl bg-gradient-to-b from-[#0B101D] to-[#070A11] border border-blue-500/30 space-y-4 shadow-xl"
                             >
-                                {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
-                                <span>{copied ? "Copied" : "Copy"}</span>
-                            </button>
-                        </div>
-                    </div>
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px] font-mono font-bold uppercase">
+                                                Stage {selectedRoadmapIdx + 1} of {project.milestones?.length || 5}
+                                            </span>
+                                            <span className="text-xs text-slate-400 font-mono">
+                                                {currentGuide.testCases?.length || project.milestones?.[selectedRoadmapIdx]?.testCount || 4} Automated Tests
+                                            </span>
+                                        </div>
+                                        <h5 className="text-base sm:text-lg font-bold text-white">
+                                            {currentGuide.title}
+                                        </h5>
+                                    </div>
 
+                                    {/* Previous / Next Stage Quick Controls */}
+                                    <div className="flex items-center gap-1.5 self-start sm:self-auto">
+                                        <button
+                                            type="button"
+                                            onClick={() => setSelectedRoadmapIdx(prev => Math.max(0, prev - 1))}
+                                            disabled={selectedRoadmapIdx === 0}
+                                            className="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-xs font-bold flex items-center gap-1"
+                                            title="Previous Stage"
+                                        >
+                                            <ChevronLeft size={14} />
+                                            <span>Prev Stage</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setSelectedRoadmapIdx(prev => Math.min((project.milestones?.length || 5) - 1, prev + 1))}
+                                            disabled={selectedRoadmapIdx === (project.milestones?.length || 5) - 1}
+                                            className="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-xs font-bold flex items-center gap-1"
+                                            title="Next Stage"
+                                        >
+                                            <span>Next Stage</span>
+                                            <ChevronRight size={14} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Milestone Detailed Description */}
+                                <div className="p-3.5 rounded-xl bg-blue-500/5 border border-blue-500/15 space-y-1">
+                                    <div className="text-[10px] font-mono font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
+                                        <BookOpen size={11} />
+                                        <span>Milestone Description</span>
+                                    </div>
+                                    <p className="text-xs text-slate-200 leading-relaxed font-normal">
+                                        {currentGuide.objective}
+                                    </p>
+                                </div>
+
+                                {/* Milestone Architectural Objectives Checklist */}
+                                <div className="space-y-2 pt-1">
+                                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                                        <span className="flex items-center gap-1.5 text-blue-400">
+                                            <ShieldCheck size={13} />
+                                            <span>Milestone Objectives & Architecture Checklist</span>
+                                        </span>
+                                        <span className="text-[10px] font-mono text-cyan-400 font-normal">
+                                            {currentGuide.specRules?.length || 0} requirements
+                                        </span>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 gap-2">
+                                        {currentGuide.specRules?.map((rule, rIdx) => (
+                                            <div key={rIdx} className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/5 border border-white/5 text-xs text-slate-300">
+                                                <CheckCircle2 size={13} className="text-cyan-400 shrink-0 mt-0.5" />
+                                                <span className="leading-relaxed">{rule}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Target Test Verification Preview */}
+                                {currentGuide.testCases && currentGuide.testCases.length > 0 && (
+                                    <div className="space-y-2 pt-1">
+                                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                                            <Terminal size={13} className="text-cyan-400" />
+                                            <span>Target Automated Test Assertions ({currentGuide.testCases.length})</span>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
+                                            {currentGuide.testCases.map((tc, tIdx) => (
+                                                <div key={tIdx} className="p-2.5 rounded-xl bg-[#05070B] border border-white/10 text-slate-300 space-y-1">
+                                                    <div className="flex items-center justify-between font-bold text-slate-200">
+                                                        <span className="truncate pr-1">✓ {tc.name}</span>
+                                                        <span className="text-[9px] text-blue-400 uppercase">Harness</span>
+                                                    </div>
+                                                    <div className="text-[10px] text-slate-400">
+                                                        Expects: <span className="text-emerald-400">{tc.expected}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </motion.div>
+
+                            {/* Git Clone Quick Command */}
+                            <div className="space-y-2 pt-2">
+                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                                    Clone Locally or Forge Online
+                                </label>
+                                <div className="flex items-center gap-2 bg-[#05070B] border border-white/10 rounded-xl p-2.5">
+                                    <code className="text-xs font-mono text-cyan-300 truncate flex-grow pl-2">
+                                        {gitCloneCommand}
+                                    </code>
+                                    <button
+                                        type="button"
+                                        onClick={handleCopy}
+                                        className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold text-white transition-all flex items-center gap-1.5 shrink-0"
+                                    >
+                                        {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                                        <span>{copied ? "Copied" : "Copy"}</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+                    )}
+
+                    {/* TAB 2: COMPILER RUNTIME & BOOT LOGS */}
+                    {activeModalTab === "runtime" && (
+                        <div className="space-y-6 animate-in fade-in duration-200">
+                            
+                            {/* Dramatic Logo Transition & Compiler Boot Stage */}
+                            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-[#111827] to-[#0A0E17] border border-blue-500/20 p-8 flex flex-col items-center justify-center min-h-[260px] shadow-inner text-center">
+                                
+                                {/* Ambient Radial Energy Glow */}
+                                <div className="absolute inset-0 bg-blue-600/10 blur-[60px] pointer-events-none" />
+
+                                {/* Particle Ring Shockwaves */}
+                                {(bootPhase === 2 || bootPhase === 3) && (
+                                    <motion.div
+                                        initial={{ scale: 0.8, opacity: 0.9 }}
+                                        animate={{ scale: 2.3, opacity: 0 }}
+                                        transition={{ duration: 1.5, repeat: Infinity, ease: "easeOut" }}
+                                        className="absolute w-40 h-40 rounded-full border-2 border-blue-400/50 pointer-events-none"
+                                    />
+                                )}
+
+                                <div className="relative z-10 min-h-[100px] flex items-center justify-center">
+                                    <AnimatePresence mode="wait">
+                                        {bootPhase === 1 ? (
+                                            /* Phase 1: Main Platform Logo */
+                                            <motion.div
+                                                key="step-main"
+                                                initial={{ opacity: 0, scale: 0.8 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                exit={{ opacity: 0, scale: 1.3, filter: "blur(8px)" }}
+                                                transition={{ duration: 0.5 }}
+                                                className="flex flex-col items-center gap-2"
+                                            >
+                                                <SkillForgeLogo size="lg" />
+                                                <span className="text-[11px] font-mono text-slate-400 tracking-wider">
+                                                    Platform Curriculum Mode
+                                                </span>
+                                            </motion.div>
+                                        ) : (
+                                            /* Phase 2, 3, 4: SkillForge Logo in Compiler Runtime */
+                                            <motion.div
+                                                key="step-anvil"
+                                                initial={{ opacity: 0, scale: 0.85, filter: "blur(12px)" }}
+                                                animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                                                transition={{ duration: 0.6, type: "spring", stiffness: 120 }}
+                                                className="flex flex-col items-center gap-3"
+                                            >
+                                                <div className="relative p-3.5 rounded-2xl bg-[#070A11] border border-blue-500/40 shadow-[0_0_30px_rgba(37,99,235,0.3)]">
+                                                    <div className="absolute inset-0 bg-blue-500/20 blur-xl rounded-2xl animate-pulse" />
+                                                    <img 
+                                                        src="/images/code-anvil-logo.png" 
+                                                        alt="The Code Anvil" 
+                                                        className="h-14 w-auto object-contain relative z-10 drop-shadow-[0_0_15px_rgba(56,189,248,0.8)]" 
+                                                    />
+                                                </div>
+                                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-300 text-xs font-mono font-bold uppercase tracking-widest">
+                                                    <span className={`w-2 h-2 rounded-full ${bootPhase === 4 ? "bg-emerald-400" : "bg-cyan-400 animate-ping"}`} />
+                                                    <span>
+                                                        {bootPhase === 4 ? "Compiler Ready" : "Compiler Booting..."}
+                                                    </span>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+
+                                {/* Status Label Below Logo */}
+                                <p className="relative z-10 text-xs text-slate-400 max-w-sm mt-4 font-medium">
+                                    {bootPhase < 4 
+                                        ? "Switching from study mode to interactive compiler sandbox. Initializing container allocation."
+                                        : "Runtime container synchronized. All automated test suites and specifications ready."
+                                    }
+                                </p>
+                            </div>
+
+                            {/* Terminal Boot Log */}
+                            <div className="bg-[#05070B] border border-white/10 rounded-xl p-4 font-mono text-xs text-slate-300 space-y-1 shadow-inner">
+                                <div className="flex items-center justify-between text-slate-500 pb-2 border-b border-white/5 mb-2 text-[10px] uppercase tracking-wider">
+                                    <span className="flex items-center gap-1.5 text-blue-400">
+                                        <Terminal size={12} /> skillforge-sandbox-runtime
+                                    </span>
+                                    <span>x86_64 Linux</span>
+                                </div>
+                                {terminalLines.map((line, idx) => (
+                                    <div key={idx} className="flex items-start gap-2">
+                                        <span className="text-blue-500 select-none">&gt;</span>
+                                        <span className={idx === terminalLines.length - 1 ? "text-cyan-300 font-bold" : "text-slate-400"}>
+                                            {line}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Git Clone Quick Command */}
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                                    Clone Locally or Forge Online
+                                </label>
+                                <div className="flex items-center gap-2 bg-[#05070B] border border-white/10 rounded-xl p-2.5">
+                                    <code className="text-xs font-mono text-cyan-300 truncate flex-grow pl-2">
+                                        {gitCloneCommand}
+                                    </code>
+                                    <button
+                                        type="button"
+                                        onClick={handleCopy}
+                                        className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold text-white transition-all flex items-center gap-1.5 shrink-0"
+                                    >
+                                        {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                                        <span>{copied ? "Copied" : "Copy"}</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+                    )}
                 </div>
 
                 {/* Footer Buttons */}

@@ -24,7 +24,8 @@ import {
     Maximize2,
     Minimize2,
     GripHorizontal,
-    Code2
+    Code2,
+    Milestone
 } from "lucide-react";
 import { PROJECTS } from "../../data/projectsData";
 import { getProjectWorkspaceData } from "../../data/projectWorkspacesData";
@@ -79,8 +80,9 @@ export default function ProjectWorkspace() {
 
     const [activeFileName, setActiveFileName] = useState(workspaceData.files[0]?.name || "main.rs");
 
-    // State: Left panel tab ('spec' | 'prd' | 'hints')
+    // State: Left panel tab ('roadmap' | 'spec' | 'prd' | 'hints')
     const [specTab, setSpecTab] = useState("spec");
+    const [selectedRoadmapIdx, setSelectedRoadmapIdx] = useState(0);
     const [isSpecsCollapsed, setIsSpecsCollapsed] = useState(false);
 
     // State: Resizable terminal drawer height
@@ -351,47 +353,66 @@ export default function ProjectWorkspace() {
                     </div>
                 </div>
 
-                {/* Center: System-Gated Milestone Stepper */}
-                <div className="hidden lg:flex items-center gap-1.5 bg-[#05070B] p-1 rounded-xl border border-white/5 text-xs font-mono">
-                    {project.milestones?.map((m, idx) => {
-                        const active = idx === currentMilestoneIndex;
-                        const isVerified = verifiedMilestones.has(idx);
-                        // Can only navigate to this milestone if it is verified, or is the current active milestone
-                        const isLocked = idx > currentMilestoneIndex && !verifiedMilestones.has(idx - 1);
+                {/* Center: System-Gated Milestone Stepper & Roadmap Toggle */}
+                <div className="hidden lg:flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 bg-[#05070B] p-1 rounded-xl border border-white/5 text-xs font-mono">
+                        {project.milestones?.map((m, idx) => {
+                            const active = idx === currentMilestoneIndex;
+                            const isVerified = verifiedMilestones.has(idx);
+                            // Can only navigate to this milestone if it is verified, or is the current active milestone
+                            const isLocked = idx > currentMilestoneIndex && !verifiedMilestones.has(idx - 1);
 
-                        return (
-                            <button
-                                key={m.id}
-                                onClick={() => {
-                                    if (isLocked) {
-                                        toast.error(`Milestone ${idx + 1} is locked! Complete Milestone ${idx} tests to proceed.`);
-                                        return;
-                                    }
-                                    setCurrentMilestoneIndex(idx);
-                                    setTestResults(null);
-                                }}
-                                className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-all ${
-                                    active 
-                                        ? "bg-blue-600 text-white font-bold shadow-sm" 
-                                        : isVerified
-                                        ? "text-emerald-400 hover:bg-white/5" 
-                                        : isLocked
-                                        ? "text-slate-600 opacity-60 cursor-not-allowed"
-                                        : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
-                                }`}
-                                title={isLocked ? `Locked. Pass Milestone ${idx} first.` : m.title}
-                            >
-                                {isVerified ? (
-                                    <CheckCircle2 size={12} className="text-emerald-400" />
-                                ) : isLocked ? (
-                                    <Lock size={11} className="text-slate-600" />
-                                ) : (
-                                    <span>M{idx + 1}</span>
-                                )}
-                                <span className="truncate max-w-[85px]">{m.title.split(" ")[0]}</span>
-                            </button>
-                        );
-                    })}
+                            return (
+                                <button
+                                    key={m.id}
+                                    onClick={() => {
+                                        if (isLocked) {
+                                            toast.error(`Milestone ${idx + 1} is locked! Complete Milestone ${idx} tests to proceed.`);
+                                            return;
+                                        }
+                                        setCurrentMilestoneIndex(idx);
+                                        setSelectedRoadmapIdx(idx);
+                                        setTestResults(null);
+                                    }}
+                                    className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-all ${
+                                        active 
+                                            ? "bg-blue-600 text-white font-bold shadow-sm" 
+                                            : isVerified
+                                            ? "text-emerald-400 hover:bg-white/5" 
+                                            : isLocked
+                                            ? "text-slate-600 opacity-60 cursor-not-allowed"
+                                            : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                                    }`}
+                                    title={isLocked ? `Locked. Pass Milestone ${idx} first.` : m.title}
+                                >
+                                    {isVerified ? (
+                                        <CheckCircle2 size={12} className="text-emerald-400" />
+                                    ) : isLocked ? (
+                                        <Lock size={11} className="text-slate-600" />
+                                    ) : (
+                                        <span>M{idx + 1}</span>
+                                    )}
+                                    <span className="truncate max-w-[85px]">{m.title.split(" ")[0]}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    <button
+                        onClick={() => {
+                            setSpecTab("roadmap");
+                            setIsSpecsCollapsed(false);
+                        }}
+                        className={`px-2.5 py-1.5 rounded-xl flex items-center gap-1.5 transition-all text-xs font-bold ${
+                            specTab === "roadmap"
+                                ? "bg-blue-600/20 text-cyan-300 border border-blue-500/40 shadow-sm"
+                                : "bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border border-white/5"
+                        }`}
+                        title="View Full Architectural Roadmap"
+                    >
+                        <Milestone size={13} className="text-cyan-400" />
+                        <span>Roadmap</span>
+                    </button>
                 </div>
 
                 {/* Right: Stats & Run Action */}
@@ -433,6 +454,7 @@ export default function ProjectWorkspace() {
                         <div className="flex items-center justify-between border-b border-white/10 bg-[#070A11] px-3 pt-2">
                             <div className="flex items-center gap-1">
                                 {[
+                                    { id: "roadmap", label: "Roadmap", icon: Milestone },
                                     { id: "spec", label: "Spec Guide", icon: BookOpen },
                                     { id: "prd", label: "Full PRD", icon: Layers },
                                     { id: "hints", label: "Hints", icon: HelpCircle }
@@ -470,6 +492,245 @@ export default function ProjectWorkspace() {
                         {/* Left Pane Content Body */}
                         <div className="flex-grow overflow-y-auto p-5 space-y-6 select-text text-sm leading-relaxed text-slate-300">
                             
+                            {/* TAB 0: INTERACTIVE ROADMAP & MILESTONES EXPLORER */}
+                            {specTab === "roadmap" && (
+                                <div className="space-y-6 animate-in fade-in duration-200">
+                                    
+                                    {/* Roadmap Progress Overview Banner */}
+                                    <div className="p-4 rounded-2xl bg-gradient-to-b from-[#0F172A] to-[#090D16] border border-blue-500/20 space-y-3 shadow-inner">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <div className="p-1.5 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                                                    <Milestone size={16} />
+                                                </div>
+                                                <div>
+                                                    <h2 className="text-sm font-bold text-white">Project Architecture Roadmap</h2>
+                                                    <span className="text-[11px] text-slate-400 font-mono">
+                                                        {verifiedMilestones.size} of {project.milestones?.length || 5} Milestones Verified
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <span className="text-xs font-mono font-bold text-cyan-400 px-2 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/20">
+                                                {Math.round((verifiedMilestones.size / (project.milestones?.length || 5)) * 100)}%
+                                            </span>
+                                        </div>
+
+                                        {/* Progress Bar */}
+                                        <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
+                                            <div 
+                                                className="h-full bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400 rounded-full transition-all duration-500"
+                                                style={{ width: `${Math.max(8, (verifiedMilestones.size / (project.milestones?.length || 5)) * 100)}%` }}
+                                            />
+                                        </div>
+                                        
+                                        <p className="text-[11px] text-slate-400 leading-normal">
+                                            Click any milestone below to inspect its detailed architecture description, objectives checklist, and automated test requirements.
+                                        </p>
+                                    </div>
+
+                                    {/* Vertical Connected Milestone Roadmap */}
+                                    <div className="space-y-3 relative">
+                                        {project.milestones?.map((m, idx) => {
+                                            const isSelected = idx === selectedRoadmapIdx;
+                                            const isCurrentActive = idx === currentMilestoneIndex;
+                                            const isVerified = verifiedMilestones.has(idx);
+                                            const isLocked = idx > currentMilestoneIndex && !verifiedMilestones.has(idx - 1);
+                                            const guide = workspaceData.milestoneGuides?.[idx] || {
+                                                milestone: idx + 1,
+                                                title: m.title,
+                                                objective: `Implement ${m.title} according to specifications.`,
+                                                specRules: ["Write clean, test-compliant code."],
+                                                testCases: []
+                                            };
+
+                                            return (
+                                                <div 
+                                                    key={m.id}
+                                                    className={`rounded-2xl border transition-all overflow-hidden ${
+                                                        isSelected 
+                                                            ? "bg-gradient-to-b from-[#0F172A] to-[#070A11] border-blue-500/50 shadow-lg ring-1 ring-blue-500/20" 
+                                                            : isCurrentActive
+                                                            ? "bg-blue-500/[0.04] border-blue-500/30"
+                                                            : isVerified
+                                                            ? "bg-emerald-500/[0.02] border-emerald-500/20 hover:border-emerald-500/40"
+                                                            : "bg-white/[0.02] border-white/5 hover:border-white/15"
+                                                    }`}
+                                                >
+                                                    {/* Milestone Card Header (Click to Select & Inspect) */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setSelectedRoadmapIdx(idx)}
+                                                        className="w-full p-3.5 flex items-start gap-3 text-left transition-colors"
+                                                    >
+                                                        {/* Step Badge / Status Node */}
+                                                        <div className="shrink-0 mt-0.5">
+                                                            {isVerified ? (
+                                                                <div className="w-7 h-7 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center font-bold text-xs shadow-[0_0_12px_rgba(16,185,129,0.3)]">
+                                                                    <Check size={14} strokeWidth={3} />
+                                                                </div>
+                                                            ) : isCurrentActive ? (
+                                                                <div className="w-7 h-7 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-[0_0_15px_rgba(37,99,235,0.5)]">
+                                                                    {idx + 1}
+                                                                </div>
+                                                            ) : isLocked ? (
+                                                                <div className="w-7 h-7 rounded-xl bg-[#05070B] border border-white/10 text-slate-600 flex items-center justify-center">
+                                                                    <Lock size={12} />
+                                                                </div>
+                                                            ) : (
+                                                                <div className="w-7 h-7 rounded-xl bg-white/5 border border-white/10 text-slate-400 flex items-center justify-center font-bold text-xs">
+                                                                    {idx + 1}
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Milestone Info */}
+                                                        <div className="flex-grow min-w-0 space-y-1">
+                                                            <div className="flex items-center justify-between gap-2">
+                                                                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
+                                                                    Stage {idx + 1}
+                                                                </span>
+                                                                
+                                                                {/* Status Badge */}
+                                                                <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
+                                                                    isVerified 
+                                                                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" 
+                                                                        : isCurrentActive
+                                                                        ? "bg-blue-500/20 text-blue-300 border-blue-500/30 flex items-center gap-1"
+                                                                        : isLocked
+                                                                        ? "bg-white/5 text-slate-500 border-white/5"
+                                                                        : "bg-cyan-500/10 text-cyan-400 border-cyan-500/20"
+                                                                }`}>
+                                                                    {isVerified ? "Verified ✓" : isCurrentActive ? (
+                                                                        <>
+                                                                            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                                                                            In Progress
+                                                                        </>
+                                                                    ) : isLocked ? "Locked" : "Unlocked"}
+                                                                </span>
+                                                            </div>
+
+                                                            <h3 className={`text-xs sm:text-sm font-bold truncate ${
+                                                                isSelected ? "text-white" : isCurrentActive ? "text-blue-300" : "text-slate-300"
+                                                            }`}>
+                                                                {m.title}
+                                                            </h3>
+
+                                                            <p className="text-[11px] text-slate-400 line-clamp-1 leading-normal">
+                                                                {guide.objective}
+                                                            </p>
+                                                        </div>
+                                                    </button>
+
+                                                    {/* Expanded Milestone Details: Description, Architectural Checklist & Test Cases */}
+                                                    {isSelected && (
+                                                        <div className="px-3.5 pb-3.5 pt-1 space-y-3.5 border-t border-white/10 text-xs animate-in fade-in duration-200">
+                                                            
+                                                            {/* Detailed Milestone Description */}
+                                                            <div className="p-3 rounded-xl bg-[#05070B] border border-white/5 space-y-1">
+                                                                <div className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                                                                    <BookOpen size={11} className="text-blue-400" />
+                                                                    <span>Milestone Description</span>
+                                                                </div>
+                                                                <p className="text-xs text-slate-300 leading-relaxed">
+                                                                    {guide.objective}
+                                                                </p>
+                                                            </div>
+
+                                                            {/* Architectural Objectives Checklist */}
+                                                            <div className="space-y-2">
+                                                                <div className="flex items-center justify-between text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
+                                                                    <span className="flex items-center gap-1.5 text-blue-400">
+                                                                        <ShieldCheck size={12} />
+                                                                        <span>Objectives Checklist</span>
+                                                                    </span>
+                                                                    <span>{guide.specRules?.length || 0} requirements</span>
+                                                                </div>
+
+                                                                <div className="space-y-1.5">
+                                                                    {guide.specRules?.map((rule, rIdx) => (
+                                                                        <div 
+                                                                            key={rIdx}
+                                                                            className={`flex items-start gap-2.5 p-2 rounded-lg border text-[11px] ${
+                                                                                isVerified 
+                                                                                    ? "bg-emerald-500/[0.04] border-emerald-500/20 text-emerald-300"
+                                                                                    : "bg-white/[0.02] border-white/5 text-slate-300"
+                                                                            }`}
+                                                                        >
+                                                                            <div className="shrink-0 mt-0.5">
+                                                                                {isVerified ? (
+                                                                                    <Check size={11} className="text-emerald-400" />
+                                                                                ) : (
+                                                                                    <span className="w-3.5 h-3.5 rounded-full border border-slate-600 flex items-center justify-center text-[8px] text-slate-500 font-mono">
+                                                                                        {rIdx + 1}
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="flex-grow">
+                                                                                <span className={isVerified ? "line-through text-slate-400" : ""}>{rule}</span>
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Automated Test Assertions Preview */}
+                                                            {guide.testCases && guide.testCases.length > 0 && (
+                                                                <div className="space-y-1.5">
+                                                                    <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                                                                        <Terminal size={11} className="text-cyan-400" />
+                                                                        <span>Target Automated Test Assertions ({guide.testCases.length})</span>
+                                                                    </div>
+                                                                    <div className="space-y-1">
+                                                                        {guide.testCases.map((tc, tIdx) => (
+                                                                            <div key={tIdx} className="p-2 rounded-lg bg-[#05070B] border border-white/5 font-mono text-[10px] text-slate-300 flex items-center justify-between">
+                                                                                <span className="truncate pr-2">✓ {tc.name}</span>
+                                                                                <span className="text-[9px] text-blue-400 uppercase shrink-0">Harness</span>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+                                                            {/* Jump to Workspace Milestone Action */}
+                                                            <div className="pt-1">
+                                                                {isCurrentActive ? (
+                                                                    <div className="w-full py-2 px-3 rounded-xl bg-blue-500/10 border border-blue-500/30 text-center font-bold text-xs text-blue-300 flex items-center justify-center gap-1.5">
+                                                                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                                                                        <span>Currently Active in Code Studio</span>
+                                                                    </div>
+                                                                ) : isLocked ? (
+                                                                    <div className="w-full py-2 px-3 rounded-xl bg-white/5 border border-white/5 text-center text-xs text-slate-500 flex items-center justify-center gap-1.5 font-mono">
+                                                                        <Lock size={12} />
+                                                                        <span>Pass Milestone {idx} tests to unlock</span>
+                                                                    </div>
+                                                                ) : (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            setCurrentMilestoneIndex(idx);
+                                                                            setSelectedRoadmapIdx(idx);
+                                                                            setSpecTab("spec");
+                                                                            setTestResults(null);
+                                                                            toast.success(`Switched workspace to Stage ${idx + 1}: ${m.title}`);
+                                                                        }}
+                                                                        className="w-full py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95"
+                                                                    >
+                                                                        <BookOpen size={12} />
+                                                                        <span>Open Stage {idx + 1} in Spec Guide</span>
+                                                                        <ChevronRight size={12} />
+                                                                    </button>
+                                                                )}
+                                                            </div>
+
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* TAB 1: MILESTONE SPEC */}
                             {specTab === "spec" && (
                                 <div className="space-y-6 animate-in fade-in duration-200">
