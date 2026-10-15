@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import NavBar from "../../components/NavBar";
+import SkillForgeLogo from "../../components/SkillForgeLogo";
 import api from "../../api";
 import StarRating from "../../components/StarRating";
 import { getImageUrl } from "../../utils/imageHelper";
@@ -589,8 +590,8 @@ report = evaluator.analyze(
             {/* Simple Footer */}
             <footer className="bg-brand-bg border-t border-brand-border py-12 text-center text-brand-muted font-medium">
                 <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div className="flex items-center gap-2 font-bold text-brand-text">
-                        <Terminal size={18} /> SkillForge
+                    <div className="flex items-center">
+                        <SkillForgeLogo size="sm" />
                     </div>
                     <p className="text-sm">© {new Date().getFullYear()} SkillForge Inc. All rights reserved.</p>
                 </div>

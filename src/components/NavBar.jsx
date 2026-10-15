@@ -12,6 +12,7 @@ import {
     Search
 } from "lucide-react";
 import SearchBar from "./SearchBar";
+import SkillForgeLogo from "./SkillForgeLogo";
 import api from "../api";
 
 function NavBar() {
@@ -70,15 +71,14 @@ function NavBar() {
 
                 {/* LOGO SECTION */}
                 <div className="flex items-center gap-8">
-                    <motion.h1
+                    <motion.div
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        className="text-xl font-bold text-brand-text cursor-pointer tracking-tight shrink-0 flex items-center gap-2"
+                        className="cursor-pointer shrink-0 flex items-center"
                         onClick={() => navigate("/dashboard")}
                     >
-                        SkillForge
-                        <span className="w-1.5 h-1.5 rounded-full bg-brand-primary animate-pulse"></span>
-                    </motion.h1>
+                        <SkillForgeLogo size="md" />
+                    </motion.div>
                 </div>
 
                 {/* MIDDLE NAVIGATION */}
