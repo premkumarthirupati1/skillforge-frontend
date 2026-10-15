@@ -44,67 +44,80 @@ export async function fetchAiMentorAdvice({
         console.warn("AI Mentor backend unavailable, using client-side heuristic diagnosis:", err);
         return getClientSideHeuristicFallback({
             projectId,
-            language,
             milestoneIndex,
+            milestoneTitle,
+            milestoneObjective,
             userCode,
             testResults,
+            userQuery,
             hintLevel
         });
     }
 }
 
 /**
- * Client-Side Heuristic Fallback in case of network issue
+ * Client-Side Heuristic Fallback in case backend is offline
  */
 function getClientSideHeuristicFallback({
     projectId,
-    language,
-    milestoneIndex,
+    milestoneIndex = 0,
+    milestoneTitle = "Milestone 1",
+    milestoneObjective = "",
     userCode = "",
     testResults,
+    userQuery = "",
     hintLevel = 1
 }) {
     const code = userCode.trim();
-    const hasTodo = /TODO[:\s]+implement/i.test(code) || code.includes("# TODO") || code.includes("// TODO");
     const failedStep = testResults?.steps?.find(s => !s.passed);
+    const testName = failedStep?.name || "Milestone Tests";
+    const testOutput = failedStep?.output || "Assertion requirement not met.";
+    const query = (userQuery || "").toLowerCase();
 
-    if (hasTodo) {
+    // Query intent: edge cases
+    if (query.includes("edge case") || query.includes("cases")) {
         return {
-            diagnosis: "Incomplete Template: Code contains uncompleted TODO placeholder stubs.",
+            diagnosis: `Edge Cases for Milestone ${milestoneIndex + 1}: ${milestoneTitle}`,
             level: hintLevel,
             targetLine: 1,
-            hint: hintLevel === 1 
-                ? "The test suite requires real logic instead of starter placeholder return values."
-                : hintLevel === 2
-                ? "Locate the TODO comments and replace them with the necessary algorithmic functions."
-                : "Remove the placeholder return and write the required struct or function implementation.",
-            codePattern: "// Replace with actual logic\nreturn { status: 'initialized', ready: true };",
-            quickPrompts: [
-                "What functions are required?",
-                "How do I pass the first test?",
-                "Show milestone constraints"
-            ],
+            hint: "Crucial edge cases:\n1. Empty payloads and malformed delimiters\n2. Concurrency race conditions on shared state\n3. Out of bounds indexing and buffer framing\n4. Error recovery rather than panics.",
+            codePattern: "",
+            quickPrompts: ["Why did my test fail?", "Give me a subtle hint", "Show code pattern"],
+            modelUsed: "Forge Client Heuristics (Offline)",
+            isLiveAI: false
+        };
+    }
+
+    // Query intent: hint
+    if (query.includes("hint") || query.includes("nudge")) {
+        return {
+            diagnosis: `Architectural Nudge for ${milestoneTitle}`,
+            level: 1,
+            targetLine: 1,
+            hint: milestoneObjective || "Review the production spec rules on the left panel to ensure all required contracts and invariants are met.",
+            codePattern: "",
+            quickPrompts: ["Pinpoint the bug", "Show code pattern", "Why did my test fail?"],
             modelUsed: "Forge Client Heuristics (Offline)",
             isLiveAI: false
         };
     }
 
     return {
-        diagnosis: failedStep?.output 
-            ? `Assertion Failed: ${failedStep.output}` 
-            : `Tests failed for Milestone ${milestoneIndex + 1}.`,
+        diagnosis: failedStep 
+            ? `Assertion Failed in '${testName}': ${testOutput}` 
+            : `Specification check for Milestone ${milestoneIndex + 1}: ${milestoneTitle}`,
         level: hintLevel,
         targetLine: 1,
         hint: hintLevel === 1
-            ? "Review the Spec Guide rules on the left panel to ensure all required contracts and invariants are met."
+            ? (milestoneObjective || "Review the milestone specification in the Spec Guide tab to satisfy the required assertions.")
             : hintLevel === 2
-            ? `Check assertion '${failedStep?.name || "Test"}' in the test drawer. Review the expected format against your code's output.`
-            : "Ensure input parameters are validated, error handling covers boundary conditions, and return types match.",
+            ? `Check assertion '${testName}' in the test drawer. The runner expects conforming output rather than starter stub values.`
+            : "Implement concrete data structures and return values that satisfy the unit assertions.",
         codePattern: "",
         quickPrompts: [
-            "Why did this test fail?",
-            "Explain milestone objective",
-            "Give me a subtle hint"
+            "Why did my test fail?",
+            "Give me a subtle hint",
+            "Check my code for edge cases"
         ],
         modelUsed: "Forge Client Heuristics (Offline)",
         isLiveAI: false
