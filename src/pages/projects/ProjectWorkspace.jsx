@@ -141,8 +141,15 @@ export default function ProjectWorkspace() {
     ]);
     const [terminalInput, setTerminalInput] = useState("");
 
-    // State: Session timer
-    const [secondsElapsed, setSecondsElapsed] = useState(0);
+    // State: Session timer (persisted per project in localStorage)
+    const [secondsElapsed, setSecondsElapsed] = useState(() => {
+        try {
+            const saved = localStorage.getItem(`skillforge_timer_${project.id}`);
+            return saved ? parseInt(saved, 10) || 0 : 0;
+        } catch {
+            return 0;
+        }
+    });
     const [showCelebration, setShowCelebration] = useState(false);
 
     // Active milestone guide data
@@ -158,18 +165,28 @@ export default function ProjectWorkspace() {
         ]
     };
 
-    // Session timer ticker
+    // Session timer ticker (persists elapsed seconds to localStorage on every tick)
     useEffect(() => {
         const timer = setInterval(() => {
-            setSecondsElapsed(prev => prev + 1);
+            setSecondsElapsed(prev => {
+                const next = prev + 1;
+                try {
+                    localStorage.setItem(`skillforge_timer_${project.id}`, next.toString());
+                } catch (e) { /* ignore */ }
+                return next;
+            });
         }, 1000);
         return () => clearInterval(timer);
-    }, []);
+    }, [project.id]);
 
-    // Format seconds into MM:SS
+    // Format seconds into HH:MM:SS or MM:SS
     const formattedTime = useMemo(() => {
-        const mins = Math.floor(secondsElapsed / 60);
+        const hrs = Math.floor(secondsElapsed / 3600);
+        const mins = Math.floor((secondsElapsed % 3600) / 60);
         const secs = secondsElapsed % 60;
+        if (hrs > 0) {
+            return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }, [secondsElapsed]);
 
@@ -488,9 +505,12 @@ export default function ProjectWorkspace() {
                 {/* Right: Stats & Run Action */}
                 <div className="flex items-center gap-3">
                     
-                    {/* Session Timer */}
-                    <div className="hidden sm:flex items-center gap-1.5 text-xs font-mono text-slate-400 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">
-                        <Clock size={12} className="text-cyan-400" />
+                    {/* Session Timer (Auto-persisted) */}
+                    <div 
+                        className="hidden sm:flex items-center gap-1.5 text-xs font-mono text-slate-400 bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-lg border border-white/5 transition-colors cursor-help"
+                        title="Session Time Elapsed (Auto-saved across browser refreshes)"
+                    >
+                        <Clock size={12} className="text-cyan-400 animate-pulse" />
                         <span>{formattedTime}</span>
                     </div>
 
