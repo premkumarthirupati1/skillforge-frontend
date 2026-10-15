@@ -32,6 +32,7 @@ import CertificateViewer from "./pages/learning/CertificateViewer";
 import Dashboard from "./pages/dashboard/Dashboard";
 import UnifiedDashBoard from "./pages/dashboard/UnifiedDashboard";
 import Profile from "./pages/dashboard/Profile";
+import PublicProfile from "./pages/dashboard/PublicProfile";
 
 // Public & Marketing
 import HomePage from "./pages/common/Homepage";
@@ -64,6 +65,7 @@ function App() {
             <Profile />
           </ProtectedRoute>
         } />
+        <Route path="/profile/:userId" element={<PublicProfile />} />
         <Route path="/" element={<HomePage />} />
         <Route path="/signup" element={<Signup />} />
         
