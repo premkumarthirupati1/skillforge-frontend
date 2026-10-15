@@ -83,7 +83,7 @@ function NavBar() {
 
                 {/* MIDDLE NAVIGATION */}
                 <div className="hidden md:flex items-center gap-6">
-                    {['Learn', 'Tracks', 'Projects', 'Challenges', 'Community'].map((item) => (
+                    {['Tracks', 'Projects', 'Challenges', 'Community'].map((item) => (
                         <Link 
                             key={item}
                             to={`/${item.toLowerCase()}`}
