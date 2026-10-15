@@ -65,7 +65,8 @@ function App() {
             <Profile />
           </ProtectedRoute>
         } />
-        <Route path="/profile/:userId" element={<PublicProfile />} />
+        <Route path="/profile/:identifier" element={<PublicProfile />} />
+        <Route path="/u/:identifier" element={<PublicProfile />} />
         <Route path="/" element={<HomePage />} />
         <Route path="/signup" element={<Signup />} />
         

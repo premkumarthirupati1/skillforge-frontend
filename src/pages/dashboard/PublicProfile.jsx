@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import toast from "react-hot-toast";
 import { 
     User, 
+    AtSign,
     Github, 
     Twitter, 
     Linkedin, 
@@ -11,29 +13,30 @@ import {
     Edit3, 
     Lock,
     ExternalLink,
-    AlertCircle
+    Copy,
+    Check
 } from "lucide-react";
 import NavBar from "../../components/NavBar";
 import api from "../../api";
 import { getImageUrl } from "../../utils/imageHelper";
 
 function PublicProfile() {
-    const { userId } = useParams();
+    const { identifier, userId } = useParams();
     const navigate = useNavigate();
     
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [copied, setCopied] = useState(false);
 
-    const currentLoggedInUserId = localStorage.getItem("userId");
-    const isOwner = currentLoggedInUserId && currentLoggedInUserId === userId;
+    const targetIdentifier = identifier || userId;
 
     useEffect(() => {
         const fetchPublicProfile = async () => {
             setLoading(true);
             setError(null);
             try {
-                const res = await api.get(`/user/profile/${userId}`);
+                const res = await api.get(`/user/profile/${targetIdentifier}`);
                 setProfile(res.data);
             } catch (err) {
                 console.error("Public profile fetch error:", err);
@@ -50,10 +53,25 @@ function PublicProfile() {
             }
         };
 
-        if (userId) {
+        if (targetIdentifier) {
             fetchPublicProfile();
         }
-    }, [userId]);
+    }, [targetIdentifier]);
+
+    const currentLoggedInUserId = localStorage.getItem("userId");
+    const currentLoggedInHandle = localStorage.getItem("userHandle");
+    
+    const isOwner = Boolean(
+        (currentLoggedInUserId && (
+            currentLoggedInUserId === profile?.userId?._id || 
+            currentLoggedInUserId === profile?.userId ||
+            currentLoggedInUserId === profile?._id
+        )) ||
+        (currentLoggedInHandle && (
+            currentLoggedInHandle === profile?.username || 
+            currentLoggedInHandle === profile?.userId?.username
+        ))
+    );
 
     const memberSinceDate = profile?.userId?.createdAt || profile?.createdAt;
     const memberSince = memberSinceDate 
@@ -61,21 +79,31 @@ function PublicProfile() {
         : "Recent";
 
     const role = (profile?.userId?.role || "STUDENT").toUpperCase();
-    const displayName = profile?.name || profile?.userId?.name || "Developer";
+    const displayName = profile?.name || profile?.userId?.name || profile?.username || "Developer";
+    const username = profile?.username || profile?.userId?.username || "";
 
     const avatarSrc = profile?.avatar 
         ? getImageUrl(profile.avatar) 
-        : `https://api.dicebear.com/7.x/bottts/svg?seed=${userId || displayName || 'skillforge'}`;
+        : `https://api.dicebear.com/7.x/bottts/svg?seed=${username || targetIdentifier || displayName || 'skillforge'}`;
 
     const socials = profile?.socials || {};
+
+    const handleCopyProfileLink = () => {
+        const handle = username || targetIdentifier;
+        const url = `${window.location.origin}/u/${handle}`;
+        navigator.clipboard.writeText(url);
+        setCopied(true);
+        toast.success("Profile link copied to clipboard!");
+        setTimeout(() => setCopied(false), 2000);
+    };
 
     return (
         <div className="min-h-screen bg-brand-bg text-brand-text flex flex-col antialiased selection:bg-brand-primary/20 selection:text-brand-primary">
             <NavBar />
 
             <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-                {/* Back navigation */}
-                <div className="mb-6 flex items-center justify-between">
+                {/* Back navigation & Actions */}
+                <div className="mb-6 flex items-center justify-between gap-4">
                     <button 
                         onClick={() => navigate(-1)}
                         className="inline-flex items-center gap-2 text-xs font-semibold text-brand-muted hover:text-brand-text transition-colors group"
@@ -84,22 +112,35 @@ function PublicProfile() {
                         Back
                     </button>
 
-                    {isOwner && (
-                        <Link 
-                            to="/profile"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-primary/10 hover:bg-brand-primary/20 border border-brand-primary/30 text-brand-primary text-xs font-bold transition-all shadow-sm"
-                        >
-                            <Edit3 size={13} />
-                            Edit Your Profile
-                        </Link>
-                    )}
+                    <div className="flex items-center gap-2.5">
+                        {profile && (
+                            <button
+                                onClick={handleCopyProfileLink}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-elevated hover:bg-brand-border/70 border border-brand-border text-xs font-semibold text-brand-text transition-all shadow-sm"
+                                title="Share profile"
+                            >
+                                {copied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} className="text-brand-muted" />}
+                                <span>{copied ? "Copied" : "Share"}</span>
+                            </button>
+                        )}
+
+                        {isOwner && (
+                            <Link 
+                                to="/profile"
+                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-brand-primary hover:bg-brand-primary/90 text-white text-xs font-bold transition-all shadow-sm"
+                            >
+                                <Edit3 size={13} />
+                                Edit Your Profile
+                            </Link>
+                        )}
+                    </div>
                 </div>
 
                 {/* Loading State */}
                 {loading && (
                     <div className="py-24 flex flex-col items-center justify-center gap-4">
                         <div className="w-10 h-10 border-2 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
-                        <p className="text-sm font-medium text-brand-muted">Fetching public profile...</p>
+                        <p className="text-sm font-medium text-brand-muted">Fetching developer profile...</p>
                     </div>
                 )}
 
@@ -146,19 +187,9 @@ function PublicProfile() {
                                         <ShieldCheck size={14} />
                                     </div>
                                 </div>
-
-                                {isOwner && (
-                                    <Link 
-                                        to="/profile"
-                                        className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-elevated hover:bg-brand-border/70 border border-brand-border text-xs font-bold text-brand-text transition-colors shadow-sm self-start sm:self-auto"
-                                    >
-                                        <Edit3 size={14} className="text-brand-primary" />
-                                        Edit Profile
-                                    </Link>
-                                )}
                             </div>
 
-                            {/* Name, Role & Metadata */}
+                            {/* Name, Handle, Role & Metadata */}
                             <div className="space-y-2 mb-8">
                                 <div className="flex flex-wrap items-center gap-3">
                                     <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-brand-text">
@@ -170,7 +201,13 @@ function PublicProfile() {
                                     </span>
                                 </div>
 
-                                <div className="flex items-center gap-2 text-xs text-brand-muted">
+                                {username && (
+                                    <p className="text-sm font-mono font-semibold text-brand-primary flex items-center gap-1">
+                                        <span>@{username}</span>
+                                    </p>
+                                )}
+
+                                <div className="flex items-center gap-2 text-xs text-brand-muted pt-1">
                                     <Calendar size={13} className="text-brand-subtle" />
                                     <span>Member since {memberSince}</span>
                                 </div>

@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { 
     User, 
+    AtSign,
     Github,
     Twitter,
     Linkedin,
@@ -28,6 +29,7 @@ function Profile() {
     const [avatarFile, setAvatarFile] = useState(null);
     const [avatarPreview, setAvatarPreview] = useState(null);
     const [name, setName] = useState("");
+    const [username, setUsername] = useState("");
     const [bio, setBio] = useState("");
     const [socials, setSocials] = useState({ github: "", twitter: "", linkedin: "" });
     const [loading, setLoading] = useState(true);
@@ -37,6 +39,7 @@ function Profile() {
     // Initial backup state for resetting
     const [initialState, setInitialState] = useState({
         name: "",
+        username: "",
         bio: "",
         socials: { github: "", twitter: "", linkedin: "" }
     });
@@ -53,6 +56,7 @@ function Profile() {
             setUser(data);
             
             const initialName = data.name || localStorage.getItem("userName") || "";
+            const initialUsername = data.username || data.userId?.username || "";
             const initialBio = data.bio || "";
             const initialSocials = {
                 github: data.socials?.github || "",
@@ -61,10 +65,12 @@ function Profile() {
             };
 
             setName(initialName);
+            setUsername(initialUsername);
             setBio(initialBio);
             setSocials(initialSocials);
             setInitialState({
                 name: initialName,
+                username: initialUsername,
                 bio: initialBio,
                 socials: initialSocials
             });
@@ -102,6 +108,7 @@ function Profile() {
 
     const handleReset = () => {
         setName(initialState.name);
+        setUsername(initialState.username);
         setBio(initialState.bio);
         setSocials({ ...initialState.socials });
         handleClearAvatarPreview();
@@ -116,10 +123,22 @@ function Profile() {
             return;
         }
 
+        const cleanUsername = username.trim().toLowerCase();
+        if (cleanUsername) {
+            const usernameRegex = /^[a-z0-9_-]{3,30}$/;
+            if (!usernameRegex.test(cleanUsername)) {
+                toast.error("Username must be 3-30 letters, numbers, hyphens, or underscores.");
+                return;
+            }
+        }
+
         setSaving(true);
         try {
             const formData = new FormData();
             formData.append("name", name.trim());
+            if (cleanUsername) {
+                formData.append("username", cleanUsername);
+            }
             formData.append("bio", bio);
             formData.append("socials", JSON.stringify(socials));
             if (avatarFile) {
@@ -134,13 +153,17 @@ function Profile() {
             setUser(updatedData);
             setInitialState({
                 name: updatedData.name || name,
+                username: updatedData.username || cleanUsername,
                 bio: updatedData.bio || bio,
                 socials: updatedData.socials || socials
             });
             
-            // Sync local storage display name
+            // Sync local storage display name & username
             if (name.trim()) {
                 localStorage.setItem("userName", name.trim());
+            }
+            if (updatedData.username) {
+                localStorage.setItem("userHandle", updatedData.username);
             }
 
             // Cleanup preview URL
@@ -171,9 +194,10 @@ function Profile() {
     // Avatar source determination
     const displayAvatarSrc = avatarPreview 
         || (user?.avatar ? getImageUrl(user.avatar) : null) 
-        || `https://api.dicebear.com/7.x/bottts/svg?seed=${user?._id || user?.userId?._id || name || 'skillforge'}`;
+        || `https://api.dicebear.com/7.x/bottts/svg?seed=${user?._id || user?.userId?._id || username || name || 'skillforge'}`;
 
     const hasUnsavedChanges = name !== initialState.name ||
+        username !== initialState.username ||
         bio !== initialState.bio ||
         socials.github !== initialState.socials.github ||
         socials.twitter !== initialState.socials.twitter ||
@@ -181,10 +205,11 @@ function Profile() {
         avatarFile !== null;
 
     const targetUserId = user?.userId?._id || (typeof user?.userId === 'string' ? user?.userId : null) || localStorage.getItem("userId");
+    const publicHandle = username || user?.username || targetUserId;
 
     const handleCopyPublicLink = () => {
-        if (!targetUserId) return;
-        const url = `${window.location.origin}/profile/${targetUserId}`;
+        if (!publicHandle) return;
+        const url = `${window.location.origin}/u/${publicHandle}`;
         navigator.clipboard.writeText(url);
         setCopied(true);
         toast.success("Public profile link copied to clipboard!");
@@ -232,7 +257,7 @@ function Profile() {
                                     Unsaved changes
                                 </span>
                             )}
-                            {targetUserId && (
+                            {publicHandle && (
                                 <>
                                     <button
                                         type="button"
@@ -244,7 +269,7 @@ function Profile() {
                                         <span>{copied ? "Copied" : "Copy Link"}</span>
                                     </button>
                                     <Link
-                                        to={`/profile/${targetUserId}`}
+                                        to={`/u/${publicHandle}`}
                                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-primary/10 hover:bg-brand-primary/20 border border-brand-primary/30 text-xs font-bold text-brand-primary transition-all shadow-sm"
                                         title="View how others see your profile"
                                     >
@@ -366,11 +391,35 @@ function Profile() {
                             </div>
                         </div>
 
-                        {/* Section 3: Personal Information (Editable) */}
+                        {/* Section 3: Personal Information & Username (Editable) */}
                         <div className="bg-brand-surface border border-brand-border rounded-2xl p-6 shadow-sm space-y-4">
                             <h2 className="text-sm font-bold uppercase tracking-wider text-brand-muted mb-4">
                                 Personal Details
                             </h2>
+
+                            {/* Username / Handle */}
+                            <div>
+                                <label className="block text-xs font-semibold text-brand-muted mb-1.5">
+                                    Username / Public Handle <span className="text-brand-primary">*</span>
+                                </label>
+                                <div className="relative flex items-center">
+                                    <div className="absolute left-3.5 text-brand-muted pointer-events-none">
+                                        <AtSign size={16} />
+                                    </div>
+                                    <input 
+                                        type="text" 
+                                        value={username} 
+                                        onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
+                                        placeholder="username"
+                                        maxLength={30}
+                                        className="w-full bg-brand-bg border border-brand-border focus:border-brand-primary rounded-xl pl-10 pr-4 py-2.5 text-sm font-medium font-mono text-brand-text outline-none transition-all placeholder:text-brand-muted/60"
+                                    />
+                                </div>
+                                <p className="text-[11px] text-brand-muted mt-1.5 flex items-center gap-1">
+                                    <span>Public URL:</span>
+                                    <span className="font-mono text-brand-primary font-semibold">skillforge.dev/u/{username || 'username'}</span>
+                                </p>
+                            </div>
 
                             {/* Full Name */}
                             <div>
@@ -545,6 +594,11 @@ function Profile() {
                                 <h3 className="text-lg font-bold text-brand-text mt-3 tracking-tight">
                                     {name || "Your Name"}
                                 </h3>
+                                {username && (
+                                    <p className="text-xs font-mono font-bold text-brand-primary mt-0.5">
+                                        @{username}
+                                    </p>
+                                )}
                                 <p className="text-xs text-brand-muted flex items-center justify-center gap-1.5 mt-1">
                                     <Mail size={12} />
                                     {email}
