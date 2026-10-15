@@ -54,6 +54,7 @@ function App() {
         
         {/* Nav Links mapping */}
         <Route path="/learn" element={<CourseShowcase />} />
+        <Route path="/tracks" element={<CourseShowcase />} />
         <Route path="/skills" element={<CourseShowcase />} />
         <Route path="/projects" element={<ComingSoon title="Project Forge" />} />
         <Route path="/challenges" element={<ComingSoon title="Coding Challenges" />} />
