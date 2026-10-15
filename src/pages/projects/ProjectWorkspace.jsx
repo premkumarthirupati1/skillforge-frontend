@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { PROJECTS } from "../../data/projectsData";
 import { getProjectWorkspaceData } from "../../data/projectWorkspacesData";
+import CodeStudioEditor from "../../components/workspace/CodeStudioEditor";
 import toast from "react-hot-toast";
 
 export default function ProjectWorkspace() {
@@ -554,67 +555,14 @@ export default function ProjectWorkspace() {
                 {/* ---------------------------------------------------- */}
                 <main className="flex-grow flex flex-col h-2/3 md:h-auto overflow-hidden bg-[#070A11]">
                     
-                    {/* File Tabs & Editor Controls */}
-                    <div className="h-10 border-b border-white/10 bg-[#0A0E17] px-3 flex items-center justify-between shrink-0">
-                        
-                        {/* File Tabs */}
-                        <div className="flex items-center gap-1 overflow-x-auto">
-                            {files.map(file => {
-                                const active = file.name === activeFileName;
-                                return (
-                                    <button
-                                        key={file.name}
-                                        onClick={() => setActiveFileName(file.name)}
-                                        className={`px-3 py-1.5 rounded-t-lg text-xs font-mono flex items-center gap-1.5 transition-all ${
-                                            active
-                                                ? "bg-[#070A11] text-cyan-300 border-b-2 border-cyan-400 font-bold"
-                                                : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
-                                        }`}
-                                    >
-                                        <FileCode size={13} className={active ? "text-cyan-400" : "text-slate-500"} />
-                                        <span>{file.name}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-
-                        {/* Editor Action Buttons */}
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={handleCopyCode}
-                                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors text-xs"
-                                title="Copy code"
-                            >
-                                {copiedCode ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
-                            </button>
-
-                            <button
-                                onClick={handleResetFile}
-                                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors text-xs"
-                                title="Reset file to starter skeleton"
-                            >
-                                <RotateCcw size={13} />
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Interactive Multi-Line Code Editor */}
-                    <div className="flex-grow flex relative overflow-hidden bg-[#070A11] font-mono text-xs sm:text-sm">
-                        
-                        {/* Line Number Gutter */}
-                        <div className="w-12 bg-[#090D16] border-r border-white/5 py-4 select-none text-right pr-3 text-slate-600 font-mono text-xs">
-                            {activeFile.content.split("\n").map((_, i) => (
-                                <div key={i} className="leading-6">{i + 1}</div>
-                            ))}
-                        </div>
-
-                        {/* Code Textarea Editor */}
-                        <textarea
-                            value={activeFile.content}
-                            onChange={(e) => handleCodeChange(e.target.value)}
-                            spellCheck={false}
-                            className="flex-grow p-4 bg-transparent text-slate-200 font-mono text-xs sm:text-sm leading-6 resize-none focus:outline-none focus:ring-0 selection:bg-blue-600/40 selection:text-white border-none"
-                            style={{ tabSize: 4 }}
+                    {/* Interactive CodeStudio Editor */}
+                    <div className="flex-grow flex flex-col overflow-hidden">
+                        <CodeStudioEditor
+                            files={files}
+                            activeFileName={activeFileName}
+                            onSelectFile={setActiveFileName}
+                            onChangeCode={handleCodeChange}
+                            onResetFile={handleResetFile}
                         />
                     </div>
 
