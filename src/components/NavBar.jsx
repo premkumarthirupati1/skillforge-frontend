@@ -131,10 +131,8 @@ function NavBar() {
                         ))
                     ) : (
                         [
-                            { name: 'Courses', path: '/courses' },
-                            { name: 'Learning Paths', path: '/tracks' },
+                            { name: 'Tracks', path: '/tracks' },
                             { name: 'Challenges', path: '/challenges' },
-                            { name: 'Projects', path: '/projects' },
                             { name: 'Community', path: '/community' },
                         ].map((item) => (
                             <Link 
