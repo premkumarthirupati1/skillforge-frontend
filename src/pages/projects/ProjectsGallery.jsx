@@ -30,13 +30,10 @@ export default function ProjectsGallery() {
     const [searchQuery, setSearchQuery] = useState("");
     const [activeModalProject, setActiveModalProject] = useState(null);
 
-    // Play pure transition video once on entrance
-    const [showIntroVideo, setShowIntroVideo] = useState(() => {
-        return !sessionStorage.getItem("sf_has_seen_forge_video");
-    });
+    // Play pure transition video on entrance into the Projects Forge
+    const [showIntroVideo, setShowIntroVideo] = useState(true);
 
     const handleDismissIntro = () => {
-        sessionStorage.setItem("sf_has_seen_forge_video", "true");
         setShowIntroVideo(false);
     };
 
