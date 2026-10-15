@@ -37,6 +37,9 @@ import HomePage from "./pages/common/Homepage";
 import ComingSoon from "./pages/common/ComingSoon";
 import PaymentSuccess from "./pages/common/PaymentSuccess";
 
+// Smooth Route Transition with Animated Logo Layer
+import RouteTransitionLayout from "./components/RouteTransitionLayout";
+
 function App() {
   return (
     <BrowserRouter>
@@ -53,7 +56,8 @@ function App() {
             } 
         }} 
       />
-      <Routes>
+      <RouteTransitionLayout>
+        <Routes>
         <Route path="/profile" element={<Profile />} />
         <Route path="/" element={<HomePage />} />
         <Route path="/signup" element={<Signup />} />
@@ -158,6 +162,7 @@ function App() {
           </ProtectedRoute>
         } />
       </Routes>
+      </RouteTransitionLayout>
     </BrowserRouter>
   );
 }

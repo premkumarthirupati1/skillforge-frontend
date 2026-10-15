@@ -19,8 +19,6 @@ import {
     Play
 } from "lucide-react";
 import NavBar from "../../components/NavBar";
-import SkillForgeLogo from "../../components/SkillForgeLogo";
-import ForgeVideoIntro from "../../components/ForgeVideoIntro";
 import ProjectLaunchModal from "../../components/ProjectLaunchModal";
 import { PROJECTS, PROJECT_TRACKS, DIFFICULTY_LEVELS } from "../../data/projectsData";
 
@@ -29,13 +27,6 @@ export default function ProjectsGallery() {
     const [selectedDifficulty, setSelectedDifficulty] = useState("all");
     const [searchQuery, setSearchQuery] = useState("");
     const [activeModalProject, setActiveModalProject] = useState(null);
-
-    // Play pure transition video on entrance into the Projects Forge
-    const [showIntroVideo, setShowIntroVideo] = useState(true);
-
-    const handleDismissIntro = () => {
-        setShowIntroVideo(false);
-    };
 
     // Track icon lookup helper
     const getTrackIcon = (iconName) => {
@@ -66,12 +57,6 @@ export default function ProjectsGallery() {
     return (
         <div className="min-h-screen bg-brand-bg text-brand-text flex flex-col selection:bg-blue-600/30 selection:text-white">
             <NavBar />
-
-            {/* Pure Fullscreen Video Transition (Zero details, only the video) */}
-            <ForgeVideoIntro 
-                isOpen={showIntroVideo} 
-                onClose={handleDismissIntro} 
-            />
 
             {/* Ambient Background Glows */}
             <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
