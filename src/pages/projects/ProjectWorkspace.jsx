@@ -214,59 +214,78 @@ export default function ProjectWorkspace() {
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }, [secondsElapsed]);
 
-    // Handle Horizontal Side Panel Drag-to-Resize
+    // Performance refs for butter-smooth, 60fps drag-to-resize without layout thrashing
+    const panelWidthRef = useRef(panelWidth);
+    const terminalHeightRef = useRef(terminalHeight);
+    const resizeRafIdRef = useRef(null);
+
     useEffect(() => {
+        panelWidthRef.current = panelWidth;
+    }, [panelWidth]);
+
+    useEffect(() => {
+        terminalHeightRef.current = terminalHeight;
+    }, [terminalHeight]);
+
+    // High-performance unified resize listener (RAF-throttled, zero listener churn, auto-layout trigger)
+    useEffect(() => {
+        if (!isDraggingPanel && !isDraggingTerminal) return;
+
+        // Prevent browser selection / ghost drag during resize
+        document.body.style.userSelect = "none";
+        document.body.style.cursor = isDraggingPanel ? "col-resize" : "row-resize";
+
         const handleMouseMove = (e) => {
-            if (!isDraggingPanel) return;
-            // Left activity bar is 48px wide
-            const newWidth = e.clientX - 48;
-            if (newWidth >= 220 && newWidth <= 700) {
-                setPanelWidth(newWidth);
-            }
+            if (resizeRafIdRef.current) return;
+            resizeRafIdRef.current = requestAnimationFrame(() => {
+                resizeRafIdRef.current = null;
+                if (isDraggingPanel) {
+                    // Left activity bar is 48px wide
+                    const newWidth = Math.max(200, Math.min(e.clientX - 48, 800));
+                    setPanelWidth(newWidth);
+                } else if (isDraggingTerminal) {
+                    const newHeight = Math.max(50, Math.min(window.innerHeight - e.clientY, window.innerHeight - 120));
+                    setTerminalHeight(newHeight);
+                }
+            });
         };
 
         const handleMouseUp = () => {
+            if (resizeRafIdRef.current) {
+                cancelAnimationFrame(resizeRafIdRef.current);
+                resizeRafIdRef.current = null;
+            }
+            document.body.style.userSelect = "";
+            document.body.style.cursor = "";
+
             if (isDraggingPanel) {
                 setIsDraggingPanel(false);
                 try {
-                    localStorage.setItem("skillforge_sidepanel_width", panelWidth.toString());
+                    localStorage.setItem("skillforge_sidepanel_width", panelWidthRef.current.toString());
                 } catch (e) {}
             }
-        };
-
-        if (isDraggingPanel) {
-            window.addEventListener("mousemove", handleMouseMove);
-            window.addEventListener("mouseup", handleMouseUp);
-        }
-        return () => {
-            window.removeEventListener("mousemove", handleMouseMove);
-            window.removeEventListener("mouseup", handleMouseUp);
-        };
-    }, [isDraggingPanel, panelWidth]);
-
-    // Handle Terminal Drawer Vertical Drag-to-Resize
-    useEffect(() => {
-        const handleMouseMove = (e) => {
-            if (!isDraggingTerminal) return;
-            const newHeight = window.innerHeight - e.clientY;
-            if (newHeight >= 60 && newHeight <= window.innerHeight - 150) {
-                setTerminalHeight(newHeight);
+            if (isDraggingTerminal) {
+                setIsDraggingTerminal(false);
             }
+
+            // Instantly inform Monaco to snap to new container dimensions
+            editorInstanceRef.current?.layout();
         };
 
-        const handleMouseUp = () => {
-            setIsDraggingTerminal(false);
-        };
+        window.addEventListener("mousemove", handleMouseMove, { passive: true });
+        window.addEventListener("mouseup", handleMouseUp);
 
-        if (isDraggingTerminal) {
-            window.addEventListener("mousemove", handleMouseMove);
-            window.addEventListener("mouseup", handleMouseUp);
-        }
         return () => {
+            if (resizeRafIdRef.current) {
+                cancelAnimationFrame(resizeRafIdRef.current);
+                resizeRafIdRef.current = null;
+            }
+            document.body.style.userSelect = "";
+            document.body.style.cursor = "";
             window.removeEventListener("mousemove", handleMouseMove);
             window.removeEventListener("mouseup", handleMouseUp);
         };
-    }, [isDraggingTerminal]);
+    }, [isDraggingPanel, isDraggingTerminal]);
 
     // Handle File Content Change
     const handleCodeChange = (newCode) => {
@@ -645,7 +664,9 @@ export default function ProjectWorkspace() {
                 {!isSpecsCollapsed && (
                     <aside 
                         style={{ width: `${panelWidth}px` }}
-                        className="border-r border-white/10 bg-[#090D16] flex flex-col shrink-0 h-full overflow-hidden transition-all duration-75 relative z-10"
+                        className={`border-r border-white/10 bg-[#090D16] flex flex-col shrink-0 h-full overflow-hidden relative z-10 will-change-[width] ${
+                            isDraggingPanel ? "select-none" : ""
+                        }`}
                     >
                         {/* Header Tabs */}
                         <div className="flex items-center justify-between border-b border-white/10 bg-[#070A11] px-3 h-10 shrink-0">
@@ -968,10 +989,12 @@ export default function ProjectWorkspace() {
                     <div
                         onMouseDown={() => setIsDraggingPanel(true)}
                         onDoubleClick={() => setPanelWidth(380)}
-                        className="w-1.5 hover:w-2 bg-[#05070B] hover:bg-blue-500/40 active:bg-blue-500 transition-colors cursor-col-resize flex items-center justify-center shrink-0 select-none group z-10"
+                        className={`w-1.5 hover:w-2 ${
+                            isDraggingPanel ? "w-2 bg-blue-500 shadow-[0_0_10px_#2563eb]" : "bg-[#05070B] hover:bg-blue-500/40 active:bg-blue-500"
+                        } transition-colors cursor-col-resize flex items-center justify-center shrink-0 select-none group z-10`}
                         title="Drag to resize panel (Double-click to reset)"
                     >
-                        <div className="h-8 w-0.5 rounded-full bg-white/20 group-hover:bg-blue-400 transition-colors" />
+                        <div className={`h-8 w-0.5 rounded-full ${isDraggingPanel ? "bg-white" : "bg-white/20 group-hover:bg-blue-400"} transition-colors`} />
                     </div>
                 )}
 
@@ -981,7 +1004,7 @@ export default function ProjectWorkspace() {
                 <main className="flex-grow flex flex-col h-full overflow-hidden bg-[#070A11] relative">
                     
                     {/* Monaco Code Studio Editor */}
-                    <div className="flex-grow flex flex-col overflow-hidden min-h-0">
+                    <div className={`flex-grow flex flex-col overflow-hidden min-h-0 ${isDraggingPanel || isDraggingTerminal ? "pointer-events-none select-none" : ""}`}>
                         <CodeStudioEditor
                             files={files}
                             activeFileName={activeFileName}
@@ -998,15 +1021,17 @@ export default function ProjectWorkspace() {
                     {/* Draggable Terminal Drawer Resizer */}
                     <div
                         onMouseDown={() => setIsDraggingTerminal(true)}
-                        className="h-1.5 hover:h-2 bg-[#0A0E17] hover:bg-blue-500/40 active:bg-blue-500 transition-colors cursor-row-resize flex items-center justify-center border-t border-white/10 shrink-0 select-none group z-10"
+                        className={`h-1.5 hover:h-2 ${
+                            isDraggingTerminal ? "h-2 bg-blue-500 shadow-[0_0_10px_#2563eb]" : "bg-[#0A0E17] hover:bg-blue-500/40 active:bg-blue-500"
+                        } transition-colors cursor-row-resize flex items-center justify-center border-t border-white/10 shrink-0 select-none group z-10`}
                         title="Drag to resize test runner drawer"
                     >
-                        <div className="w-12 h-0.5 rounded-full bg-white/20 group-hover:bg-blue-400 transition-colors" />
+                        <div className={`w-12 h-0.5 rounded-full ${isDraggingTerminal ? "bg-white" : "bg-white/20 group-hover:bg-blue-400"} transition-colors`} />
                     </div>
 
                     {/* Integrated Terminal & Test Runner Drawer */}
                     <div 
-                        className="bg-[#05070B] flex flex-col shrink-0 overflow-hidden transition-all duration-75"
+                        className="bg-[#05070B] flex flex-col shrink-0 overflow-hidden will-change-[height]"
                         style={{ height: `${terminalHeight}px` }}
                     >
                         {/* Drawer Tabs */}
@@ -1210,6 +1235,17 @@ export default function ProjectWorkspace() {
                 </main>
 
             </div>
+
+            {/* Global Drag Overlay (captures mouse events across window, prevents Monaco/DOM from stealing cursor focus) */}
+            {(isDraggingPanel || isDraggingTerminal) && (
+                <div 
+                    className="fixed inset-0 z-[99999] select-none"
+                    style={{ 
+                        cursor: isDraggingPanel ? "col-resize" : "row-resize",
+                        pointerEvents: "auto" 
+                    }}
+                />
+            )}
 
             {/* ======================================================== */}
             {/* 5. VS CODE-STYLE STATUS BAR (Bottom 24px)                 */}

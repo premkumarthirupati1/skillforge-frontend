@@ -34,7 +34,7 @@ function getMonacoLanguage(fileName = "") {
     }
 }
 
-export default function CodeStudioEditor({
+function CodeStudioEditor({
     files = [],
     activeFileName,
     onSelectFile,
@@ -118,6 +118,28 @@ export default function CodeStudioEditor({
         setTimeout(() => setCopied(false), 2000);
     };
 
+    const editorOptions = React.useMemo(() => ({
+        fontSize: 13.5,
+        fontFamily: "'Geist Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace",
+        fontLigatures: true,
+        minimap: { enabled: showMinimap, maxColumn: 80, scale: 1 },
+        scrollBeyondLastLine: false,
+        smoothScrolling: true,
+        automaticLayout: true,
+        tabSize: 4,
+        insertSpaces: true,
+        wordWrap: "on",
+        bracketPairColorization: { enabled: true },
+        autoClosingBrackets: "always",
+        autoClosingQuotes: "always",
+        formatOnPaste: true,
+        formatOnType: true,
+        renderLineHighlight: "all",
+        cursorBlinking: "smooth",
+        cursorSmoothCaretAnimation: "on",
+        padding: { top: 12, bottom: 12 }
+    }), [showMinimap]);
+
     return (
         <div className="flex flex-col h-full bg-[#070A11] border-r border-white/10 select-none overflow-hidden">
             
@@ -191,29 +213,11 @@ export default function CodeStudioEditor({
                     beforeMount={handleBeforeMount}
                     onMount={handleEditorDidMount}
                     onChange={(newVal) => onChangeCode(newVal || "")}
-                    options={{
-                        fontSize: 13.5,
-                        fontFamily: "'Geist Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace",
-                        fontLigatures: true,
-                        minimap: { enabled: showMinimap, maxColumn: 80, scale: 1 },
-                        scrollBeyondLastLine: false,
-                        smoothScrolling: true,
-                        automaticLayout: true,
-                        tabSize: 4,
-                        insertSpaces: true,
-                        wordWrap: "on",
-                        bracketPairColorization: { enabled: true },
-                        autoClosingBrackets: "always",
-                        autoClosingQuotes: "always",
-                        formatOnPaste: true,
-                        formatOnType: true,
-                        renderLineHighlight: "all",
-                        cursorBlinking: "smooth",
-                        cursorSmoothCaretAnimation: "on",
-                        padding: { top: 12, bottom: 12 }
-                    }}
+                    options={editorOptions}
                 />
             </div>
         </div>
     );
 }
+
+export default React.memo(CodeStudioEditor);
