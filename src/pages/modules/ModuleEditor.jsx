@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "react-hot-toast";
+import { ChevronLeft, Save, Loader2, Layers } from "lucide-react";
 import api from "../../api";
 import NavBar from "../../components/NavBar";
-import { toast } from "react-hot-toast"; // Recommended for user feedback
 
 function ModuleEditor() {
     const { moduleId } = useParams();
@@ -21,12 +22,11 @@ function ModuleEditor() {
                 const res = await api.get(`/modules/${moduleId}/`);
                 const moduleData = res.data;
                 setFormData({
-                    title: moduleData.title,
-                    order: moduleData.order,
+                    title: moduleData.title || "",
+                    order: moduleData.order || 1,
                 });
             } catch (err) {
                 toast.error("Error loading module details");
-                console.error(err);
             } finally {
                 setLoading(false);
             }
@@ -42,16 +42,6 @@ function ModuleEditor() {
         }));
     };
 
-    const formatTitle = (title) => {
-        const minorWords = ['a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'if', 'in', 'nor', 'of', 'on', 'or', 'so', 'the', 'to', 'up', 'yet'];
-        return title.trim().toLowerCase().split(/\s+/).map((word, index) => {
-            if (index === 0 || !minorWords.includes(word)) {
-                return word.charAt(0).toUpperCase() + word.slice(1);
-            }
-            return word;
-        }).join(' ');
-    };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -61,85 +51,99 @@ function ModuleEditor() {
 
         setIsSaving(true);
         try {
-            const formattedTitle = formatTitle(formData.title);
             await api.patch(`/modules/${moduleId}/update-module`, {
-                title: formattedTitle,
-                order: Number(formData.order)
+                title: formData.title.trim(),
+                order: Number(formData.order) || 1
             });
             toast.success("Module updated successfully");
             navigate(-1);
         } catch (err) {
             toast.error("Failed to save changes");
-            console.error(err);
         } finally {
             setIsSaving(false);
         }
     };
 
-    if (loading) return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col transition-colors duration-300">
-            <NavBar />
-            <div className="flex-1 flex items-center justify-center text-slate-400 animate-pulse">
-                Fetching module data...
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-brand-bg text-brand-text flex flex-col font-sans">
+                <NavBar />
+                <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-4">
+                    <div className="w-10 h-10 rounded-full border-3 border-brand-border border-t-brand-primary animate-spin" />
+                    <p className="text-xs font-mono uppercase tracking-widest text-brand-muted">
+                        Fetching module data...
+                    </p>
+                </div>
             </div>
-        </div>
-    );
+        );
+    }
 
     return (
-        <div className="bg-slate-50 dark:bg-slate-950 min-h-screen font-sans transition-colors duration-300">
+        <div className="bg-brand-bg min-h-screen font-sans text-brand-text transition-colors duration-300 flex flex-col selection:bg-brand-primary/30">
             <NavBar />
-            <div className="max-w-xl mx-auto py-16 px-6">
-                <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800">
-                    <header className="mb-8">
-                        <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">Edit Module</h2>
-                        <p className="text-slate-500 dark:text-slate-400 mt-2">Adjust the sequence or title of this module.</p>
+            
+            <div className="max-w-xl mx-auto w-full py-12 px-6 flex-1 flex flex-col justify-center">
+                <div className="bg-brand-surface p-8 rounded-3xl shadow-xl border border-brand-border space-y-6">
+                    <header className="space-y-1">
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-muted hover:text-brand-primary transition-colors cursor-pointer mb-2"
+                        >
+                            <ChevronLeft size={16} /> Back
+                        </button>
+                        <h2 className="text-2xl sm:text-3xl font-black text-brand-text tracking-tight flex items-center gap-2">
+                            <Layers size={22} className="text-brand-primary" /> Edit Module
+                        </h2>
+                        <p className="text-brand-subtle text-xs">
+                            Adjust the title or sequence order for this curriculum section.
+                        </p>
                     </header>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-5">
                         <div>
-                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wide">
-                                Module Title
+                            <label className="block text-xs font-bold uppercase tracking-wider text-brand-muted mb-2">
+                                Module Title *
                             </label>
                             <input
                                 name="title"
                                 placeholder="e.g., Introduction to Neural Networks"
                                 value={formData.title}
                                 onChange={handleChange}
-                                className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 p-4 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                className="w-full bg-brand-elevated border border-brand-border text-brand-text text-sm rounded-xl p-3.5 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all placeholder-brand-muted"
                                 required
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wide">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-brand-muted mb-2">
                                 Sequence Order
                             </label>
                             <input
                                 name="order"
                                 type="number"
+                                min="1"
                                 placeholder="1"
                                 value={formData.order}
                                 onChange={handleChange}
-                                className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 p-4 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                className="w-full bg-brand-elevated border border-brand-border text-brand-text text-sm rounded-xl p-3.5 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all font-mono"
                                 required
                             />
                         </div>
 
-                        <div className="flex gap-4 pt-4">
+                        <div className="flex gap-3 pt-3 border-t border-brand-border/60">
                             <button
                                 type="button"
                                 onClick={() => navigate(-1)}
-                                className="flex-1 py-4 rounded-2xl font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                className="flex-1 py-3 rounded-xl font-bold text-xs text-brand-muted hover:text-brand-text bg-brand-elevated hover:bg-brand-elevated/80 transition-colors cursor-pointer"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
                                 disabled={isSaving}
-                                className={`flex-1 py-4 rounded-2xl font-bold text-white transition-all shadow-lg ${
-                                    isSaving ? "bg-slate-400 dark:bg-slate-700" : "bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/25"
-                                }`}
+                                className="flex-1 py-3 rounded-xl font-bold text-xs text-white bg-brand-primary hover:bg-brand-secondary transition-all shadow-md shadow-brand-primary/20 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
                             >
+                                {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                                 {isSaving ? "Saving..." : "Save Changes"}
                             </button>
                         </div>

@@ -14,14 +14,12 @@ import CourseView from "./pages/courses/CourseView";
 
 // Module & Curriculum Management (Studio)
 import ModuleEditor from "./pages/modules/ModuleEditor";
-import CourseBuilder from "./pages/modules/CourseBuilder";
 import CourseEditor from "./pages/modules/CourseEditor";
 import CreateCourse from "./pages/modules/CreateCourse";
 import EditCourse from "./pages/modules/EditCourse";
 import LessonBuilder from "./pages/modules/LessonBuilder";
 import EditLesson from "./pages/modules/EditLesson";
 import InstructorStudio from "./pages/modules/InstructorStudio";
-import InstructorDashBoard from "./pages/modules/InstructorDashboard";
 
 // Student Learning & Player
 import LessonViewer from "./pages/learning/LessonViewer";
@@ -85,7 +83,7 @@ function App() {
         } />
         <Route path="/instructor" element={
           <ProtectedRoute>
-            <InstructorDashBoard />
+            <InstructorStudio />
           </ProtectedRoute>
         }
         />
@@ -112,7 +110,7 @@ function App() {
         />
         <Route path="/course-builder/:courseId" element={
           <ProtectedRoute>
-            <CourseBuilder />
+            <CourseEditor />
           </ProtectedRoute>
         } />
         <Route path="/module/:moduleId/edit" element={
