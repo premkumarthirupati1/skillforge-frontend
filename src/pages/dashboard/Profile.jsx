@@ -16,6 +16,9 @@ import {
     ArrowLeft,
     ExternalLink,
     CheckCircle2,
+    XCircle,
+    AlertCircle,
+    Loader2,
     Copy,
     Check
 } from "lucide-react";
@@ -35,6 +38,9 @@ function Profile() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [copied, setCopied] = useState(false);
+
+    // Real-time username availability state
+    const [usernameStatus, setUsernameStatus] = useState({ state: "idle", message: "" });
 
     // Initial backup state for resetting
     const [initialState, setInitialState] = useState({
@@ -82,6 +88,50 @@ function Profile() {
         }
     };
 
+    // Debounced real-time username availability check
+    useEffect(() => {
+        const clean = username.trim().toLowerCase();
+        
+        if (!clean) {
+            setUsernameStatus({ state: "idle", message: "" });
+            return;
+        }
+
+        // If it equals their current saved handle
+        if (clean === initialState.username?.toLowerCase()) {
+            setUsernameStatus({ state: "idle", message: "Current active handle" });
+            return;
+        }
+
+        // Format validation
+        const regex = /^[a-z0-9_-]{3,30}$/;
+        if (!regex.test(clean)) {
+            setUsernameStatus({ 
+                state: "invalid", 
+                message: "Must be 3–30 characters (lowercase letters, numbers, hyphens, or underscores)" 
+            });
+            return;
+        }
+
+        setUsernameStatus({ state: "checking", message: "Checking availability..." });
+
+        const timer = setTimeout(async () => {
+            try {
+                const res = await api.get(`/user/check-username?username=${encodeURIComponent(clean)}`);
+                if (res.data.available) {
+                    setUsernameStatus({ state: "available", message: "Username is available!" });
+                } else {
+                    setUsernameStatus({ state: "taken", message: res.data.message || "Username is already taken" });
+                }
+            } catch (err) {
+                console.error("Availability check failed:", err);
+                setUsernameStatus({ state: "idle", message: "" });
+            }
+        }, 350);
+
+        return () => clearTimeout(timer);
+    }, [username, initialState.username]);
+
     const handleAvatarSelect = (e) => {
         const file = e.target.files?.[0];
         if (file) {
@@ -128,6 +178,21 @@ function Profile() {
             const usernameRegex = /^[a-z0-9_-]{3,30}$/;
             if (!usernameRegex.test(cleanUsername)) {
                 toast.error("Username must be 3-30 letters, numbers, hyphens, or underscores.");
+                return;
+            }
+
+            if (usernameStatus.state === "taken") {
+                toast.error("This username is already taken. Please choose another.");
+                return;
+            }
+
+            if (usernameStatus.state === "invalid") {
+                toast.error("Invalid username format. Use 3-30 letters, numbers, hyphens, or underscores.");
+                return;
+            }
+
+            if (usernameStatus.state === "checking") {
+                toast.error("Checking username availability. Please wait a moment.");
                 return;
             }
         }
@@ -397,11 +462,28 @@ function Profile() {
                                 Personal Details
                             </h2>
 
-                            {/* Username / Handle */}
+                            {/* Username / Handle with Real-Time Availability Check */}
                             <div>
-                                <label className="block text-xs font-semibold text-brand-muted mb-1.5">
-                                    Username / Public Handle <span className="text-brand-primary">*</span>
-                                </label>
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <label className="text-xs font-semibold text-brand-muted">
+                                        Username / Public Handle <span className="text-brand-primary">*</span>
+                                    </label>
+                                    {usernameStatus.message && (
+                                        <span className={`text-[11px] font-medium flex items-center gap-1 transition-all ${
+                                            usernameStatus.state === "available" ? "text-emerald-500 font-semibold" :
+                                            usernameStatus.state === "taken" ? "text-red-500 font-semibold" :
+                                            usernameStatus.state === "invalid" ? "text-amber-500" :
+                                            usernameStatus.state === "checking" ? "text-brand-primary animate-pulse" :
+                                            "text-brand-muted"
+                                        }`}>
+                                            {usernameStatus.state === "available" && <CheckCircle2 size={12} />}
+                                            {usernameStatus.state === "taken" && <XCircle size={12} />}
+                                            {usernameStatus.state === "invalid" && <AlertCircle size={12} />}
+                                            {usernameStatus.state === "checking" && <Loader2 size={12} className="animate-spin" />}
+                                            {usernameStatus.message}
+                                        </span>
+                                    )}
+                                </div>
                                 <div className="relative flex items-center">
                                     <div className="absolute left-3.5 text-brand-muted pointer-events-none">
                                         <AtSign size={16} />
@@ -412,12 +494,31 @@ function Profile() {
                                         onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
                                         placeholder="username"
                                         maxLength={30}
-                                        className="w-full bg-brand-bg border border-brand-border focus:border-brand-primary rounded-xl pl-10 pr-4 py-2.5 text-sm font-medium font-mono text-brand-text outline-none transition-all placeholder:text-brand-muted/60"
+                                        className={`w-full bg-brand-bg border rounded-xl pl-10 pr-10 py-2.5 text-sm font-medium font-mono text-brand-text outline-none transition-all placeholder:text-brand-muted/60 ${
+                                            usernameStatus.state === "available" ? "border-emerald-500/70 focus:border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.12)]" :
+                                            usernameStatus.state === "taken" ? "border-red-500/70 focus:border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.12)]" :
+                                            usernameStatus.state === "invalid" ? "border-amber-500/70 focus:border-amber-500" :
+                                            "border-brand-border focus:border-brand-primary"
+                                        }`}
                                     />
+                                    <div className="absolute right-3.5 pointer-events-none">
+                                        {usernameStatus.state === "checking" && (
+                                            <Loader2 size={16} className="text-brand-primary animate-spin" />
+                                        )}
+                                        {usernameStatus.state === "available" && (
+                                            <CheckCircle2 size={16} className="text-emerald-500" />
+                                        )}
+                                        {usernameStatus.state === "taken" && (
+                                            <XCircle size={16} className="text-red-500" />
+                                        )}
+                                        {usernameStatus.state === "invalid" && (
+                                            <AlertCircle size={16} className="text-amber-500" />
+                                        )}
+                                    </div>
                                 </div>
                                 <p className="text-[11px] text-brand-muted mt-1.5 flex items-center gap-1">
                                     <span>Public URL:</span>
-                                    <span className="font-mono text-brand-primary font-semibold">skillforge.dev/u/{username || 'username'}</span>
+                                    <span className="font-mono text-brand-primary font-semibold">skillforge.dev/u/{username || 'yourname'}</span>
                                 </p>
                             </div>
 
@@ -544,7 +645,7 @@ function Profile() {
                             <button
                                 type="button"
                                 onClick={handleSave}
-                                disabled={saving}
+                                disabled={saving || usernameStatus.state === "taken" || usernameStatus.state === "invalid"}
                                 className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-brand-primary hover:bg-brand-primary/90 text-white text-xs font-bold tracking-wide transition-all shadow-[0_4px_14px_rgba(37,99,235,0.3)] disabled:opacity-60 disabled:cursor-not-allowed"
                             >
                                 {saving ? (
