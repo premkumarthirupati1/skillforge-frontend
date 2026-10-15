@@ -16,11 +16,14 @@ import {
     CheckCircle2, 
     Flame,
     Code2,
-    Play
+    Play,
+    Film,
+    RotateCcw
 } from "lucide-react";
 import NavBar from "../../components/NavBar";
 import CodeAnvilLogo from "../../components/CodeAnvilLogo";
-import ForgeModeTransition from "../../components/ForgeModeTransition";
+import ForgeHeroVideo from "../../components/ForgeHeroVideo";
+import ForgeVideoIntro from "../../components/ForgeVideoIntro";
 import ProjectLaunchModal from "../../components/ProjectLaunchModal";
 import { PROJECTS, PROJECT_TRACKS, DIFFICULTY_LEVELS } from "../../data/projectsData";
 
@@ -29,6 +32,16 @@ export default function ProjectsGallery() {
     const [selectedDifficulty, setSelectedDifficulty] = useState("all");
     const [searchQuery, setSearchQuery] = useState("");
     const [activeModalProject, setActiveModalProject] = useState(null);
+
+    // Play intro video once per session, or allow manual replay
+    const [showIntroVideo, setShowIntroVideo] = useState(() => {
+        return !sessionStorage.getItem("sf_has_seen_forge_video");
+    });
+
+    const handleDismissIntro = () => {
+        sessionStorage.setItem("sf_has_seen_forge_video", "true");
+        setShowIntroVideo(false);
+    };
 
     // Track icon lookup helper
     const getTrackIcon = (iconName) => {
@@ -56,14 +69,15 @@ export default function ProjectsGallery() {
         });
     }, [selectedTrack, selectedDifficulty, searchQuery]);
 
-    const handleLaunchDemo = () => {
-        // Trigger the launch modal on the first featured project
-        setActiveModalProject(PROJECTS[0]);
-    };
-
     return (
         <div className="min-h-screen bg-brand-bg text-brand-text flex flex-col selection:bg-blue-600/30 selection:text-white">
             <NavBar />
+
+            {/* Automated Cinematic Video Transition on Entry */}
+            <ForgeVideoIntro 
+                isOpen={showIntroVideo} 
+                onClose={handleDismissIntro} 
+            />
 
             {/* Ambient Background Glows */}
             <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
@@ -74,7 +88,7 @@ export default function ProjectsGallery() {
             <main className="relative z-10 flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-12">
                 
                 {/* ======================================================== */}
-                {/* 1. HERO SECTION & FORGE MODE TRANSITION SHOWCASE        */}
+                {/* 1. HERO SECTION & EMBEDDED TRANSITION VIDEO             */}
                 {/* ======================================================== */}
                 <div className="space-y-8">
                     
@@ -95,11 +109,22 @@ export default function ProjectsGallery() {
                         <p className="text-brand-muted text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
                             Graduate from tutorial hell. Work like an engineer at top tech companies with real architectural PRDs, automated test suites, and in-browser sandboxing.
                         </p>
+
+                        {/* Replay Fullscreen Transition Video Pill */}
+                        <div className="pt-2">
+                            <button
+                                onClick={() => setShowIntroVideo(true)}
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono font-bold text-slate-300 hover:text-white transition-all shadow-sm active:scale-95"
+                            >
+                                <Film size={14} className="text-blue-400" />
+                                <span>Replay Fullscreen Transition Video</span>
+                            </button>
+                        </div>
                     </div>
 
-                    {/* INTERACTIVE LOGO TRANSITION CHAMBER (Requested Feature) */}
-                    <div className="max-w-4xl mx-auto">
-                        <ForgeModeTransition onLaunchDemo={handleLaunchDemo} />
+                    {/* EMBEDDED TRANSITION VIDEO PLAYER (Replaces awkward button widget) */}
+                    <div className="max-w-3xl mx-auto">
+                        <ForgeHeroVideo />
                     </div>
 
                 </div>
