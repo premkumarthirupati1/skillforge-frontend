@@ -70,16 +70,16 @@ export default function ProjectsGallery() {
                 {/* 1. HERO SECTION                                         */}
                 {/* ======================================================== */}
                 <div className="text-center max-w-3xl mx-auto space-y-4">
-                    <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-mono font-bold uppercase tracking-widest shadow-sm">
+                    <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-mono font-bold uppercase tracking-widest shadow-sm">
                         <div className="w-5 h-4 rounded bg-[#070A11] border border-blue-400/30 flex items-center justify-center shrink-0">
                             <img src="/images/code-anvil-logo.png" alt="Anvil" className="h-2.5 w-auto object-contain" />
                         </div>
                         <span>The Project Forge • Interactive Engineering</span>
                     </div>
 
-                    <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-tight">
+                    <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
                         Build Real Systems. <br className="hidden sm:inline" />
-                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-cyan-300 to-indigo-400">
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-cyan-500 to-indigo-600 dark:from-blue-400 dark:via-cyan-300 dark:to-indigo-400">
                             Not Just Syntax.
                         </span>
                     </h1>
@@ -92,21 +92,21 @@ export default function ProjectsGallery() {
                 {/* ======================================================== */}
                 {/* 2. STATS & ARCHITECTURAL HIGHLIGHTS RIBBON              */}
                 {/* ======================================================== */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-2xl bg-brand-surface/60 border border-brand-border backdrop-blur-sm text-center">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-2xl bg-brand-surface border border-brand-border shadow-sm text-center">
                     <div className="p-3">
-                        <div className="text-2xl sm:text-3xl font-black text-white">8</div>
+                        <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">8</div>
                         <div className="text-xs text-brand-muted font-medium mt-1">Production Specs</div>
                     </div>
-                    <div className="p-3 border-l border-brand-border/60">
-                        <div className="text-2xl sm:text-3xl font-black text-blue-400">50+</div>
+                    <div className="p-3 border-l border-brand-border">
+                        <div className="text-2xl sm:text-3xl font-black text-blue-600 dark:text-blue-400">50+</div>
                         <div className="text-xs text-brand-muted font-medium mt-1">Automated Test Suites</div>
                     </div>
-                    <div className="p-3 border-l border-brand-border/60">
-                        <div className="text-2xl sm:text-3xl font-black text-white">100%</div>
+                    <div className="p-3 border-l border-brand-border">
+                        <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">100%</div>
                         <div className="text-xs text-brand-muted font-medium mt-1">Real-World Code</div>
                     </div>
-                    <div className="p-3 border-l border-brand-border/60">
-                        <div className="text-2xl sm:text-3xl font-black text-emerald-400">GitHub</div>
+                    <div className="p-3 border-l border-brand-border">
+                        <div className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400">GitHub</div>
                         <div className="text-xs text-brand-muted font-medium mt-1">One-Click Portfolio Sync</div>
                     </div>
                 </div>
@@ -150,7 +150,7 @@ export default function ProjectsGallery() {
                                     onClick={() => setSelectedDifficulty(diff.id)}
                                     className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
                                         selectedDifficulty === diff.id
-                                            ? "bg-white text-slate-900 shadow-sm"
+                                            ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm"
                                             : "bg-brand-surface border border-brand-border text-brand-muted hover:text-brand-text"
                                     }`}
                                 >
@@ -162,7 +162,7 @@ export default function ProjectsGallery() {
                     </div>
 
                     {/* Track Tabs Row */}
-                    <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-brand-border/60">
+                    <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-brand-border">
                         {PROJECT_TRACKS.map(track => {
                             const active = selectedTrack === track.id;
                             return (
@@ -171,8 +171,8 @@ export default function ProjectsGallery() {
                                     onClick={() => setSelectedTrack(track.id)}
                                     className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
                                         active
-                                            ? "bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]"
-                                            : "bg-brand-surface/70 border border-brand-border text-brand-muted hover:text-brand-text hover:bg-brand-surface"
+                                            ? "bg-blue-600 text-white shadow-sm"
+                                            : "bg-brand-surface border border-brand-border text-brand-muted hover:text-brand-text hover:bg-brand-elevated"
                                     }`}
                                 >
                                     {getTrackIcon(track.icon)}
@@ -189,22 +189,22 @@ export default function ProjectsGallery() {
                 {/* ======================================================== */}
                 <div>
                     <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
+                        <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
                             <span>Available Engineering Specs</span>
-                            <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-white/10 text-slate-300">
+                            <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300">
                                 {filteredProjects.length}
                             </span>
                         </h3>
                     </div>
 
                     {filteredProjects.length === 0 ? (
-                        <div className="text-center py-16 bg-brand-surface/40 border border-brand-border rounded-3xl p-8">
-                            <Terminal size={36} className="mx-auto text-slate-500 mb-3" />
-                            <h4 className="text-lg font-bold text-white mb-1">No Projects Match Your Filter</h4>
+                        <div className="text-center py-16 bg-brand-surface border border-brand-border rounded-3xl p-8 shadow-sm">
+                            <Terminal size={36} className="mx-auto text-slate-400 dark:text-slate-500 mb-3" />
+                            <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-1">No Projects Match Your Filter</h4>
                             <p className="text-sm text-brand-muted mb-4">Try clearing your search query or selecting "All Tracks".</p>
                             <button
                                 onClick={() => { setSelectedTrack("all"); setSelectedDifficulty("all"); setSearchQuery(""); }}
-                                className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-500 transition-colors"
+                                className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-500 transition-colors shadow-sm"
                             >
                                 Reset All Filters
                             </button>
@@ -214,7 +214,7 @@ export default function ProjectsGallery() {
                             {filteredProjects.map(project => (
                                 <div
                                     key={project.id}
-                                    className="group relative flex flex-col justify-between rounded-3xl bg-brand-surface/80 border border-brand-border hover:border-blue-500/40 p-6 transition-all duration-300 hover:shadow-[0_15px_35px_rgba(37,99,235,0.15)] overflow-hidden"
+                                    className="group relative flex flex-col justify-between rounded-3xl bg-brand-surface border border-brand-border hover:border-blue-500/50 p-6 transition-all duration-300 shadow-sm hover:shadow-lg dark:hover:shadow-[0_15px_35px_rgba(37,99,235,0.15)] overflow-hidden"
                                 >
                                     {/* Subtle Top Gradient Bar */}
                                     <div className={`absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r ${project.colorTheme}`} />
@@ -223,17 +223,17 @@ export default function ProjectsGallery() {
                                         
                                         {/* Card Top Row: Badge & Level */}
                                         <div className="flex items-center justify-between gap-2">
-                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-white/5 border border-white/10 text-slate-300">
-                                                <Flame size={12} className="text-blue-400" />
+                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300">
+                                                <Flame size={12} className="text-blue-500 dark:text-blue-400" />
                                                 <span>{project.badge}</span>
                                             </span>
 
                                             <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase border ${
                                                 project.difficulty === "advanced" 
-                                                    ? "text-purple-400 bg-purple-500/10 border-purple-500/30" 
+                                                    ? "text-purple-600 dark:text-purple-400 bg-purple-500/10 border-purple-500/30" 
                                                     : project.difficulty === "intermediate"
-                                                    ? "text-blue-400 bg-blue-500/10 border-blue-500/30"
-                                                    : "text-emerald-400 bg-emerald-500/10 border-emerald-500/30"
+                                                    ? "text-blue-600 dark:text-blue-400 bg-blue-500/10 border-blue-500/30"
+                                                    : "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/30"
                                             }`}>
                                                 {project.difficulty}
                                             </span>
@@ -241,7 +241,7 @@ export default function ProjectsGallery() {
 
                                         {/* Project Title & Tagline */}
                                         <div>
-                                            <h4 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors leading-snug">
+                                            <h4 className="text-xl font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-snug">
                                                 {project.title}
                                             </h4>
                                             <p className="text-xs text-brand-muted mt-1.5 leading-relaxed line-clamp-2">
@@ -254,7 +254,7 @@ export default function ProjectsGallery() {
                                             {project.techStack.map(tech => (
                                                 <span 
                                                     key={tech}
-                                                    className="px-2 py-0.5 rounded-md bg-white/5 text-[11px] font-mono text-slate-300 border border-white/5"
+                                                    className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/5 text-[11px] font-mono text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/5"
                                                 >
                                                     {tech}
                                                 </span>
@@ -262,20 +262,20 @@ export default function ProjectsGallery() {
                                         </div>
 
                                         {/* Key Milestones List */}
-                                        <div className="pt-2 border-t border-brand-border/40 space-y-1.5">
-                                            <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                                        <div className="pt-2 border-t border-brand-border/60 space-y-1.5">
+                                            <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
                                                 <span>Milestones</span>
-                                                <span className="text-blue-400">{project.milestones.length} Steps</span>
+                                                <span className="text-blue-600 dark:text-blue-400 font-bold">{project.milestones.length} Steps</span>
                                             </div>
                                             <ul className="space-y-1 text-xs text-brand-muted">
-                                                {project.milestones.slice(0, 2).map((m, idx) => (
+                                                {project.milestones.slice(0, 2).map((m) => (
                                                     <li key={m.id} className="flex items-center gap-1.5 truncate">
-                                                        <CheckCircle2 size={12} className="text-slate-500 shrink-0" />
-                                                        <span className="truncate">{m.title}</span>
+                                                        <CheckCircle2 size={12} className="text-emerald-500 dark:text-slate-500 shrink-0" />
+                                                        <span className="truncate text-slate-700 dark:text-slate-300">{m.title}</span>
                                                     </li>
                                                 ))}
                                                 {project.milestones.length > 2 && (
-                                                    <li className="text-[11px] text-slate-500 italic pl-4">
+                                                    <li className="text-[11px] text-slate-400 dark:text-slate-500 italic pl-4">
                                                         + {project.milestones.length - 2} more architectural steps
                                                     </li>
                                                 )}
@@ -288,11 +288,11 @@ export default function ProjectsGallery() {
                                     <div className="pt-6 mt-6 border-t border-brand-border/60 flex items-center justify-between">
                                         <div className="flex items-center gap-3 text-xs text-brand-muted font-medium">
                                             <span className="flex items-center gap-1">
-                                                <Clock size={13} className="text-slate-500" />
+                                                <Clock size={13} className="text-slate-400 dark:text-slate-500" />
                                                 <span>{project.timeEstimate}</span>
                                             </span>
                                             <span className="flex items-center gap-1">
-                                                <Users size={13} className="text-slate-500" />
+                                                <Users size={13} className="text-slate-400 dark:text-slate-500" />
                                                 <span>{project.popularity.toLocaleString()}</span>
                                             </span>
                                         </div>

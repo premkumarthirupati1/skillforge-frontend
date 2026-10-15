@@ -78,17 +78,24 @@ function NavBar() {
                         onClick={() => navigate(location.pathname.startsWith('/project') ? "/projects" : "/dashboard")}
                     >
                         {location.pathname.startsWith('/project') ? (
-                            <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-2xl bg-blue-500/10 border border-blue-500/30 shadow-[0_0_15px_rgba(37,99,235,0.2)]">
+                            <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-2xl bg-blue-500/10 border border-blue-500/30 shadow-[0_0_15px_rgba(37,99,235,0.15)]">
+                                {/* Dark Mode Anvil (White Anvil) */}
                                 <img 
                                     src="/images/code-anvil-logo.png" 
                                     alt="SkillForge Projects - The Code Anvil" 
-                                    className="h-6 w-auto object-contain drop-shadow-[0_0_8px_rgba(56,189,248,0.6)]"
+                                    className="h-6 w-auto object-contain hidden dark:block drop-shadow-[0_0_8px_rgba(56,189,248,0.6)]"
                                 />
-                                <div className="flex items-center gap-1.5 border-l border-white/15 pl-2.5">
-                                    <span className="text-sm font-bold text-white tracking-tight hidden sm:inline">
+                                {/* Light Mode Anvil (Slate Anvil) */}
+                                <img 
+                                    src="/images/code-anvil-logo-light.png" 
+                                    alt="SkillForge Projects - The Code Anvil" 
+                                    className="h-6 w-auto object-contain block dark:hidden drop-shadow-[0_0_6px_rgba(37,99,235,0.3)]"
+                                />
+                                <div className="flex items-center gap-1.5 border-l border-slate-300 dark:border-white/15 pl-2.5">
+                                    <span className="text-sm font-bold text-slate-900 dark:text-white tracking-tight hidden sm:inline">
                                         SkillForge
                                     </span>
-                                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-400 bg-blue-500/20 px-2 py-0.5 rounded-md">
+                                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-500/15 dark:bg-blue-500/20 px-2 py-0.5 rounded-md">
                                         Projects
                                     </span>
                                 </div>

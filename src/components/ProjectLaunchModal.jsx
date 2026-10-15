@@ -85,8 +85,8 @@ export default function ProjectLaunchModal({ project, isOpen, onClose }) {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-xl animate-in fade-in duration-300">
             
-            {/* Modal Card */}
-            <div className="relative w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-3xl bg-[#090D16] border border-blue-500/30 text-white shadow-[0_25px_70px_rgba(0,0,0,0.8)] flex flex-col">
+            {/* Modal Card (Scoped to dark compiler terminal theme) */}
+            <div className="dark relative w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-3xl bg-[#090D16] border border-blue-500/30 text-white shadow-[0_25px_70px_rgba(0,0,0,0.8)] flex flex-col">
                 
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-white/10 sticky top-0 bg-[#090D16]/95 backdrop-blur-md z-20">
