@@ -9,7 +9,8 @@ import {
     User,
     LogOut,
     ChevronDown,
-    Search
+    Search,
+    GraduationCap
 } from "lucide-react";
 import SearchBar from "./SearchBar";
 import SkillForgeLogo from "./SkillForgeLogo";
@@ -64,13 +65,15 @@ function NavBar() {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    const isProjectMode = location.pathname.startsWith('/project');
+
     return (
         <nav className={`sticky top-0 w-full z-50 transition-all duration-500 border-b ${
             scrolled 
             ? 'bg-brand-bg/85 backdrop-blur-md border-brand-border shadow-sm' 
             : 'bg-brand-bg border-transparent'
         }`}>
-            <div className="w-full px-8 md:px-12 h-16 flex justify-between items-center gap-4">
+            <div className="w-full px-4 sm:px-8 md:px-12 h-16 flex justify-between items-center gap-4">
 
                 {/* LOGO SECTION */}
                 <div className="flex items-center gap-8">
@@ -78,9 +81,9 @@ function NavBar() {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         className="cursor-pointer shrink-0 flex items-center"
-                        onClick={() => navigate(location.pathname.startsWith('/project') ? "/projects" : "/dashboard")}
+                        onClick={() => navigate(isProjectMode ? "/projects" : "/dashboard")}
                     >
-                        {location.pathname.startsWith('/project') ? (
+                        {isProjectMode ? (
                             <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-2xl bg-blue-500/10 border border-blue-500/30 shadow-[0_0_15px_rgba(37,99,235,0.15)]">
                                 {/* Dark Mode Anvil (White Anvil) */}
                                 <img 
@@ -111,26 +114,77 @@ function NavBar() {
 
                 {/* MIDDLE NAVIGATION */}
                 <div className="hidden md:flex items-center gap-6">
-                    {['Tracks', 'Projects', 'Challenges', 'Community'].map((item) => (
-                        <Link 
-                            key={item}
-                            to={`/${item.toLowerCase()}`}
-                            className="text-sm font-medium text-brand-muted hover:text-brand-text transition-colors duration-200"
-                        >
-                            {item}
-                        </Link>
-                    ))}
+                    {isProjectMode ? (
+                        [
+                            { name: 'Specs & PRDs', tab: 'specs' },
+                            { name: 'Active Builds', tab: 'builds' },
+                            { name: 'Sandbox IDE', tab: 'sandbox' },
+                            { name: 'Showcase', tab: 'showcase' },
+                        ].map((item) => (
+                            <Link 
+                                key={item.tab}
+                                to={`/projects?tab=${item.tab}`}
+                                className="text-sm font-medium text-brand-muted hover:text-brand-text transition-colors duration-200"
+                            >
+                                {item.name}
+                            </Link>
+                        ))
+                    ) : (
+                        ['Courses', 'Tracks', 'Challenges', 'Community'].map((item) => (
+                            <Link 
+                                key={item}
+                                to={`/${item.toLowerCase()}`}
+                                className="text-sm font-medium text-brand-muted hover:text-brand-text transition-colors duration-200"
+                            >
+                                {item}
+                            </Link>
+                        ))
+                    )}
                 </div>
 
                 {/* ACTION SECTION */}
-                <div className="flex items-center gap-4 transition-all duration-300">
-                    <div className="hidden md:flex relative group w-64">
-                        <SearchBar placeholder="Search courses..." />
+                <div className="flex items-center gap-2 sm:gap-4 transition-all duration-300">
+                    
+                    {/* DEDICATED MODE SWITCHER BUTTON */}
+                    {isProjectMode ? (
+                        /* Return to Curriculum Button */
+                        <motion.button
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.97 }}
+                            onClick={() => navigate("/courses")}
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-300 dark:border-white/10 text-slate-800 dark:text-slate-200 text-xs font-bold transition-all shadow-sm group shrink-0"
+                            title="Return to Course Curriculum"
+                        >
+                            <GraduationCap size={15} className="text-blue-500 group-hover:scale-110 transition-transform" />
+                            <span className="hidden sm:inline">Back to Courses</span>
+                            <span className="sm:hidden">Courses</span>
+                        </motion.button>
+                    ) : (
+                        /* Enter The Projects Forge Button */
+                        <motion.button
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.97 }}
+                            onClick={() => navigate("/projects")}
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600/10 via-indigo-500/10 to-blue-600/10 hover:from-blue-600/20 hover:to-indigo-600/20 border border-blue-500/30 text-blue-600 dark:text-blue-400 text-xs font-bold transition-all shadow-[0_0_15px_rgba(37,99,235,0.12)] group shrink-0"
+                            title="Launch Projects Forge Workspace"
+                        >
+                            <div className="w-5 h-4 rounded bg-[#070A11] border border-blue-400/40 flex items-center justify-center shrink-0 shadow-sm group-hover:border-cyan-400 transition-colors">
+                                <img src="/images/code-anvil-logo.png" alt="Anvil" className="h-2.5 w-auto object-contain" />
+                            </div>
+                            <span className="hidden sm:inline font-mono tracking-tight">Projects Forge</span>
+                            <span className="text-[9px] font-mono uppercase bg-blue-500/20 text-blue-600 dark:text-blue-300 px-1.5 py-0.5 rounded font-bold tracking-wider">
+                                Enter
+                            </span>
+                        </motion.button>
+                    )}
+
+                    <div className="hidden lg:flex relative group w-52 xl:w-64">
+                        <SearchBar placeholder="Search..." />
                     </div>
 
                     <button
                         onClick={toggleTheme}
-                        className="p-2 rounded-full bg-brand-surface border border-brand-border hover:border-brand-primary/50 text-brand-muted hover:text-brand-primary transition-all duration-300"
+                        className="p-2 rounded-full bg-brand-surface border border-brand-border hover:border-brand-primary/50 text-brand-muted hover:text-brand-primary transition-all duration-300 shrink-0"
                         aria-label="Toggle Theme"
                     >
                         {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
