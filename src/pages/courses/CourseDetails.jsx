@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../api";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import NavBar from "../../components/NavBar";
 import StarRating from "../../components/StarRating";
 import toast from "react-hot-toast";
@@ -325,11 +325,21 @@ function CourseDetails() {
                                     <div key={review._id} className="border-b border-brand-border pb-6 last:border-0 last:pb-0">
                                         <div className="flex items-center justify-between mb-3">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-brand-primary/10 border border-brand-primary/20 text-brand-primary rounded-lg flex items-center justify-center font-bold">
+                                                <Link 
+                                                    to={`/profile/${review.user?._id || review.user}`}
+                                                    className="w-10 h-10 bg-brand-primary/10 border border-brand-primary/20 hover:border-brand-primary text-brand-primary rounded-lg flex items-center justify-center font-bold hover:scale-105 transition-all shrink-0"
+                                                    title={`View ${review.reviewerName}'s profile`}
+                                                >
                                                     {review.reviewerName?.charAt(0).toUpperCase()}
-                                                </div>
+                                                </Link>
                                                 <div>
-                                                    <p className="font-bold text-brand-text text-sm">{review.reviewerName}</p>
+                                                    <Link 
+                                                        to={`/profile/${review.user?._id || review.user}`}
+                                                        className="font-bold text-brand-text text-sm hover:text-brand-primary transition-colors block"
+                                                        title={`View ${review.reviewerName}'s profile`}
+                                                    >
+                                                        {review.reviewerName}
+                                                    </Link>
                                                     <div className="flex items-center gap-2 mt-0.5">
                                                         <StarRating rating={review.rating} readOnly size={12} />
                                                         <span className="text-[10px] text-brand-subtle font-medium uppercase tracking-wider">

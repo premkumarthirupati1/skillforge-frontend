@@ -14,7 +14,9 @@ import {
     Calendar,
     ArrowLeft,
     ExternalLink,
-    CheckCircle2
+    CheckCircle2,
+    Copy,
+    Check
 } from "lucide-react";
 import NavBar from "../../components/NavBar";
 import api from "../../api";
@@ -30,6 +32,7 @@ function Profile() {
     const [socials, setSocials] = useState({ github: "", twitter: "", linkedin: "" });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [copied, setCopied] = useState(false);
 
     // Initial backup state for resetting
     const [initialState, setInitialState] = useState({
@@ -177,6 +180,17 @@ function Profile() {
         socials.linkedin !== initialState.socials.linkedin ||
         avatarFile !== null;
 
+    const targetUserId = user?.userId?._id || (typeof user?.userId === 'string' ? user?.userId : null) || localStorage.getItem("userId");
+
+    const handleCopyPublicLink = () => {
+        if (!targetUserId) return;
+        const url = `${window.location.origin}/profile/${targetUserId}`;
+        navigator.clipboard.writeText(url);
+        setCopied(true);
+        toast.success("Public profile link copied to clipboard!");
+        setTimeout(() => setCopied(false), 2000);
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen bg-brand-bg text-brand-text flex flex-col">
@@ -212,11 +226,34 @@ function Profile() {
                                 Manage your personal information, developer bio, and linked profiles.
                             </p>
                         </div>
-                        {hasUnsavedChanges && (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-500 border border-amber-500/20 self-start sm:self-auto animate-pulse">
-                                Unsaved changes
-                            </span>
-                        )}
+                        <div className="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
+                            {hasUnsavedChanges && (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-500 border border-amber-500/20 animate-pulse">
+                                    Unsaved changes
+                                </span>
+                            )}
+                            {targetUserId && (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={handleCopyPublicLink}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-elevated hover:bg-brand-border/70 border border-brand-border text-xs font-semibold text-brand-text transition-all shadow-sm"
+                                        title="Copy public profile link"
+                                    >
+                                        {copied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} className="text-brand-muted" />}
+                                        <span>{copied ? "Copied" : "Copy Link"}</span>
+                                    </button>
+                                    <Link
+                                        to={`/profile/${targetUserId}`}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-primary/10 hover:bg-brand-primary/20 border border-brand-primary/30 text-xs font-bold text-brand-primary transition-all shadow-sm"
+                                        title="View how others see your profile"
+                                    >
+                                        <ExternalLink size={13} />
+                                        <span>View Public Profile</span>
+                                    </Link>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
 
