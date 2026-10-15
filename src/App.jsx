@@ -59,7 +59,11 @@ function App() {
       />
       <RouteTransitionLayout>
         <Routes>
-        <Route path="/profile" element={<Profile />} />
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        } />
         <Route path="/" element={<HomePage />} />
         <Route path="/signup" element={<Signup />} />
         
