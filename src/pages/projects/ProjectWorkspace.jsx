@@ -676,12 +676,12 @@ export default function ProjectWorkspace() {
 
     // Activity Bar Navigation Items
     const activityNavItems = [
-        { id: "explorer", label: "Files", icon: FolderTree, count: files.length },
-        { id: "roadmap", label: "Roadmap", icon: Milestone, count: project.milestones?.length || 5 },
-        { id: "spec", label: "Spec Guide", icon: BookOpen },
-        { id: "copilot", label: "Forge AI", icon: Bot, count: testResults?.status === "failed" ? "!" : null },
-        { id: "prereq", label: "Prereqs", icon: CheckCircle2, count: (project.prerequisites?.length || 0) },
-        { id: "prd", label: "Full PRD", icon: Layers }
+        { id: "explorer", label: "Project Files", hint: "File Explorer", icon: FolderTree, count: files.length },
+        { id: "roadmap", label: "Milestone Roadmap", hint: "Stage Progression", icon: Milestone, count: project.milestones?.length || 5 },
+        { id: "spec", label: "Milestone Spec", hint: "Rules & Verification", icon: BookOpen },
+        { id: "copilot", label: "Forge AI Copilot", hint: "AI Debugger & Hints", icon: Bot, count: testResults?.status === "failed" ? "!" : null },
+        { id: "prereq", label: "Stage Objectives", hint: "Toolchain Criteria", icon: CheckCircle2, count: (project.prerequisites?.length || 0) },
+        { id: "prd", label: "Architecture PRD", hint: "System Spec Document", icon: Layers }
     ];
 
     const handleActivityNavClick = (tabId) => {
@@ -786,12 +786,11 @@ export default function ProjectWorkspace() {
                                     key={item.id}
                                     type="button"
                                     onClick={() => handleActivityNavClick(item.id)}
-                                    className={`relative w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
+                                    className={`group relative w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
                                         isActive 
                                             ? "bg-blue-600/20 text-cyan-400 shadow-md" 
                                             : "text-slate-400 hover:text-white hover:bg-white/5"
                                     }`}
-                                    title={item.label}
                                 >
                                     {isActive && (
                                         <div className="absolute -left-1.5 top-2 bottom-2 w-1 rounded-r bg-cyan-400 shadow-[0_0_8px_#38bdf8]" />
@@ -806,6 +805,18 @@ export default function ProjectWorkspace() {
                                             {item.count}
                                         </span>
                                     )}
+
+                                    {/* Instant Hover Tooltip Badge */}
+                                    <div className="absolute left-full ml-3 px-3 py-1.5 rounded-xl bg-[#090D16] border border-blue-500/30 text-white text-xs shadow-2xl shadow-black pointer-events-none opacity-0 group-hover:opacity-100 group-hover:translate-x-0 -translate-x-1.5 transition-all duration-150 whitespace-nowrap z-50 flex items-center gap-2">
+                                        <span className="font-bold text-slate-100">{item.label}</span>
+                                        {item.hint && (
+                                            <span className="text-[10px] text-cyan-300 font-mono bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/20">
+                                                {item.hint}
+                                            </span>
+                                        )}
+                                        {/* Caret arrow */}
+                                        <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-y-[5px] border-y-transparent border-r-[6px] border-r-[#090D16]" />
+                                    </div>
                                 </button>
                             );
                         })}
@@ -816,10 +827,18 @@ export default function ProjectWorkspace() {
                         <button
                             type="button"
                             onClick={() => setIsCommandPaletteOpen(true)}
-                            className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
-                            title="Command Palette (Ctrl+P)"
+                            className="group relative w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
                         >
                             <Command size={15} />
+
+                            {/* Hover Badge */}
+                            <div className="absolute left-full ml-3 px-3 py-1.5 rounded-xl bg-[#090D16] border border-blue-500/30 text-white text-xs shadow-2xl shadow-black pointer-events-none opacity-0 group-hover:opacity-100 group-hover:translate-x-0 -translate-x-1.5 transition-all duration-150 whitespace-nowrap z-50 flex items-center gap-2">
+                                <span className="font-bold text-slate-100">Command Palette</span>
+                                <kbd className="text-[10px] bg-black/50 text-cyan-300 border border-white/10 px-1.5 py-0.5 rounded font-mono">
+                                    Ctrl+P
+                                </kbd>
+                                <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-y-[5px] border-y-transparent border-r-[6px] border-r-[#090D16]" />
+                            </div>
                         </button>
                     </div>
                 </div>
