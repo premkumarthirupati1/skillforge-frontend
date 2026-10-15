@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { PROJECTS } from "../../data/projectsData";
 import { getProjectWorkspaceData } from "../../data/projectWorkspacesData";
+import { executeProjectTests, isClientSideLanguage } from "../../services/codeRunnerService";
 import CodeStudioEditor from "../../components/workspace/CodeStudioEditor";
 import toast from "react-hot-toast";
 
@@ -183,42 +184,50 @@ export default function ProjectWorkspace() {
         }
     };
 
-    // Run Automated Test Suite
-    const handleRunTests = () => {
+    // Run Automated Test Suite (Dual-Engine: In-Browser V8 or Backend Sandbox)
+    const handleRunTests = async () => {
         if (isRunningTests) return;
         setIsRunningTests(true);
         setTerminalTab("tests");
         setTestResults({ status: "running", steps: [] });
 
-        const cases = milestoneGuide.testCases || [
-            { name: "TCP Handshake", expected: "Port 6379 open" },
-            { name: "PING command handshake", expected: "PONG" },
-            { name: "Concurrent connections", expected: "5/5 connected" }
-        ];
+        const language = (workspaceData.language || project.language || "rust").toLowerCase();
+        const isClient = isClientSideLanguage(language);
 
-        let currentStep = 0;
-        const steps = [];
+        // Terminal announcement
+        setConsoleLogs(prev => [
+            ...prev,
+            `\n[${new Date().toLocaleTimeString()}] ⚡ Invoking ${isClient ? "Client-Side Engine (In-Browser V8 • 0ms)" : "Backend Sandbox Service (/api/runner/execute)"}...`,
+            `target: ${project.title} • Milestone ${currentMilestoneIndex + 1}`
+        ]);
 
-        const interval = setInterval(() => {
-            if (currentStep < cases.length) {
-                const tc = cases[currentStep];
-                steps.push({
-                    name: tc.name,
-                    passed: true,
-                    duration: (Math.random() * 3 + 1.1).toFixed(1) + "ms",
-                    output: `✓ Asserted: ${tc.expected}`
-                });
-                setTestResults({ status: "running", steps: [...steps] });
-                currentStep++;
-            } else {
-                clearInterval(interval);
-                setIsRunningTests(false);
+        try {
+            const result = await executeProjectTests({
+                language,
+                files,
+                activeFileName,
+                milestoneGuide,
+                milestoneIndex: currentMilestoneIndex,
+                projectId: project.id
+            });
+
+            // Stream compiler output & stdout/stderr to terminal logs
+            if (result.stdout) {
+                setConsoleLogs(prev => [...prev, result.stdout]);
+            }
+            if (result.stderr) {
+                setConsoleLogs(prev => [...prev, `[stderr] ${result.stderr}`]);
+            }
+
+            if (result.success) {
                 setTestResults({
                     status: "passed",
-                    total: cases.length,
-                    passed: cases.length,
-                    duration: "14.2ms",
-                    steps
+                    engineLabel: result.engineLabel,
+                    runnerType: result.runnerType,
+                    total: result.total,
+                    passed: result.passed,
+                    duration: result.duration,
+                    steps: result.steps
                 });
 
                 // Mark current milestone verified!
@@ -232,9 +241,35 @@ export default function ProjectWorkspace() {
                 updateUserBuildProgress(currentMilestoneIndex + 1);
 
                 setShowCelebration(true);
-                toast.success(`🎉 Milestone ${currentMilestoneIndex + 1} verified! All test assertions passed.`);
+                toast.success(`🎉 Milestone ${currentMilestoneIndex + 1} verified! (${result.duration})`);
+            } else {
+                setTestResults({
+                    status: "failed",
+                    engineLabel: result.engineLabel,
+                    runnerType: result.runnerType,
+                    total: result.total,
+                    passed: result.passed,
+                    duration: result.duration,
+                    steps: result.steps,
+                    error: result.stderr || "Test assertions failed"
+                });
+                toast.error(`Tests failed: ${result.passed}/${result.total} assertions passed`);
             }
-        }, 450);
+        } catch (err) {
+            console.error("Test execution failed:", err);
+            setTestResults({
+                status: "failed",
+                engineLabel: "Execution Engine",
+                total: milestoneGuide?.testCases?.length || 1,
+                passed: 0,
+                duration: "0ms",
+                steps: [{ name: "Runner Execution", passed: false, duration: "0ms", output: err.message }],
+                error: err.message
+            });
+            toast.error(`Execution failed: ${err.message}`);
+        } finally {
+            setIsRunningTests(false);
+        }
     };
 
     // Update build progress in localStorage
@@ -951,8 +986,14 @@ export default function ProjectWorkspace() {
                                     <CheckCircle2 size={13} />
                                     <span>Automated Tests</span>
                                     {testResults && (
-                                        <span className={`px-1.5 py-0.2 rounded text-[10px] ${testResults.status === "passed" ? "bg-emerald-500/20 text-emerald-400" : "bg-blue-500/20 text-blue-400"}`}>
-                                            {testResults.passed || 0}/{milestoneGuide.testCases?.length || 4}
+                                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${
+                                            testResults.status === "passed" 
+                                                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" 
+                                                : testResults.status === "failed"
+                                                ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                                                : "bg-blue-500/20 text-blue-400"
+                                        }`}>
+                                            {testResults.passed || 0}/{testResults.total || milestoneGuide.testCases?.length || 4}
                                         </span>
                                     )}
                                 </button>
@@ -1008,33 +1049,78 @@ export default function ProjectWorkspace() {
                                             <div>Click <strong>Run Tests</strong> or press <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-slate-300">Ctrl+Enter</kbd> to execute this milestone's test harness.</div>
                                         </div>
                                     ) : (
-                                        <div className="space-y-2">
-                                            <div className="flex items-center justify-between pb-2 border-b border-white/5 text-[11px] text-slate-400">
-                                                <span>Test Suite: {milestoneGuide.title}</span>
-                                                <span>Duration: {testResults.duration || "Running..."}</span>
+                                        <div className="space-y-2.5">
+                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-white/5 text-[11px] text-slate-400 gap-1.5">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-bold text-slate-300">Test Suite: {milestoneGuide.title}</span>
+                                                    {testResults.engineLabel && (
+                                                        <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-cyan-400 border border-blue-500/20 text-[10px] font-mono">
+                                                            {testResults.engineLabel}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <span className="font-mono text-cyan-300">Duration: {testResults.duration || "Running..."}</span>
                                             </div>
 
                                             {testResults.steps?.map((step, idx) => (
-                                                <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5">
-                                                    <div className="flex items-center gap-2">
-                                                        <CheckCircle2 size={14} className="text-emerald-400" />
-                                                        <span className="text-slate-200 font-bold">{step.name}</span>
-                                                        <span className="text-slate-500 text-[11px]">{step.output}</span>
+                                                <div 
+                                                    key={idx} 
+                                                    className={`flex items-start sm:items-center justify-between p-2.5 rounded-xl border transition-all gap-2 ${
+                                                        step.passed 
+                                                            ? "bg-emerald-500/[0.04] border-emerald-500/20 text-slate-200" 
+                                                            : "bg-rose-500/[0.06] border-rose-500/30 text-rose-200"
+                                                    }`}
+                                                >
+                                                    <div className="flex items-start sm:items-center gap-2.5 flex-grow min-w-0">
+                                                        <div className="shrink-0 mt-0.5 sm:mt-0">
+                                                            {step.passed ? (
+                                                                <CheckCircle2 size={15} className="text-emerald-400" />
+                                                            ) : (
+                                                                <XCircle size={15} className="text-rose-400" />
+                                                            )}
+                                                        </div>
+                                                        <div className="min-w-0 flex-grow">
+                                                            <span className="font-bold text-xs">{step.name}</span>
+                                                            {step.output && (
+                                                                <div className={`text-[11px] font-mono truncate max-w-xl ${step.passed ? "text-slate-400" : "text-rose-300 font-bold"}`}>
+                                                                    {step.output}
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
-                                                    <span className="text-emerald-400 text-[11px]">{step.duration}</span>
+                                                    <span className={`text-[11px] font-mono shrink-0 ${step.passed ? "text-emerald-400" : "text-rose-400"}`}>
+                                                        {step.duration}
+                                                    </span>
                                                 </div>
                                             ))}
 
+                                            {testResults.status === "failed" && (
+                                                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 flex items-center justify-between flex-wrap gap-2">
+                                                    <div className="flex items-center gap-2 font-bold text-xs">
+                                                        <XCircle size={16} className="text-rose-400 shrink-0" />
+                                                        <span>Tests Failed ({testResults.passed}/{testResults.total} passed). Fix errors to verify this milestone.</span>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => setTerminalTab("console")}
+                                                        className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 text-xs font-mono font-bold transition-colors flex items-center gap-1.5"
+                                                    >
+                                                        <Terminal size={12} />
+                                                        <span>View Compiler Log</span>
+                                                    </button>
+                                                </div>
+                                            )}
+
                                             {testResults.status === "passed" && (
                                                 <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-between flex-wrap gap-2">
-                                                    <div className="flex items-center gap-2 font-bold">
-                                                        <CheckCircle2 size={16} />
-                                                        <span>All {testResults.passed} tests passed! Objectives verified.</span>
+                                                    <div className="flex items-center gap-2 font-bold text-xs">
+                                                        <CheckCircle2 size={16} className="shrink-0" />
+                                                        <span>All {testResults.passed} assertions passed! Milestone {currentMilestoneIndex + 1} verified.</span>
                                                     </div>
                                                     {currentMilestoneIndex + 1 < (project.milestones?.length || 5) && (
                                                         <button
                                                             onClick={() => {
                                                                 setCurrentMilestoneIndex(prev => prev + 1);
+                                                                setSelectedRoadmapIdx(prev => prev + 1);
                                                                 setTestResults(null);
                                                             }}
                                                             className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all flex items-center gap-1.5 shadow-md active:scale-95"
