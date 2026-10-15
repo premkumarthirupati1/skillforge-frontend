@@ -1,11 +1,11 @@
 import { useEffect, useState, useMemo } from "react";
-import api from "../api";
+import api from "../../api";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import NavBar from "../components/NavBar";
-import { getImageUrl } from "../utils/imageHelper";
-import { highlightWordPrefix } from "./SearchBar";
-import StarRating from "../components/StarRating";
+import NavBar from "../../components/NavBar";
+import { getImageUrl } from "../../utils/imageHelper";
+import { highlightWordPrefix } from "../../components/SearchBar";
+import StarRating from "../../components/StarRating";
 import { 
     Search, 
     X, 

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import api from "../api";
+import api from "../../api";
 import { useNavigate, useParams } from "react-router-dom";
-import NavBar from "../components/NavBar";
-import StarRating from "../components/StarRating";
+import NavBar from "../../components/NavBar";
+import StarRating from "../../components/StarRating";
 import toast from "react-hot-toast";
 import { PlayCircle, CheckCircle, Lock, Loader2, Sparkles, Award } from "lucide-react";
 

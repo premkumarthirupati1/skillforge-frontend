@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import api from "../api";
-import NavBar from "../components/NavBar";
+import api from "../../api";
+import NavBar from "../../components/NavBar";
 import { toast } from "react-hot-toast";
 
 function CourseBuilder() {

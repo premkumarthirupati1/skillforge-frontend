@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import api from "../api";
-import NavBar from "../components/NavBar";
+import api from "../../api";
+import NavBar from "../../components/NavBar";
 function CourseView() {
     const { courseId } = useParams();
     const [courseData, setCourseData] = useState(null);

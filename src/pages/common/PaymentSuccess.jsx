@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import api from "../api";
+import api from "../../api";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
-import NavBar from "../components/NavBar";
+import NavBar from "../../components/NavBar";
 
 function PaymentSuccess() {
     const [searchParams] = useSearchParams();

@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef } from "react";
-import api from "../api";
+import api from "../../api";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import NavBar from "../components/NavBar";
+import NavBar from "../../components/NavBar";
 import { ChevronLeft, PlayCircle, FileText, CheckCircle, Circle, Loader2, Play, Pause, Volume2, VolumeX, Maximize, RotateCcw, RotateCw, PanelRightClose, PanelRightOpen } from "lucide-react";
 
 function LessonViewer() {

@@ -11,7 +11,7 @@ import {
     ChevronDown,
     Search
 } from "lucide-react";
-import SearchBar from "../pages/SearchBar";
+import SearchBar from "./SearchBar";
 import api from "../api";
 
 function NavBar() {

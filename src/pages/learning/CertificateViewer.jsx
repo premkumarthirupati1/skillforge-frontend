@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import api from "../api";
-import NavBar from "../components/NavBar";
+import api from "../../api";
+import NavBar from "../../components/NavBar";
 import { Award, Download, ArrowLeft, CheckCircle2, ShieldCheck } from "lucide-react";
 
 import { toPng } from 'html-to-image';

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams, useNavigate, Link } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import api from "../api";
-import NavBar from "../components/NavBar";
+import api from "../../api";
+import NavBar from "../../components/NavBar";
 import { 
     Lock, 
     KeyRound, 

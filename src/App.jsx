@@ -1,31 +1,42 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import Login from "./pages/login";
-import Dashboard from "./pages/dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
-import CourseView from "./pages/CourseView";
-import InstructorDashBoard from "./pages/InstructorDashBoard";
-import CreateCourse from "./pages/CreateCourse";
-import EditCourse from "./pages/EditCourse";
-import CourseBuilder from "./pages/CourseBuilder";
-import LessonBuilder from "./pages/LessonBuilder";
-import ModuleEditor from "./pages/ModuleEditor";
-import EditLesson from "./pages/EditLesson";
-import HomePage from "./pages/Homepage";
-import Signup from "./pages/Signup";
-import CourseShowcase from "./pages/CourseShowcase";
-import CourseDetails from "./pages/CourseDetails";
-import Profile from "./pages/Profile";
-import UnifiedDashBoard from "./pages/UnifiedDashboard";
-import LessonsView from "./pages/LessonsView";
-import LessonViewer from "./pages/LessonViewer";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import PaymentSuccess from "./pages/PaymentSuccess";
-import ComingSoon from "./pages/ComingSoon";
-import InstructorStudio from "./pages/InstructorStudio";
-import CourseEditor from "./pages/CourseEditor";
-import CertificateViewer from "./pages/CertificateViewer";
+// Auth Pages
+import Login from "./pages/auth/Login";
+import Signup from "./pages/auth/Signup";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import ResetPassword from "./pages/auth/ResetPassword";
+
+// Course Discovery & Details
+import CourseShowcase from "./pages/courses/CourseShowcase";
+import CourseDetails from "./pages/courses/CourseDetails";
+import CourseView from "./pages/courses/CourseView";
+
+// Module & Curriculum Management (Studio)
+import ModuleEditor from "./pages/modules/ModuleEditor";
+import CourseBuilder from "./pages/modules/CourseBuilder";
+import CourseEditor from "./pages/modules/CourseEditor";
+import CreateCourse from "./pages/modules/CreateCourse";
+import EditCourse from "./pages/modules/EditCourse";
+import LessonBuilder from "./pages/modules/LessonBuilder";
+import EditLesson from "./pages/modules/EditLesson";
+import InstructorStudio from "./pages/modules/InstructorStudio";
+import InstructorDashBoard from "./pages/modules/InstructorDashboard";
+
+// Student Learning & Player
+import LessonViewer from "./pages/learning/LessonViewer";
+import LessonsView from "./pages/learning/LessonsView";
+import CertificateViewer from "./pages/learning/CertificateViewer";
+
+// Workspace & Dashboard
+import Dashboard from "./pages/dashboard/Dashboard";
+import UnifiedDashBoard from "./pages/dashboard/UnifiedDashboard";
+import Profile from "./pages/dashboard/Profile";
+
+// Public & Marketing
+import HomePage from "./pages/common/Homepage";
+import ComingSoon from "./pages/common/ComingSoon";
+import PaymentSuccess from "./pages/common/PaymentSuccess";
 
 function App() {
   return (

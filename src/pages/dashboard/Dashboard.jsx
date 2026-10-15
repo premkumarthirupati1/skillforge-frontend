@@ -1,9 +1,9 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import api from "../api";
-import NavBar from "../components/NavBar";
-import { getImageUrl } from "../utils/imageHelper";
+import api from "../../api";
+import NavBar from "../../components/NavBar";
+import { getImageUrl } from "../../utils/imageHelper";
 import { 
     BookOpen, 
     Trophy, 

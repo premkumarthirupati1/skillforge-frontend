@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import NavBar from "../components/NavBar";
-import api from "../api";
-import StarRating from "../components/StarRating";
-import { getImageUrl } from "../utils/imageHelper";
+import NavBar from "../../components/NavBar";
+import api from "../../api";
+import StarRating from "../../components/StarRating";
+import { getImageUrl } from "../../utils/imageHelper";
 import {
     ArrowRight,
     Terminal,

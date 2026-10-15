@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
-import api from "../api";
-import NavBar from "../components/NavBar";
+import api from "../../api";
+import NavBar from "../../components/NavBar";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { ChevronLeft, Plus, PlayCircle, FileText, ChevronDown, Video, CheckCircle, GripVertical, Loader2 } from "lucide-react";

@@ -1,4 +1,4 @@
-import NavBar from "../components/NavBar";
+import NavBar from "../../components/NavBar";
 import { Sparkles, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 

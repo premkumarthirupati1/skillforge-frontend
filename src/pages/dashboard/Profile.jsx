@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import api from "../api";
+import api from "../../api";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { 
@@ -12,7 +12,7 @@ import {
     Save,
     XCircle
 } from "lucide-react";
-import NavBar from "../components/NavBar";
+import NavBar from "../../components/NavBar";
 
 function Profile() {
     const [user, setUser] = useState(null);
