@@ -51,6 +51,17 @@ function Login() {
                 password: formData.password
             });
 
+            if (res.data?.requiresOtp) {
+                toast(res.data.message || "Please verify your email address to continue.", { icon: "🔒" });
+                navigate("/signup", { 
+                    state: { 
+                        requiresOtp: true, 
+                        email: cleanEmail 
+                    } 
+                });
+                return;
+            }
+
             localStorage.setItem("token", res.data.token);
             if (res.data.refreshToken) {
                 localStorage.setItem("refreshToken", res.data.refreshToken);
