@@ -268,6 +268,11 @@ function CourseDetails() {
                                             } ${isModuleDone ? "text-brand-subtle" : ""}`}>
                                                 {module.title}
                                             </h3>
+                                            {module.lessons && (
+                                                <p className="text-xs text-brand-subtle mt-0.5">
+                                                    {module.lessons.length} {module.lessons.length === 1 ? 'Lesson' : 'Lessons'}
+                                                </p>
+                                            )}
                                         </div>
 
                                         <div className="text-brand-subtle">

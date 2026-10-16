@@ -3,7 +3,7 @@ import api from "../../api";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import NavBar from "../../components/NavBar";
-import { ChevronLeft, PlayCircle, FileText, CheckCircle, Circle, Loader2, Play, Pause, Volume2, VolumeX, Maximize, RotateCcw, RotateCw, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { ChevronLeft, PlayCircle, FileText, CheckCircle, Circle, Loader2, Play, Pause, Volume2, VolumeX, Maximize, RotateCcw, RotateCw, PanelRightClose, PanelRightOpen, Award } from "lucide-react";
 
 function LessonViewer() {
     const { lessonId } = useParams();
@@ -38,6 +38,21 @@ function LessonViewer() {
     const [hoverTime, setHoverTime] = useState(null);
     const [hoverX, setHoverX] = useState(0);
     const [isTheaterMode, setIsTheaterMode] = useState(false);
+
+    const getYouTubeVideoId = (url) => {
+        if (!url || typeof url !== 'string') return null;
+        const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+        return match ? match[1] : null;
+    };
+
+    const resolveMediaUrl = (url) => {
+        if (!url) return '';
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+            return url;
+        }
+        const clean = url.replace(/^\/+/, '');
+        return `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/${clean}`;
+    };
 
     const handleProgressMouseMove = (e) => {
         if (!duration) return;
@@ -318,6 +333,17 @@ function LessonViewer() {
 
                         <div className="bg-brand-surface rounded-2xl overflow-hidden shadow-2xl border border-brand-border group relative mb-6 z-10">
                             {lesson.contentType === "video" ? (
+                                getYouTubeVideoId(lesson.content) ? (
+                                    <div className="relative w-full aspect-video max-h-[75vh] bg-black overflow-hidden mx-auto flex items-center justify-center">
+                                        <iframe
+                                            className="w-full h-full"
+                                            src={`https://www.youtube-nocookie.com/embed/${getYouTubeVideoId(lesson.content)}?autoplay=0&rel=0&modestbranding=1`}
+                                            title={lesson.title}
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                            allowFullScreen
+                                        />
+                                    </div>
+                                ) : (
                                 <div 
                                     ref={playerContainerRef}
                                     className="relative w-full aspect-video max-h-[75vh] bg-black flex flex-col justify-end group/player overflow-hidden mx-auto"
@@ -331,7 +357,7 @@ function LessonViewer() {
                                         onLoadedMetadata={handleLoadedMetadata}
                                         onEnded={handleVideoEnded}
                                         className="absolute inset-0 w-full h-full focus:outline-none cursor-pointer object-contain"
-                                        src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/${lesson.content}`}
+                                        src={resolveMediaUrl(lesson.content)}
                                     />
                                     
                                     {/* Play Overlay (Initial Big Play Button) */}
@@ -436,11 +462,12 @@ function LessonViewer() {
                                         </div>
                                     </div>
                                 </div>
-                            ) : (
-                                <div className="bg-brand-elevated text-brand-text p-10 leading-relaxed text-sm min-h-[500px] whitespace-pre-line border-t border-brand-primary/20">
-                                    {lesson.content}
-                                </div>
-                            )}
+                            )
+                        ) : (
+                            <div className="bg-brand-elevated text-brand-text p-10 leading-relaxed text-sm min-h-[500px] whitespace-pre-line border-t border-brand-primary/20">
+                                {lesson.content}
+                            </div>
+                        )}
                         </div>
 
                         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 pb-12">
@@ -494,6 +521,26 @@ function LessonViewer() {
                                 style={{ width: `${progressPercentage}%` }}
                             ></div>
                         </div>
+
+                        {progressPercentage === 100 && derivedCourseId && (
+                            <div className="mt-4 p-3.5 bg-gradient-to-r from-emerald-500/15 via-indigo-500/15 to-purple-500/15 border border-emerald-500/30 rounded-xl flex items-center justify-between gap-3 shadow-lg animate-in fade-in duration-300">
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                    <div className="w-9 h-9 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+                                        <Award size={18} />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-xs font-bold text-brand-text truncate">Curriculum Complete!</p>
+                                        <p className="text-[10px] text-emerald-400 font-medium truncate">Certificate Unlocked</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => navigate(`/certificate/${derivedCourseId}`)}
+                                    className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-bold transition-all shadow-md shrink-0 flex items-center gap-1.5 hover:scale-105"
+                                >
+                                    Claim
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">

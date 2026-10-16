@@ -7,12 +7,30 @@ function CourseView() {
     const [courseData, setCourseData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [activeLesson, setActiveLesson] = useState(null);
+
+    const getYouTubeVideoId = (url) => {
+        if (!url || typeof url !== 'string') return null;
+        const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+        return match ? match[1] : null;
+    };
+
+    const resolveMediaUrl = (url) => {
+        if (!url) return '';
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+            return url;
+        }
+        const clean = url.replace(/^\/+/, '');
+        return `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/${clean}`;
+    };
+
     const handleComplete = async (lessonId) => {
         try {
-            await api.post(`/lessons/${lessonId}/complete`);
+            await api.patch(`/enrollments/${courseId}/toggle-lesson`, { lessonId });
             const res = await api.get(`/course/${courseId}/full`);
-            setCourseData(res.data.result);
-
+            setCourseData(res.data);
+            if (activeLesson && activeLesson._id === lessonId) {
+                setActiveLesson(prev => prev ? { ...prev, completed: !prev.completed } : null);
+            }
         } catch (err) {
             console.error("Failed to complete lesson", err);
         }
@@ -94,12 +112,23 @@ function CourseView() {
 
                             {activeLesson.contentType === "video" && (
                                 <div className="bg-black rounded-xl overflow-hidden mb-6 shadow-md">
-                                    <video
-                                        controls
-                                        className="w-full max-h-[450px]"
-                                    >
-                                        <source src={activeLesson.content} type="video/mp4" />
-                                    </video>
+                                    {getYouTubeVideoId(activeLesson.content) ? (
+                                        <div className="relative aspect-video w-full">
+                                            <iframe
+                                                className="w-full h-full"
+                                                src={`https://www.youtube-nocookie.com/embed/${getYouTubeVideoId(activeLesson.content)}?autoplay=0&rel=0&modestbranding=1`}
+                                                title={activeLesson.title}
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                                allowFullScreen
+                                            />
+                                        </div>
+                                    ) : (
+                                        <video
+                                            controls
+                                            className="w-full max-h-[450px]"
+                                            src={resolveMediaUrl(activeLesson.content)}
+                                        />
+                                    )}
                                 </div>
                             )}
 

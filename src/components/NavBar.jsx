@@ -131,6 +131,7 @@ function NavBar() {
                         ))
                     ) : (
                         [
+                            { name: 'Courses', path: '/courses' },
                             { name: 'Tracks', path: '/tracks' },
                             { name: 'Challenges', path: '/challenges' },
                             { name: 'Community', path: '/community' },
