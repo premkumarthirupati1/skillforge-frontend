@@ -23,12 +23,9 @@ import {
     Lock,
     Maximize2,
     Minimize2,
-    GripHorizontal,
-    GripVertical,
     Code2,
     Milestone,
     Target,
-    Folder,
     FolderTree,
     Search,
     Command,
@@ -38,7 +35,13 @@ import {
     Lightbulb,
     Zap,
     RefreshCw,
-    X
+    X,
+    PanelLeftClose,
+    PanelLeftOpen,
+    Plus,
+    FileCode,
+    CheckCheck,
+    Flame
 } from "lucide-react";
 import { PROJECTS } from "../../data/projectsData";
 import { getProjectWorkspaceData } from "../../data/projectWorkspacesData";
@@ -51,24 +54,21 @@ import toast from "react-hot-toast";
 import api from "../../api";
 
 /**
- * Renders AI mentor output with structured markdown-like formatting:
- * Highlights inline code, lists, bullet points, and code blocks cleanly.
+ * Structured AI / Markdown Content Formatter
  */
 function FormattedAiContent({ content, className = "" }) {
     if (!content) return null;
 
-    // Split into paragraphs
     const paragraphs = String(content).split(/\n{2,}/);
 
     return (
-        <div className={`space-y-2.5 text-sm sm:text-[15px] leading-relaxed ${className}`}>
+        <div className={`space-y-2.5 text-xs sm:text-sm leading-relaxed ${className}`}>
             {paragraphs.map((p, pIdx) => {
                 const lines = p.split('\n');
                 return (
                     <div key={pIdx} className="space-y-1.5">
                         {lines.map((line, lIdx) => {
                             const trimmed = line.trim();
-                            // Check for list item (e.g. "1. ", "- ", "* ")
                             const listMatch = trimmed.match(/^(\d+\.|\-|\*)\s+(.*)$/);
                             if (listMatch) {
                                 const bullet = listMatch[1];
@@ -76,12 +76,12 @@ function FormattedAiContent({ content, className = "" }) {
                                 return (
                                     <div key={lIdx} className="flex items-start gap-2 pl-1">
                                         <span className="font-mono text-xs text-blue-400 font-bold shrink-0 mt-0.5">{bullet}</span>
-                                        <span className="flex-grow text-slate-100">{renderInlineText(rest)}</span>
+                                        <span className="flex-grow text-slate-200">{renderInlineText(rest)}</span>
                                     </div>
                                 );
                             }
                             return (
-                                <p key={lIdx} className="leading-relaxed text-slate-100">
+                                <p key={lIdx} className="leading-relaxed text-slate-200">
                                     {renderInlineText(line)}
                                 </p>
                             );
@@ -130,7 +130,7 @@ export default function ProjectWorkspace() {
     const { projectId } = useParams();
     const navigate = useNavigate();
 
-    // Strict Authentication Guard: Unauthenticated users are not permitted to enter any project workspace
+    // Strict Authentication Guard
     useEffect(() => {
         const token = localStorage.getItem("token");
         if (!token) {
@@ -155,7 +155,7 @@ export default function ProjectWorkspace() {
         return getProjectWorkspaceData(project.id, project);
     }, [project]);
 
-    // State: Current active milestone (0-indexed, restored from saved progress)
+    // Current active milestone (0-indexed, restored from saved progress)
     const [currentMilestoneIndex, setCurrentMilestoneIndex] = useState(() => {
         try {
             const saved = localStorage.getItem(`skillforge_active_milestone_${project.id}`);
@@ -173,7 +173,7 @@ export default function ProjectWorkspace() {
     });
     const currentMilestone = project.milestones?.[currentMilestoneIndex] || project.milestones?.[0];
 
-    // State: Verified Milestones set (Milestones unlocked and passed by test suite)
+    // Verified Milestones set
     const [verifiedMilestones, setVerifiedMilestones] = useState(() => {
         try {
             const saved = localStorage.getItem(`skillforge_verified_${project.id}`);
@@ -186,13 +186,13 @@ export default function ProjectWorkspace() {
 
     const isCurrentMilestoneVerified = verifiedMilestones.has(currentMilestoneIndex);
 
-    // Strict Progression Rule: Stage 1 is unlocked. Stage N requires Stage N-1 to be verified!
+    // Strict Progression Rule
     const isMilestoneUnlocked = (idx) => {
         if (idx === 0) return true;
         return verifiedMilestones.has(idx - 1);
     };
 
-    // Safe milestone switcher that strictly prevents jumping ahead
+    // Safe milestone switcher
     const handleSelectMilestone = (targetIdx) => {
         if (!isMilestoneUnlocked(targetIdx)) {
             toast.error(`Stage ${targetIdx + 1} is locked! Complete and pass all tests for Stage ${targetIdx} first.`, {
@@ -210,13 +210,12 @@ export default function ProjectWorkspace() {
         return true;
     };
 
-    // State: File editor contents (persisted per project)
+    // File editor contents (persisted per project)
     const [files, setFiles] = useState(() => {
         const saved = localStorage.getItem(`skillforge_files_${project.id}`);
         if (saved) {
             try {
                 const parsed = JSON.parse(saved);
-                // Stale cache migration: check if files have mismatched language syntax
                 const isStale = Array.isArray(parsed) && parsed.some(f => 
                     (f.name?.endsWith('.py') && (f.content?.includes('// SkillForge') || f.content?.includes('module.exports'))) ||
                     (f.name?.endsWith('.rs') && f.content?.includes('console.log')) ||
@@ -232,52 +231,50 @@ export default function ProjectWorkspace() {
 
     const [activeFileName, setActiveFileName] = useState(workspaceData.files[0]?.name || "main.rs");
 
-    // State: Active Sidebar Navigation ('explorer' | 'roadmap' | 'spec' | 'prereq' | 'prd' | 'hints')
+    // Active Left Pane Tab ('spec' | 'roadmap' | 'files' | 'copilot' | 'prd')
     const [specTab, setSpecTab] = useState("spec");
     const [selectedRoadmapIdx, setSelectedRoadmapIdx] = useState(0);
     const [isSpecsCollapsed, setIsSpecsCollapsed] = useState(false);
 
-    // State: Resizable Side Panel width (persisted in localStorage)
+    // Resizable Left Panel width (persisted in localStorage, default 460px)
     const [panelWidth, setPanelWidth] = useState(() => {
         try {
             const saved = localStorage.getItem("skillforge_sidepanel_width");
-            return saved ? parseInt(saved, 10) || 380 : 380;
+            return saved ? parseInt(saved, 10) || 460 : 460;
         } catch {
-            return 380;
+            return 460;
         }
     });
     const [isDraggingPanel, setIsDraggingPanel] = useState(false);
 
-    // Note: Prerequisites & Objectives are verified automatically by compiler test assertions, not manual user clicks
-
-    // State: Resizable terminal drawer height
-    const [terminalHeight, setTerminalHeight] = useState(240);
+    // Resizable bottom test runner drawer height
+    const [terminalHeight, setTerminalHeight] = useState(260);
     const [isDraggingTerminal, setIsDraggingTerminal] = useState(false);
 
-    // State: Terminal tab ('tests' | 'console')
+    // Test Runner tab ('tests' | 'console')
     const [terminalTab, setTerminalTab] = useState("tests");
 
-    // State: Test Runner execution state
+    // Test Runner execution state
     const [isRunningTests, setIsRunningTests] = useState(false);
     const [testResults, setTestResults] = useState(null);
 
-    // State: Monaco Editor Reference & Cursor Coordinates
+    // Monaco Editor Reference & Cursor Coordinates
     const editorInstanceRef = useRef(null);
     const [cursorPosition, setCursorPosition] = useState({ line: 1, col: 1 });
 
-    // State: Command Palette Modal
+    // Command Palette Modal
     const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
-    // State: Terminal console output
+    // Terminal console logs
     const [consoleLogs, setConsoleLogs] = useState([
         `⚡ skillforge-microvm v2.4 initialized for [${project.title}]`,
         `container: sha256:8b47e2 mounted at /workspace`,
         `branch: main (tracking origin/main)`,
-        `Ready. Edit code in the center pane and click 'Run Tests'.`
+        `Ready. Edit code on the right and click 'Run Tests' (Ctrl+Enter).`
     ]);
     const [terminalInput, setTerminalInput] = useState("");
 
-    // State: Session timer (persisted per project in localStorage)
+    // Session timer (persisted per project)
     const [secondsElapsed, setSecondsElapsed] = useState(() => {
         try {
             const saved = localStorage.getItem(`skillforge_timer_${project.id}`);
@@ -288,12 +285,12 @@ export default function ProjectWorkspace() {
     });
     const [showCelebration, setShowCelebration] = useState(false);
 
-    // State: AI Mentor (Forge Copilot)
+    // Forge Copilot state
     const [aiMentorState, setAiMentorState] = useState({
         isLoading: false,
         diagnosis: null,
         hint: null,
-        level: 1, // 1: Nudge, 2: Pinpoint, 3: Fix Structure
+        level: 1,
         targetLine: null,
         codePattern: "",
         quickPrompts: [
@@ -321,21 +318,21 @@ export default function ProjectWorkspace() {
         ]
     };
 
-    // Session timer ticker (persists elapsed seconds to localStorage on every tick)
+    // Session timer ticker
     useEffect(() => {
         const timer = setInterval(() => {
             setSecondsElapsed(prev => {
                 const next = prev + 1;
                 try {
                     localStorage.setItem(`skillforge_timer_${project.id}`, next.toString());
-                } catch (e) { /* ignore */ }
+                } catch (e) {}
                 return next;
             });
         }, 1000);
         return () => clearInterval(timer);
     }, [project.id]);
 
-    // Remote Progress Synchronization: Fetch user's saved milestones and progress from backend database
+    // Remote Progress Synchronization
     useEffect(() => {
         const token = localStorage.getItem("token");
         if (!token || !project?.id) return;
@@ -388,7 +385,7 @@ export default function ProjectWorkspace() {
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }, [secondsElapsed]);
 
-    // Performance refs for butter-smooth, 60fps drag-to-resize without layout thrashing
+    // Performance refs for resize handlers
     const panelWidthRef = useRef(panelWidth);
     const terminalHeightRef = useRef(terminalHeight);
     const resizeRafIdRef = useRef(null);
@@ -401,11 +398,10 @@ export default function ProjectWorkspace() {
         terminalHeightRef.current = terminalHeight;
     }, [terminalHeight]);
 
-    // High-performance unified resize listener (RAF-throttled, zero listener churn, auto-layout trigger)
+    // High-performance resize listener
     useEffect(() => {
         if (!isDraggingPanel && !isDraggingTerminal) return;
 
-        // Prevent browser selection / ghost drag during resize
         document.body.style.userSelect = "none";
         document.body.style.cursor = isDraggingPanel ? "col-resize" : "row-resize";
 
@@ -414,11 +410,10 @@ export default function ProjectWorkspace() {
             resizeRafIdRef.current = requestAnimationFrame(() => {
                 resizeRafIdRef.current = null;
                 if (isDraggingPanel) {
-                    // Left activity bar is 48px wide
-                    const newWidth = Math.max(200, Math.min(e.clientX - 48, 800));
+                    const newWidth = Math.max(320, Math.min(e.clientX, window.innerWidth - 400));
                     setPanelWidth(newWidth);
                 } else if (isDraggingTerminal) {
-                    const newHeight = Math.max(50, Math.min(window.innerHeight - e.clientY, window.innerHeight - 120));
+                    const newHeight = Math.max(60, Math.min(window.innerHeight - e.clientY, window.innerHeight - 150));
                     setTerminalHeight(newHeight);
                 }
             });
@@ -442,7 +437,6 @@ export default function ProjectWorkspace() {
                 setIsDraggingTerminal(false);
             }
 
-            // Instantly inform Monaco to snap to new container dimensions
             editorInstanceRef.current?.layout();
         };
 
@@ -519,13 +513,12 @@ export default function ProjectWorkspace() {
         }
     };
 
-    // Regex Helper to extract line number from compiler diagnostic output
     const extractLineNumber = (output = "") => {
         const match = output.match(/line (\d+)/i) || output.match(/:(\d+)/);
         return match ? parseInt(match[1], 10) : null;
     };
 
-    // Trigger Forge Copilot / AI Coding Mentor
+    // Trigger Forge Copilot
     const handleAskAiMentor = async ({ 
         testCase = null, 
         error = null, 
@@ -535,18 +528,15 @@ export default function ProjectWorkspace() {
     } = {}) => {
         const token = localStorage.getItem("token");
         if (!token) {
-            toast.error("Please sign in to access the AI Coding Mentor", { icon: "🔒" });
+            toast.error("Please sign in to access Forge Copilot", { icon: "🔒" });
             navigate("/login", { state: { from: `/projects/${projectId}/workspace` } });
             return;
         }
 
-        // Open the AI Mentor panel in the sidebar
         setSpecTab("copilot");
         setIsSpecsCollapsed(false);
 
         const targetLevel = requestedLevel !== null ? requestedLevel : (aiMentorState.level || 1);
-        
-        // Only associate with a failing test if one was specifically requested or if tests currently failed
         const failingStep = testResults?.status === "failed" ? testResults?.steps?.find(s => !s.passed) : null;
         const failingName = testCase || (testCase === null && prompt ? null : (failingStep?.name || null));
         const failingErr = error || (failingName ? (failingStep?.output || testResults?.error || "") : "");
@@ -581,31 +571,11 @@ export default function ProjectWorkspace() {
                 hintLevel: targetLevel
             });
 
-            // Resilient unpacker: If hint or diagnosis is a JSON string, extract individual fields
             let cleanDiagnosis = advice.diagnosis || "";
             let cleanHint = advice.hint || "";
             let cleanPattern = advice.codePattern || "";
             let cleanLine = line || (typeof advice.targetLine === "number" ? advice.targetLine : (parseInt(advice.targetLine, 10) || null));
             let cleanPrompts = advice.quickPrompts || [];
-
-            if (typeof cleanHint === "string" && (cleanHint.trim().startsWith("{") || cleanHint.includes('"diagnosis"') || cleanHint.includes('"hint"'))) {
-                try {
-                    const sanitized = cleanHint.replace(/"(diagnosis|hint|targetLine|codePattern|quickPrompts):\s*/g, '"$1": "');
-                    const inner = JSON.parse(sanitized);
-                    if (inner.hint) cleanHint = inner.hint;
-                    if (inner.diagnosis) cleanDiagnosis = inner.diagnosis;
-                    if (inner.codePattern) cleanPattern = inner.codePattern;
-                    if (inner.targetLine) cleanLine = inner.targetLine;
-                    if (Array.isArray(inner.quickPrompts) && inner.quickPrompts.length > 0) cleanPrompts = inner.quickPrompts;
-                } catch (e) {
-                    const hintM = cleanHint.match(/"hint"\s*:\s*"([^"]+)"/i) || cleanHint.match(/"hint:\s*([^"]+)"/i);
-                    if (hintM) cleanHint = hintM[1];
-                    const diagM = cleanHint.match(/"diagnosis"\s*:\s*"([^"]+)"/i);
-                    if (diagM && !cleanDiagnosis) cleanDiagnosis = diagM[1];
-                    const patM = cleanHint.match(/"codePattern"\s*:\s*"([^"]+)"/i);
-                    if (patM && !cleanPattern) cleanPattern = patM[1].replace(/\\n/g, "\n");
-                }
-            }
 
             setAiMentorState(prev => ({
                 ...prev,
@@ -636,7 +606,7 @@ export default function ProjectWorkspace() {
         }
     };
 
-    // Handle Run Tests Action
+    // Run Tests Action
     const handleRunTests = async () => {
         if (isRunningTests) return;
 
@@ -652,7 +622,6 @@ export default function ProjectWorkspace() {
         const language = (workspaceData.language || project.language || "rust").toLowerCase();
         const isClient = isClientSideLanguage(language);
 
-        // Terminal announcement
         setConsoleLogs(prev => [
             ...prev,
             `\n[${new Date().toLocaleTimeString()}] ⚡ Invoking ${isClient ? "Client-Side Engine (In-Browser V8 • 0ms)" : "Backend Sandbox Service (/api/runner/execute)"}...`,
@@ -669,13 +638,8 @@ export default function ProjectWorkspace() {
                 projectId: project.id
             });
 
-            // Stream compiler output & stdout/stderr to terminal logs
-            if (result.stdout) {
-                setConsoleLogs(prev => [...prev, result.stdout]);
-            }
-            if (result.stderr) {
-                setConsoleLogs(prev => [...prev, `[stderr] ${result.stderr}`]);
-            }
+            if (result.stdout) setConsoleLogs(prev => [...prev, result.stdout]);
+            if (result.stderr) setConsoleLogs(prev => [...prev, `[stderr] ${result.stderr}`]);
 
             if (result.success) {
                 setTestResults({
@@ -688,14 +652,12 @@ export default function ProjectWorkspace() {
                     steps: result.steps
                 });
 
-                // Clear previous failure context since tests passed
                 setAiMentorState(prev => ({
                     ...prev,
                     activeFailingTest: null,
                     diagnosis: null
                 }));
 
-                // Mark current milestone verified!
                 let updatedVerifiedList = [];
                 setVerifiedMilestones(prev => {
                     const next = new Set(prev);
@@ -712,7 +674,6 @@ export default function ProjectWorkspace() {
                 const nextMilestone = Math.min(totalMilestones, currentMilestoneIndex + 2);
                 const percent = Math.min(100, Math.round(((currentMilestoneIndex + 1) / totalMilestones) * 100));
 
-                // Persist progress to local user builds
                 try {
                     const savedBuilds = JSON.parse(localStorage.getItem("skillforge_user_builds") || "[]");
                     const existingIdx = savedBuilds.findIndex(b => b.projectId === project.id);
@@ -723,17 +684,11 @@ export default function ProjectWorkspace() {
                         lastActive: new Date().toISOString(),
                         status: isFinalMilestone ? "completed" : "in_progress"
                     };
-                    if (existingIdx !== -1) {
-                        savedBuilds[existingIdx] = newEntry;
-                    } else {
-                        savedBuilds.push(newEntry);
-                    }
+                    if (existingIdx !== -1) savedBuilds[existingIdx] = newEntry;
+                    else savedBuilds.push(newEntry);
                     localStorage.setItem("skillforge_user_builds", JSON.stringify(savedBuilds));
-                } catch (e) {
-                    console.error("Failed to update user builds", e);
-                }
+                } catch (e) {}
 
-                // Synchronize progress to backend database
                 if (token) {
                     api.post("/projects/progress", {
                         projectId: project.id,
@@ -744,14 +699,11 @@ export default function ProjectWorkspace() {
                         status: isFinalMilestone ? "completed" : "in_progress",
                         percent,
                         secondsElapsed
-                    }).catch(err => {
-                        console.error("Failed to sync progress to database", err);
-                    });
+                    }).catch(err => console.error("Failed to sync progress to database", err));
                 }
 
                 toast.success(`Milestone ${currentMilestoneIndex + 1} passed all test assertions!`);
 
-                // Check if final milestone was passed
                 if (currentMilestoneIndex + 1 === (project.milestones?.length || 5)) {
                     setShowCelebration(true);
                 }
@@ -767,7 +719,6 @@ export default function ProjectWorkspace() {
                     error: result.error
                 });
 
-                // Pre-seed AI Mentor with the first failing step
                 const firstFailed = result.steps?.find(s => !s.passed);
                 if (firstFailed) {
                     setAiMentorState(prev => ({
@@ -780,12 +731,11 @@ export default function ProjectWorkspace() {
                     }));
                 }
 
-                toast.error("Tests failed. Review output in the bottom test drawer.");
+                toast.error("Tests failed. Review output in the bottom test runner.");
             }
 
-            // Ensure test drawer is visible
             if (terminalHeight < 120) {
-                setTerminalHeight(240);
+                setTerminalHeight(260);
             }
             setTerminalTab("tests");
 
@@ -797,7 +747,7 @@ export default function ProjectWorkspace() {
         }
     };
 
-    // Global Keyboard Shortcuts (Ctrl+P, Ctrl+Enter)
+    // Global Keyboard Shortcuts
     useEffect(() => {
         const handleGlobalKeyDown = (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === "p") {
@@ -813,7 +763,7 @@ export default function ProjectWorkspace() {
         return () => window.removeEventListener("keydown", handleGlobalKeyDown);
     }, [handleRunTests]);
 
-    // Handle terminal input command
+    // Terminal command runner
     const handleTerminalCommand = (e) => {
         e.preventDefault();
         const cmd = terminalInput.trim();
@@ -826,17 +776,14 @@ export default function ProjectWorkspace() {
             setConsoleLogs([]);
             return;
         }
-
         if (cmd === "test" || cmd === "run") {
             handleRunTests();
             return;
         }
-
         if (cmd === "ls") {
             setConsoleLogs(prev => [...prev, files.map(f => f.name).join("  ")]);
             return;
         }
-
         if (cmd === "help") {
             setConsoleLogs(prev => [
                 ...prev,
@@ -848,51 +795,33 @@ export default function ProjectWorkspace() {
             ]);
             return;
         }
-
         setConsoleLogs(prev => [...prev, `sh: command not found: ${cmd}. Type 'help' for available commands.`]);
     };
 
-    // Activity Bar Navigation Items
-    const activityNavItems = [
-        { id: "explorer", label: "Project Files", hint: "File Explorer", icon: FolderTree, count: files.length },
-        { id: "roadmap", label: "Milestone Roadmap", hint: "Stage Progression", icon: Milestone, count: project.milestones?.length || 5 },
-        { id: "spec", label: "Milestone Spec", hint: "Rules & Verification", icon: BookOpen },
-        { id: "copilot", label: "Forge AI Copilot", hint: "AI Debugger & Hints", icon: Bot, count: testResults?.status === "failed" ? "!" : null },
-        { id: "prereq", label: "Stage Objectives", hint: "Toolchain Criteria", icon: CheckCircle2, count: (project.prerequisites?.length || 0) },
-        { id: "prd", label: "Architecture PRD", hint: "System Spec Document", icon: Layers }
-    ];
-
-    const handleActivityNavClick = (tabId) => {
-        if (!isSpecsCollapsed && specTab === tabId) {
-            setIsSpecsCollapsed(true);
-        } else {
-            setIsSpecsCollapsed(false);
-            setSpecTab(tabId);
-        }
-    };
+    const totalMilestones = project.milestones?.length || 5;
 
     return (
-        <div className="h-screen w-screen bg-[#070A11] text-white flex flex-col overflow-hidden font-sans">
+        <div className="h-screen w-screen bg-[#070A11] text-white flex flex-col overflow-hidden font-sans select-none">
             
             {/* ======================================================== */}
-            {/* TOP NAVIGATION HEADER BAR                                */}
+            {/* 1. TOP GLOBAL ACTION HEADER                              */}
             {/* ======================================================== */}
-            <header className="h-12 border-b border-white/10 bg-[#090D16] px-3 flex items-center justify-between shrink-0 select-none z-30">
+            <header className="h-13 border-b border-white/10 bg-[#090D16] px-3.5 flex items-center justify-between shrink-0 z-30">
                 
-                {/* Left: Project Brand & Path Breadcrumb */}
-                <div className="flex items-center gap-2 sm:gap-3 truncate">
+                {/* Left: Brand, Back & Project Title */}
+                <div className="flex items-center gap-2.5 sm:gap-3 truncate">
                     <button
                         onClick={() => navigate("/projects")}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
-                        title="Back to Project Catalog"
+                        title="Back to Projects"
                     >
                         <ArrowLeft size={16} />
                     </button>
 
                     <button
                         onClick={() => navigate("/dashboard")}
-                        className="flex items-center gap-1.5 hover:opacity-85 transition-opacity"
-                        title="SkillForge Platform"
+                        className="flex items-center gap-2 hover:opacity-85 transition-opacity"
+                        title="SkillForge Dashboard"
                     >
                         <img 
                             src="/images/skillforge-icon.png" 
@@ -903,537 +832,232 @@ export default function ProjectWorkspace() {
 
                     <div className="h-4 w-px bg-white/10 hidden sm:block" />
 
-                    <div className="flex items-center gap-1.5 text-xs truncate">
-                        <span className="text-slate-400 font-mono hidden md:inline">projects</span>
-                        <ChevronRight size={12} className="text-slate-600 hidden md:inline" />
-                        <span className="font-bold text-white truncate max-w-[200px] sm:max-w-xs">{project.title}</span>
-                    </div>
-
-                    {/* Active Milestone Progress Indicator */}
-                    <div className="hidden lg:flex items-center gap-2 pl-2">
-                        <div className="flex items-center gap-1 bg-[#05070B] border border-blue-500/20 px-2.5 py-1 rounded-full text-[11px] font-mono">
-                            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-                            <span className="text-slate-300 font-bold">Stage {currentMilestoneIndex + 1}:</span>
-                            <span className="text-cyan-300 truncate max-w-[140px]">{currentMilestone?.title}</span>
-                        </div>
+                    <div className="flex items-center gap-2 text-xs truncate">
+                        <span className="font-bold text-white tracking-tight truncate max-w-[140px] sm:max-w-xs text-sm">
+                            {project.title}
+                        </span>
+                        <span className="hidden md:inline-flex px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-400 font-mono text-[10px] font-bold uppercase">
+                            {workspaceData.language || project.language || "Code"}
+                        </span>
                     </div>
                 </div>
 
-                {/* Right: Quick Command Search, Timer & Run Action */}
+                {/* Center: Stage Navigator, Run Tests & Copilot Trigger */}
                 <div className="flex items-center gap-2 sm:gap-3">
                     
-                    {/* Command Palette Trigger */}
-                    <button
-                        onClick={() => setIsCommandPaletteOpen(true)}
-                        className="hidden md:flex items-center gap-2 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 text-xs text-slate-400 hover:text-slate-200 transition-colors"
-                        title="Open Command Palette (Ctrl+P)"
-                    >
-                        <Search size={12} className="text-cyan-400" />
-                        <span className="font-mono text-[11px]">Quick Open</span>
-                        <kbd className="px-1 py-0.2 bg-black/40 rounded text-[10px] font-mono">Ctrl+P</kbd>
-                    </button>
+                    {/* Milestone Stepper */}
+                    <div className="hidden sm:flex items-center gap-1 bg-[#05070B] border border-white/10 p-0.5 rounded-xl">
+                        <button
+                            type="button"
+                            disabled={currentMilestoneIndex === 0}
+                            onClick={() => handleSelectMilestone(currentMilestoneIndex - 1)}
+                            className="p-1 rounded-lg text-slate-400 hover:text-white disabled:opacity-30 disabled:hover:text-slate-400 transition-colors"
+                            title="Previous Milestone"
+                        >
+                            <ChevronLeft size={14} />
+                        </button>
 
-                    {/* Session Timer (Auto-persisted) */}
-                    <div 
-                        className="hidden sm:flex items-center gap-1.5 text-xs font-mono text-slate-400 bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-lg border border-white/5 transition-colors cursor-help"
-                        title="Session Time Elapsed (Auto-saved across browser refreshes)"
-                    >
-                        <Clock size={12} className="text-cyan-400 animate-pulse" />
-                        <span>{formattedTime}</span>
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono">
+                            <span className="text-slate-400 font-medium">Stage {currentMilestoneIndex + 1}/{totalMilestones}:</span>
+                            <span className="font-bold text-white truncate max-w-[120px] lg:max-w-[160px]">
+                                {currentMilestone?.title}
+                            </span>
+                            {isCurrentMilestoneVerified ? (
+                                <span className="w-2 h-2 rounded-full bg-emerald-400 ml-0.5" title="Stage Verified" />
+                            ) : (
+                                <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse ml-0.5" title="Stage Active" />
+                            )}
+                        </div>
+
+                        <button
+                            type="button"
+                            disabled={currentMilestoneIndex >= totalMilestones - 1}
+                            onClick={() => handleSelectMilestone(currentMilestoneIndex + 1)}
+                            className="p-1 rounded-lg text-slate-400 hover:text-white disabled:opacity-30 disabled:hover:text-slate-400 transition-colors"
+                            title="Next Milestone"
+                        >
+                            <ChevronRight size={14} />
+                        </button>
                     </div>
 
-                    {/* Run Tests Button */}
+                    {/* Primary Run Tests Button */}
                     <button
                         onClick={handleRunTests}
                         disabled={isRunningTests}
-                        className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold transition-all shadow-[0_0_20px_rgba(37,99,235,0.4)] flex items-center gap-2 active:scale-95 disabled:opacity-50"
+                        className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 hover:from-blue-500 hover:to-blue-400 text-white text-xs font-bold transition-all shadow-[0_0_20px_rgba(37,99,235,0.4)] flex items-center gap-2 active:scale-95 disabled:opacity-50 shrink-0"
                     >
                         <Play size={13} fill="currentColor" className={isRunningTests ? "animate-spin" : ""} />
-                        <span>{isRunningTests ? "Running..." : "Run Tests"}</span>
-                        <kbd className="hidden md:inline text-[10px] bg-black/30 px-1.5 py-0.5 rounded font-mono text-blue-200">
+                        <span>{isRunningTests ? "Running Tests..." : "Run Tests"}</span>
+                        <kbd className="hidden lg:inline text-[10px] bg-black/30 px-1.5 py-0.5 rounded font-mono text-blue-200">
                             Ctrl+↵
                         </kbd>
+                    </button>
+
+                    {/* Dedicated Forge Copilot Action Button */}
+                    <button
+                        onClick={() => {
+                            setSpecTab("copilot");
+                            setIsSpecsCollapsed(false);
+                            if (!aiMentorState.diagnosis && testResults?.status === "failed") {
+                                handleAskAiMentor({ prompt: "Diagnose my failing test assertions" });
+                            }
+                        }}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl border text-xs font-semibold transition-all shadow-sm active:scale-95 shrink-0 ${
+                            specTab === "copilot" && !isSpecsCollapsed
+                                ? "bg-blue-600/30 text-white border-blue-400 shadow-[0_0_15px_rgba(37,99,235,0.3)]"
+                                : "bg-white/5 hover:bg-blue-600/20 text-blue-300 border-blue-500/30 hover:text-white"
+                        }`}
+                        title="Open Forge Copilot Senior AI Mentor"
+                    >
+                        <Sparkles size={14} className="text-blue-400 animate-pulse" />
+                        <span className="hidden md:inline font-mono">Forge Copilot</span>
+                    </button>
+                </div>
+
+                {/* Right: Timer, Quick Open & Panel Toggle */}
+                <div className="flex items-center gap-2 sm:gap-2.5">
+                    
+                    {/* Session Timer */}
+                    <div 
+                        className="hidden md:flex items-center gap-1.5 text-xs font-mono text-slate-400 bg-white/5 px-2.5 py-1.5 rounded-lg border border-white/5 transition-colors"
+                        title="Session Time Elapsed (Auto-saved)"
+                    >
+                        <Clock size={12} className="text-blue-400 animate-pulse" />
+                        <span>{formattedTime}</span>
+                    </div>
+
+                    {/* Quick Command Palette */}
+                    <button
+                        onClick={() => setIsCommandPaletteOpen(true)}
+                        className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 text-xs text-slate-400 hover:text-slate-200 transition-colors"
+                        title="Quick File Open (Ctrl+P)"
+                    >
+                        <Search size={12} className="text-blue-400" />
+                        <kbd className="px-1 py-0.2 bg-black/40 rounded text-[10px] font-mono">Ctrl+P</kbd>
+                    </button>
+
+                    {/* Toggle Left Spec Panel */}
+                    <button
+                        onClick={() => setIsSpecsCollapsed(prev => !prev)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
+                        title={isSpecsCollapsed ? "Open Spec Panel" : "Collapse Spec Panel"}
+                    >
+                        {isSpecsCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
                     </button>
                 </div>
             </header>
 
             {/* ======================================================== */}
-            {/* WORKSPACE MIDDLE BODY                                    */}
+            {/* 2. MAIN 2-COLUMN SPLIT STUDIO                            */}
             {/* ======================================================== */}
             <div className="flex-grow flex overflow-hidden relative">
 
                 {/* ---------------------------------------------------- */}
-                {/* 1. ACTIVITY BAR (VS Code Far Left Strip, 48px)       */}
-                {/* ---------------------------------------------------- */}
-                <div className="w-12 bg-[#05070B] border-r border-white/10 shrink-0 flex flex-col justify-between py-2 items-center select-none z-20">
-                    {/* Top Section: Navigation Panes */}
-                    <div className="flex flex-col items-center gap-1.5 w-full">
-                        {activityNavItems.map(item => {
-                            const Icon = item.icon;
-                            const isActive = !isSpecsCollapsed && specTab === item.id;
-                            return (
-                                <button
-                                    key={item.id}
-                                    type="button"
-                                    onClick={() => handleActivityNavClick(item.id)}
-                                    className={`group relative w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
-                                        isActive 
-                                            ? "bg-blue-600/20 text-cyan-400 shadow-md" 
-                                            : "text-slate-400 hover:text-white hover:bg-white/5"
-                                    }`}
-                                >
-                                    {isActive && (
-                                        <div className="absolute -left-1.5 top-2 bottom-2 w-1 rounded-r bg-cyan-400 shadow-[0_0_8px_#38bdf8]" />
-                                    )}
-                                    <Icon size={16} />
-                                    {item.count !== undefined && item.count !== null && (
-                                        <span className={`absolute -bottom-0.5 -right-0.5 text-[8px] font-mono px-1 rounded-full border ${
-                                            item.count === "!" 
-                                                ? "bg-blue-600 text-white border-blue-400 font-extrabold animate-pulse shadow-[0_0_8px_rgba(37,99,235,0.6)]" 
-                                                : "bg-blue-500/30 text-cyan-200 border-blue-500/40"
-                                        }`}>
-                                            {item.count}
-                                        </span>
-                                    )}
-
-                                    {/* Instant Hover Tooltip Badge */}
-                                    <div className="absolute left-full ml-3 px-3 py-1.5 rounded-xl bg-[#090D16] border border-blue-500/30 text-white text-xs shadow-2xl shadow-black pointer-events-none opacity-0 group-hover:opacity-100 group-hover:translate-x-0 -translate-x-1.5 transition-all duration-150 whitespace-nowrap z-50 flex items-center gap-2">
-                                        <span className="font-bold text-slate-100">{item.label}</span>
-                                        {item.hint && (
-                                            <span className="text-[10px] text-cyan-300 font-mono bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/20">
-                                                {item.hint}
-                                            </span>
-                                        )}
-                                        {/* Caret arrow */}
-                                        <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-y-[5px] border-y-transparent border-r-[6px] border-r-[#090D16]" />
-                                    </div>
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    {/* Bottom Section: Command Palette & Settings */}
-                    <div className="flex flex-col items-center gap-1.5 w-full">
-                        <button
-                            type="button"
-                            onClick={() => setIsCommandPaletteOpen(true)}
-                            className="group relative w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
-                        >
-                            <Command size={15} />
-
-                            {/* Hover Badge */}
-                            <div className="absolute left-full ml-3 px-3 py-1.5 rounded-xl bg-[#090D16] border border-blue-500/30 text-white text-xs shadow-2xl shadow-black pointer-events-none opacity-0 group-hover:opacity-100 group-hover:translate-x-0 -translate-x-1.5 transition-all duration-150 whitespace-nowrap z-50 flex items-center gap-2">
-                                <span className="font-bold text-slate-100">Command Palette</span>
-                                <kbd className="text-[10px] bg-black/50 text-cyan-300 border border-white/10 px-1.5 py-0.5 rounded font-mono">
-                                    Ctrl+P
-                                </kbd>
-                                <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-y-[5px] border-y-transparent border-r-[6px] border-r-[#090D16]" />
-                            </div>
-                        </button>
-                    </div>
-                </div>
-
-                {/* ---------------------------------------------------- */}
-                {/* 2. RESIZABLE SIDE PANEL (Explorer / Spec / Roadmap)  */}
+                {/* LEFT PANE: SPEC, ROADMAP, FILES & COPILOT HUB        */}
                 {/* ---------------------------------------------------- */}
                 {!isSpecsCollapsed && (
                     <aside 
                         style={{ width: `${panelWidth}px` }}
-                        className={`border-r border-white/10 bg-[#090D16] flex flex-col shrink-0 h-full overflow-hidden relative z-10 will-change-[width] ${
+                        className={`border-r border-white/10 bg-[#080C14] flex flex-col shrink-0 h-full overflow-hidden relative z-10 will-change-[width] ${
                             isDraggingPanel ? "select-none" : ""
                         }`}
                     >
-                        {/* Header Tabs */}
-                        <div className="flex items-center justify-between border-b border-white/10 bg-[#070A11] px-3 h-10 shrink-0">
-                            <span className="text-xs font-bold uppercase tracking-wider text-slate-300 font-mono flex items-center gap-1.5">
-                                {specTab === "explorer" && <FolderTree size={13} className="text-cyan-400" />}
-                                {specTab === "roadmap" && <Milestone size={13} className="text-cyan-400" />}
-                                {specTab === "spec" && <BookOpen size={13} className="text-cyan-400" />}
-                                {(specTab === "copilot" || specTab === "hints") && <Bot size={13} className="text-blue-400" />}
-                                {specTab === "prereq" && <CheckCircle2 size={13} className="text-cyan-400" />}
-                                {specTab === "prd" && <Layers size={13} className="text-cyan-400" />}
-                                <span>
-                                    {specTab === "explorer" && "Project Files"}
-                                    {specTab === "roadmap" && "Milestone Roadmap"}
-                                    {specTab === "spec" && "Milestone Spec"}
-                                    {(specTab === "copilot" || specTab === "hints") && "Forge Copilot"}
-                                    {specTab === "prereq" && "Prerequisites"}
-                                    {specTab === "prd" && "Architecture PRD"}
-                                </span>
-                            </span>
+                        {/* Segmented Top Nav Tabs */}
+                        <div className="flex items-center justify-between border-b border-white/10 bg-[#06090F] px-2 h-10 shrink-0">
+                            <div className="flex items-center gap-1 overflow-x-auto scrollbar-none py-1">
+                                {[
+                                    { id: "spec", label: "Spec", icon: BookOpen },
+                                    { id: "roadmap", label: "Roadmap", icon: Milestone, count: totalMilestones },
+                                    { id: "files", label: "Files", icon: FolderTree, count: files.length },
+                                    { id: "copilot", label: "Copilot", icon: Sparkles, count: testResults?.status === "failed" ? "!" : null },
+                                    { id: "prd", label: "PRD", icon: Layers }
+                                ].map(tab => {
+                                    const Icon = tab.icon;
+                                    const isActive = specTab === tab.id;
+                                    return (
+                                        <button
+                                            key={tab.id}
+                                            type="button"
+                                            onClick={() => setSpecTab(tab.id)}
+                                            className={`px-2.5 py-1 rounded-lg text-xs font-mono font-semibold flex items-center gap-1.5 transition-all shrink-0 ${
+                                                isActive
+                                                    ? "bg-blue-600/20 text-white border border-blue-500/40 shadow-sm"
+                                                    : "text-slate-400 hover:text-white hover:bg-white/5"
+                                            }`}
+                                        >
+                                            <Icon size={12} className={isActive ? "text-blue-400" : ""} />
+                                            <span>{tab.label}</span>
+                                            {tab.count !== undefined && tab.count !== null && (
+                                                <span className={`text-[9px] px-1 rounded-full font-mono font-bold ${
+                                                    tab.count === "!" 
+                                                        ? "bg-rose-500/30 text-rose-300 border border-rose-500/40 animate-pulse" 
+                                                        : "bg-white/10 text-slate-300"
+                                                }`}>
+                                                    {tab.count}
+                                                </span>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
 
                             <button
                                 onClick={() => setIsSpecsCollapsed(true)}
-                                className="p-1 rounded text-slate-500 hover:text-white hover:bg-white/5 transition-colors text-[10px]"
+                                className="p-1 rounded text-slate-500 hover:text-white hover:bg-white/5 transition-colors"
                                 title="Collapse Side Panel"
                             >
-                                <ChevronLeft size={14} />
+                                <PanelLeftClose size={14} />
                             </button>
                         </div>
 
-                        {/* Side Panel Content Body */}
-                        <div className="flex-grow overflow-y-auto">
+                        {/* Content Area */}
+                        <div className="flex-grow overflow-y-auto p-4 space-y-4 font-sans text-xs scrollbar-thin select-text">
                             
-                            {/* TAB: FILE EXPLORER */}
-                            {specTab === "explorer" && (
-                                <FileExplorerTree
-                                    files={files}
-                                    activeFileName={activeFileName}
-                                    onSelectFile={setActiveFileName}
-                                    onResetFile={handleResetFile}
-                                    onCreateFile={handleCreateFile}
-                                    repoName={workspaceData.repoName}
-                                />
-                            )}
-
-                            {/* TAB: INTERACTIVE ROADMAP */}
-                            {specTab === "roadmap" && (
-                                <div className="p-5 space-y-4 animate-in fade-in duration-200">
-                                    <div className="p-3.5 rounded-xl bg-gradient-to-r from-blue-900/20 via-indigo-950/20 to-transparent border border-blue-500/20 space-y-1">
+                            {/* TAB 1: MILESTONE SPEC */}
+                            {specTab === "spec" && (
+                                <div className="space-y-4 animate-in fade-in duration-200">
+                                    {/* Milestone Header Card */}
+                                    <div className="p-4 rounded-2xl bg-[#0B0F1A] border border-white/10 space-y-2 relative overflow-hidden shadow-sm">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-[10px] font-mono font-bold uppercase text-blue-400">{project.track}</span>
-                                            <span className="text-[10px] font-mono text-cyan-300 font-bold">
-                                                {verifiedMilestones.size} / {project.milestones?.length || 5} Verified
+                                            <span className="text-[10px] font-mono uppercase tracking-wider font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                                                Stage {currentMilestoneIndex + 1} of {totalMilestones}
                                             </span>
+                                            {isCurrentMilestoneVerified ? (
+                                                <span className="text-xs font-mono font-bold text-emerald-400 flex items-center gap-1">
+                                                    <CheckCircle2 size={13} /> Verified
+                                                </span>
+                                            ) : (
+                                                <span className="text-xs font-mono font-bold text-blue-400 flex items-center gap-1.5">
+                                                    <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" /> Active In-Progress
+                                                </span>
+                                            )}
                                         </div>
-                                        <h3 className="text-xs font-bold text-white">Full Architecture Roadmap</h3>
-                                        <p className="text-[11px] text-slate-400 leading-normal">
-                                            Milestones unlock sequentially. Pass all tests in each stage to advance.
+                                        <h2 className="text-base font-bold text-white tracking-tight">
+                                            {milestoneGuide.title}
+                                        </h2>
+                                        <p className="text-slate-300 leading-relaxed text-xs">
+                                            {milestoneGuide.objective}
                                         </p>
                                     </div>
 
-                                    {/* Stages List */}
-                                    <div className="space-y-2">
-                                        {project.milestones?.map((m, idx) => {
-                                            const isVerified = verifiedMilestones.has(idx);
-                                            const isActive = idx === currentMilestoneIndex;
-                                            const isSelected = idx === selectedRoadmapIdx;
-                                            const unlocked = isMilestoneUnlocked(idx);
-
-                                            return (
-                                                <button
-                                                    key={m.id}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setSelectedRoadmapIdx(idx);
-                                                        if (!unlocked) {
-                                                            toast.error(`Stage ${idx + 1} is locked! Complete all tests in Stage ${idx} first.`, {
-                                                                icon: "🔒",
-                                                                id: `locked_click_${idx}`
-                                                            });
-                                                        }
-                                                    }}
-                                                    className={`w-full p-3 rounded-xl border text-left transition-all flex items-start gap-3 relative ${
-                                                        isSelected
-                                                            ? "bg-blue-600/15 border-blue-500/50 text-white shadow-md"
-                                                            : isActive
-                                                            ? "bg-cyan-500/10 border-cyan-500/30 text-white"
-                                                            : isVerified
-                                                            ? "bg-emerald-500/5 border-emerald-500/20 text-slate-300"
-                                                            : "bg-white/[0.02] border-white/5 text-slate-500 hover:border-white/10 opacity-70"
-                                                    }`}
-                                                >
-                                                    {/* Status Icon */}
-                                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
-                                                        isVerified 
-                                                            ? "bg-emerald-500 text-black shadow-sm" 
-                                                            : isActive 
-                                                            ? "bg-cyan-400 text-black font-extrabold shadow-[0_0_10px_#38bdf8]" 
-                                                            : unlocked
-                                                            ? "bg-[#05070B] border border-blue-500/30 text-blue-300"
-                                                            : "bg-[#05070B] border border-white/10 text-slate-600"
-                                                    }`}>
-                                                        {isVerified ? (
-                                                            <Check size={14} className="stroke-[3]" />
-                                                        ) : !unlocked ? (
-                                                            <Lock size={12} className="text-slate-500" />
-                                                        ) : (
-                                                            idx + 1
-                                                        )}
-                                                    </div>
-
-                                                    {/* Title & Status */}
-                                                    <div className="flex-grow min-w-0">
-                                                        <div className="flex items-center justify-between gap-1">
-                                                            <div className={`font-bold text-sm truncate ${!unlocked ? "text-slate-500" : "text-white"}`}>
-                                                                {m.title}
-                                                            </div>
-                                                            <span className={`text-xs font-mono shrink-0 font-medium ${
-                                                                isVerified 
-                                                                    ? "text-emerald-400 font-bold" 
-                                                                    : !unlocked 
-                                                                    ? "text-slate-600 flex items-center gap-1" 
-                                                                    : "text-cyan-400 font-semibold"
-                                                            }`}>
-                                                                {!unlocked ? (
-                                                                    <span className="flex items-center gap-1"><Lock size={11} /> Locked</span>
-                                                                ) : (
-                                                                    `${m.testCount || 4} Tests`
-                                                                )}
-                                                            </span>
-                                                        </div>
-                                                        <div className="text-xs font-mono mt-1">
-                                                            {isVerified ? (
-                                                                <span className="text-emerald-400 font-semibold">✓ Completed & Verified</span>
-                                                            ) : isActive ? (
-                                                                <span className="text-cyan-300 font-bold">● Active Workspace (Target)</span>
-                                                            ) : unlocked ? (
-                                                                <span className="text-blue-300 font-medium">Ready to start</span>
-                                                            ) : (
-                                                                <span className="text-amber-500/80">🔒 Requires Stage {idx} completion</span>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-
-                                    {/* Milestone Detail & Objective Card */}
-                                    {(() => {
-                                        const selectedMilestone = project.milestones?.[selectedRoadmapIdx] || project.milestones?.[0];
-                                        const selectedGuide = workspaceData.milestoneGuides?.[selectedRoadmapIdx];
-                                        const isSelectedVerified = verifiedMilestones.has(selectedRoadmapIdx);
-                                        const isSelectedActive = selectedRoadmapIdx === currentMilestoneIndex;
-                                        const isSelectedUnlocked = isMilestoneUnlocked(selectedRoadmapIdx);
-
-                                        return (
-                                            <div className="p-4 rounded-xl bg-[#05070B] border border-white/10 space-y-3 mt-2">
-                                                <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-xs font-mono font-bold uppercase px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                                                            Stage {selectedRoadmapIdx + 1}
-                                                        </span>
-                                                        <span className="text-sm font-bold text-white truncate max-w-[200px]">
-                                                            {selectedMilestone?.title}
-                                                        </span>
-                                                    </div>
-                                                    {isSelectedVerified ? (
-                                                        <span className="text-xs font-mono text-emerald-400 flex items-center gap-1 font-bold">
-                                                            <CheckCircle2 size={13} /> Verified
-                                                        </span>
-                                                    ) : isSelectedActive ? (
-                                                        <span className="text-xs font-mono text-cyan-400 flex items-center gap-1.5 font-bold">
-                                                            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" /> Active
-                                                        </span>
-                                                    ) : (
-                                                        <span className="text-xs font-mono text-amber-500/90 flex items-center gap-1 font-bold">
-                                                            <Lock size={12} /> Locked
-                                                        </span>
-                                                    )}
-                                                </div>
-
-                                                {/* Objective Description */}
-                                                <div className="space-y-1">
-                                                    <div className="text-xs uppercase font-bold text-slate-300 tracking-wider">
-                                                        Stage Objective
-                                                    </div>
-                                                    <p className="text-sm text-slate-200 leading-relaxed font-normal">
-                                                        {selectedGuide?.objective || "Implement architecture according to specification guidelines."}
-                                                    </p>
-                                                </div>
-
-                                                {/* Stats */}
-                                                <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                                                    <div className="p-2.5 rounded-lg bg-white/5 border border-white/5">
-                                                        <div className="text-xs text-slate-400 uppercase font-bold">Test Suite</div>
-                                                        <div className="font-bold text-sm text-cyan-300 mt-0.5">{selectedGuide?.testCases?.length || selectedMilestone?.testCount || 4} Tests</div>
-                                                    </div>
-                                                    <div className="p-2.5 rounded-lg bg-white/5 border border-white/5">
-                                                        <div className="text-xs text-slate-400 uppercase font-bold">Constraints</div>
-                                                        <div className="font-bold text-sm text-indigo-300 mt-0.5">{selectedGuide?.specRules?.length || 2} Constraints</div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Milestone Action Button (strictly enforces progression lock) */}
-                                                {isSelectedActive ? (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setSpecTab("spec")}
-                                                        className="w-full py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-mono font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-md active:scale-95"
-                                                    >
-                                                        <span>● Active Stage · Open Spec & Tests</span>
-                                                        <ChevronRight size={13} />
-                                                    </button>
-                                                ) : isSelectedUnlocked ? (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleSelectMilestone(selectedRoadmapIdx)}
-                                                        className="w-full py-2.5 px-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-mono font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-md active:scale-95"
-                                                    >
-                                                        <span>Switch Workspace to Stage {selectedRoadmapIdx + 1}</span>
-                                                        <ChevronRight size={13} />
-                                                    </button>
-                                                ) : (
-                                                    <div className="space-y-2 pt-1">
-                                                        <button
-                                                            type="button"
-                                                            disabled
-                                                            className="w-full py-2.5 px-3 rounded-xl bg-white/5 border border-white/10 text-slate-500 font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-not-allowed opacity-60"
-                                                        >
-                                                            <Lock size={13} className="text-amber-400" />
-                                                            <span>Locked · Complete Stage {selectedRoadmapIdx} First</span>
-                                                        </button>
-                                                        <p className="text-[10px] text-amber-500/80 text-center font-mono">
-                                                            Cannot jump ahead. Fix and pass tests in Stage {selectedRoadmapIdx} to unlock.
-                                                        </p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        );
-                                    })()}
-
-                                </div>
-                            )}
-
-                            {/* TAB: SPEC GUIDE */}
-                            {specTab === "spec" && (
-                                <div className="p-5 space-y-5 animate-in fade-in duration-200">
-                                    <div className="space-y-1.5 border-b border-white/10 pb-3">
-                                        <div className="flex items-center gap-2">
-                                            <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 text-xs font-mono font-bold uppercase">
-                                                Stage {currentMilestoneIndex + 1} of {project.milestones?.length || 5}
-                                            </span>
-                                            <span className="text-xs text-slate-300 font-mono">
-                                                {milestoneGuide.testCases?.length || 4} Test Assertions
-                                            </span>
-                                        </div>
-                                        <h2 className="text-base font-bold text-white">
-                                            {milestoneGuide.title}
-                                        </h2>
-                                    </div>
-
-                                    {/* Objective */}
-                                    <div className="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-sm text-blue-100 leading-relaxed">
-                                        {milestoneGuide.objective}
-                                    </div>
-
-                                    {/* Specification Rules Checklist */}
-                                    <div className="space-y-2.5">
-                                        <div className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center justify-between">
-                                            <span className="flex items-center gap-1.5 text-blue-300">
-                                                <ShieldCheck size={14} />
-                                                <span>Production Rules & Spec</span>
-                                            </span>
-                                            <span className="text-xs font-mono text-cyan-300 font-semibold">
-                                                {milestoneGuide.specRules?.length || 0} constraints
-                                            </span>
-                                        </div>
-
+                                    {/* Specification Rules */}
+                                    {milestoneGuide.specRules && milestoneGuide.specRules.length > 0 && (
                                         <div className="space-y-2">
-                                            {milestoneGuide.specRules?.map((rule, idx) => (
-                                                <div key={idx} className="flex items-start gap-2.5 p-3 rounded-xl bg-white/5 border border-white/5 text-sm text-slate-200 leading-relaxed">
-                                                    <CheckCircle2 size={15} className="text-cyan-400 shrink-0 mt-0.5" />
-                                                    <span>{rule}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Test Assertions Target Table */}
-                                    <div className="space-y-2.5">
-                                        <div className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                                            <Terminal size={14} className="text-cyan-400" />
-                                            <span>Target Verification Test Harness</span>
-                                        </div>
-                                        <div className="space-y-2 font-mono text-sm">
-                                            {milestoneGuide.testCases?.map((tc, idx) => (
-                                                <div key={idx} className="p-3 rounded-xl bg-[#05070B] border border-white/10 space-y-1.5">
-                                                    <div className="flex items-center justify-between font-bold text-slate-100">
-                                                        <span className="truncate pr-1">✓ {tc.name}</span>
-                                                        <span className="text-[10px] text-blue-400 uppercase font-semibold">Harness</span>
-                                                    </div>
-                                                    <div className="text-xs text-slate-300 truncate">
-                                                        Expects: <span className="text-emerald-400 font-semibold">{tc.expected}</span>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* TAB: PREREQUISITES & OBJECTIVES (AUTOMATED VERIFICATION ONLY) */}
-                            {specTab === "prereq" && (
-                                <div className="p-5 space-y-4 animate-in fade-in duration-200">
-                                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                                        <div>
-                                            <h2 className="text-base font-bold text-white flex items-center gap-2">
-                                                <CheckCircle2 size={16} className="text-cyan-400" />
-                                                <span>Objectives & Toolchain</span>
-                                            </h2>
-                                            <p className="text-xs text-slate-300 mt-0.5">
-                                                Stage {currentMilestoneIndex + 1} validation criteria & environment.
-                                            </p>
-                                        </div>
-                                        <span className={`text-xs font-mono font-bold px-2.5 py-1 rounded ${
-                                            isCurrentMilestoneVerified 
-                                                ? "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20" 
-                                                : "text-amber-400 bg-amber-500/10 border border-amber-500/20"
-                                        }`}>
-                                            {isCurrentMilestoneVerified ? "All Verified" : "Pending Tests"}
-                                        </span>
-                                    </div>
-
-                                    {/* Automated Verification Notice Banner */}
-                                    <div className="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-sm text-blue-100 flex items-start gap-2.5 leading-relaxed">
-                                        <ShieldCheck size={18} className="text-cyan-400 shrink-0 mt-0.5" />
-                                        <div>
-                                            <span className="font-bold text-white block">Automated Verification</span>
-                                            <span className="text-xs sm:text-sm text-slate-200">
-                                                Objectives cannot be checked manually. Write code in the editor and click <b>Run Tests</b> to verify milestone completion.
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {/* System Runtime Box */}
-                                    <div className="p-3.5 rounded-xl bg-gradient-to-r from-blue-900/20 via-cyan-900/10 to-transparent border border-blue-500/20 space-y-1.5">
-                                        <span className="text-xs font-mono font-bold uppercase text-cyan-300">Active Compiler Sandbox</span>
-                                        <div className="text-xs sm:text-sm text-slate-200 font-mono">
-                                            {isClientSideLanguage(workspaceData.language || project.language)
-                                                ? "Client-Side In-Browser V8 (0ms server latency)"
-                                                : "Backend Sandbox Service (/api/runner/execute)"}
-                                        </div>
-                                    </div>
-
-                                    {/* Milestone-Specific Concepts & Objectives */}
-                                    {milestoneGuide.prerequisites && milestoneGuide.prerequisites.length > 0 && (
-                                        <div className="space-y-2.5">
-                                            <div className="text-xs font-bold text-white uppercase tracking-wider flex items-center justify-between">
-                                                <span className="flex items-center gap-1.5">
-                                                    <Target size={14} className="text-cyan-400" />
-                                                    <span>Stage {currentMilestoneIndex + 1} Objectives</span>
-                                                </span>
-                                                <span className={`text-xs font-mono ${isCurrentMilestoneVerified ? "text-emerald-400 font-bold" : "text-amber-400"}`}>
-                                                    {isCurrentMilestoneVerified ? "Verified" : "Run Tests to verify"}
-                                                </span>
+                                            <div className="text-xs uppercase font-bold tracking-wider text-slate-300 flex items-center gap-1.5">
+                                                <ShieldCheck size={14} className="text-blue-400" />
+                                                <span>Production Specification Rules</span>
                                             </div>
-                                            <div className="space-y-2">
-                                                {milestoneGuide.prerequisites.map((p, idx) => (
-                                                    <div
+                                            <div className="space-y-1.5">
+                                                {milestoneGuide.specRules.map((rule, idx) => (
+                                                    <div 
                                                         key={idx}
-                                                        className={`w-full p-3 rounded-xl border transition-all flex items-start gap-2.5 text-sm ${
-                                                            isCurrentMilestoneVerified
-                                                                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-200" 
-                                                                : "bg-white/5 border-white/10 text-slate-200"
-                                                        }`}
+                                                        className="p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:border-blue-500/20 transition-colors flex items-start gap-2.5"
                                                     >
-                                                        <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
-                                                            isCurrentMilestoneVerified 
-                                                                ? "bg-emerald-500 border-emerald-400 text-black" 
-                                                                : "border-white/20 bg-[#05070B] text-slate-500"
-                                                        }`}>
-                                                            {isCurrentMilestoneVerified ? (
-                                                                <Check size={11} className="stroke-[3]" />
-                                                            ) : (
-                                                                <span className="w-1.5 h-1.5 rounded-full bg-slate-600" />
-                                                            )}
-                                                        </div>
-                                                        <span className="flex-grow leading-relaxed">{p}</span>
-                                                        <span className={`text-xs font-mono shrink-0 ${
-                                                            isCurrentMilestoneVerified ? "text-emerald-400 font-bold" : "text-slate-400"
-                                                        }`}>
-                                                            {isCurrentMilestoneVerified ? "✓ Passed" : "Pending"}
+                                                        <span className="font-mono text-xs text-blue-400 font-bold shrink-0 mt-0.5">
+                                                            {idx + 1}.
+                                                        </span>
+                                                        <span className="text-slate-200 leading-relaxed">
+                                                            {renderInlineText(rule)}
                                                         </span>
                                                     </div>
                                                 ))}
@@ -1441,142 +1065,212 @@ export default function ProjectWorkspace() {
                                         </div>
                                     )}
 
-                                    {/* Project-Wide Toolchain */}
-                                    <div className="space-y-2.5">
-                                        <div className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-                                            <ShieldCheck size={14} className="text-blue-400" />
-                                            <span>Required Toolchain & Knowledge</span>
-                                        </div>
+                                    {/* Verification Test Suite Checklist */}
+                                    {milestoneGuide.testCases && milestoneGuide.testCases.length > 0 && (
                                         <div className="space-y-2">
-                                            {(project.prerequisites || []).map((p, idx) => (
-                                                <div
-                                                    key={idx}
-                                                    className="w-full p-3 rounded-xl border border-white/5 bg-white/[0.03] flex items-start gap-2.5 text-sm text-slate-200 leading-relaxed"
-                                                >
-                                                    <div className="mt-0.5 w-4 h-4 rounded bg-blue-500/20 border border-blue-500/30 text-cyan-300 flex items-center justify-center shrink-0 text-xs font-mono font-bold">
-                                                        {idx + 1}
-                                                    </div>
-                                                    <span>{p}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* TAB: PRD */}
-                            {specTab === "prd" && (
-                                <div className="p-5 space-y-4 animate-in fade-in duration-200">
-                                    <h2 className="text-base font-bold text-white">Product Requirements Document (PRD)</h2>
-                                    <p className="text-sm text-slate-300 leading-relaxed">{project.description}</p>
-                                    <div className="space-y-2.5 pt-2">
-                                        <h3 className="text-xs font-bold text-white uppercase tracking-wider">Key Skills Mastered</h3>
-                                        <ul className="space-y-2 text-sm text-slate-200">
-                                            {project.keySkills?.map((skill, i) => (
-                                                <li key={i} className="flex items-center gap-2.5">
-                                                    <CheckCircle2 size={15} className="text-blue-400 shrink-0" />
-                                                    <span>{skill}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* TAB: FORGE AI COPILOT / AI MENTOR */}
-                            {(specTab === "copilot" || specTab === "hints") && (
-                                <div className="p-4 space-y-4 animate-in fade-in duration-200">
-                                    
-                                    {/* Mentor Header Card */}
-                                    <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-950/40 via-[#0C1220] to-[#070A11] border border-blue-500/30 space-y-2.5 relative overflow-hidden shadow-lg">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2.5">
-                                                <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-300">
-                                                    <Bot size={18} />
-                                                </div>
-                                                <div>
-                                                    <div className="text-sm font-bold text-white flex items-center gap-2">
-                                                        <span>Forge Copilot</span>
-                                                        <span className="text-[10px] uppercase px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/40 font-mono font-bold tracking-wide">
-                                                            Project Copilot
-                                                        </span>
-                                                    </div>
-                                                    <div className="text-xs text-slate-300 font-mono">
-                                                        Pedagogical Senior Debugger
-                                                    </div>
-                                                </div>
+                                            <div className="text-xs uppercase font-bold tracking-wider text-slate-300 flex items-center gap-1.5">
+                                                <Target size={14} className="text-cyan-400" />
+                                                <span>Verification Checklist ({milestoneGuide.testCases.length} Targets)</span>
                                             </div>
-
-                                            <div className="flex items-center gap-1.5">
-                                                <span className="w-2.5 h-2.5 rounded-full bg-blue-400 animate-pulse" />
-                                                <span className="text-xs font-mono text-blue-200 font-medium">
-                                                    {aiMentorState.modelUsed ? (
-                                                        aiMentorState.modelUsed.includes("Qwen") ? "Qwen 2.5 Coder 32B" :
-                                                        aiMentorState.modelUsed.includes("Gemini") ? "Gemini 1.5" :
-                                                        aiMentorState.modelUsed.includes("Heuristic") ? "Diagnostic Engine" :
-                                                        aiMentorState.modelUsed
-                                                    ) : "Ready"}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <p className="text-xs sm:text-sm text-blue-100/90 leading-relaxed font-normal">
-                                            Analyzes failing assertions, unblocks architecture, and provides graduated hints without spoiling your solution.
-                                        </p>
-                                    </div>
-
-                                    {/* Active Test Case Context Bar */}
-                                    {aiMentorState.activeFailingTest && (
-                                        <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs sm:text-sm text-rose-200 flex items-center justify-between gap-2">
-                                            <div className="flex items-center gap-2 truncate">
-                                                <XCircle size={16} className="text-rose-400 shrink-0" />
-                                                <span className="font-bold font-mono truncate">{aiMentorState.activeFailingTest}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1.5 shrink-0">
-                                                {aiMentorState.targetLine && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => jumpToLine(aiMentorState.targetLine)}
-                                                        className="px-2.5 py-1 rounded bg-rose-500/20 hover:bg-rose-500/30 text-xs font-mono text-rose-200 flex items-center gap-1.5 transition-colors font-medium"
+                                            <div className="space-y-1.5">
+                                                {milestoneGuide.testCases.map((tc, idx) => (
+                                                    <div 
+                                                        key={idx}
+                                                        className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between gap-2"
                                                     >
-                                                        <Target size={12} />
-                                                        <span>Line {aiMentorState.targetLine}</span>
-                                                    </button>
-                                                )}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setAiMentorState(prev => ({ ...prev, activeFailingTest: null }))}
-                                                    className="p-1 rounded hover:bg-white/10 text-rose-300 hover:text-white transition-colors"
-                                                    title="Dismiss context"
-                                                >
-                                                    <X size={14} />
-                                                </button>
+                                                        <div className="flex items-center gap-2 truncate">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0" />
+                                                            <span className="font-mono text-slate-200 truncate">{tc.name}</span>
+                                                        </div>
+                                                        {tc.expected && (
+                                                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/40 text-slate-400 border border-white/5 shrink-0">
+                                                                {tc.expected}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                ))}
                                             </div>
                                         </div>
                                     )}
 
-                                    {/* Graduated Hint Level Selector */}
+                                    {/* Action Banner */}
+                                    <div className="pt-2">
+                                        <button
+                                            type="button"
+                                            onClick={handleRunTests}
+                                            disabled={isRunningTests}
+                                            className="w-full py-2.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-300 font-semibold text-xs transition-all flex items-center justify-center gap-2 shadow-sm"
+                                        >
+                                            <Play size={13} fill="currentColor" />
+                                            <span>Run Automated Tests For This Stage</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* TAB 2: MILESTONE ROADMAP */}
+                            {specTab === "roadmap" && (
+                                <div className="space-y-3 animate-in fade-in duration-200">
+                                    <div className="text-xs uppercase font-bold tracking-wider text-slate-300 flex items-center justify-between">
+                                        <span>Milestone Progression</span>
+                                        <span className="text-blue-400 font-mono font-bold">
+                                            {verifiedMilestones.size}/{totalMilestones} Passed
+                                        </span>
+                                    </div>
+
                                     <div className="space-y-2">
-                                        <div className="text-xs uppercase font-bold tracking-wider text-slate-300 flex items-center justify-between">
-                                            <span>Guidance Level</span>
-                                            <span className="text-xs font-mono text-blue-400">Graduated Hinting</span>
+                                        {project.milestones?.map((m, idx) => {
+                                            const isVerified = verifiedMilestones.has(idx);
+                                            const isActive = currentMilestoneIndex === idx;
+                                            const isUnlocked = isMilestoneUnlocked(idx);
+
+                                            return (
+                                                <div
+                                                    key={idx}
+                                                    onClick={() => isUnlocked && handleSelectMilestone(idx)}
+                                                    className={`p-3.5 rounded-xl border transition-all text-left flex items-start gap-3 ${
+                                                        !isUnlocked
+                                                            ? "opacity-50 bg-black/20 border-white/5 cursor-not-allowed"
+                                                            : isActive
+                                                            ? "bg-blue-600/15 border-blue-500/40 shadow-sm cursor-pointer"
+                                                            : "bg-white/[0.02] border-white/5 hover:border-white/10 hover:bg-white/[0.04] cursor-pointer"
+                                                    }`}
+                                                >
+                                                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center font-mono font-bold text-xs shrink-0 ${
+                                                        isVerified
+                                                            ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+                                                            : isActive
+                                                            ? "bg-blue-500/30 text-white border border-blue-400"
+                                                            : "bg-white/5 text-slate-400 border border-white/10"
+                                                    }`}>
+                                                        {isVerified ? <Check size={12} /> : idx + 1}
+                                                    </div>
+
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center justify-between gap-1 mb-0.5">
+                                                            <span className="font-semibold text-white truncate text-xs">
+                                                                {m.title}
+                                                            </span>
+                                                            {!isUnlocked && (
+                                                                <span className="text-[10px] font-mono text-amber-400 flex items-center gap-0.5 shrink-0">
+                                                                    <Lock size={10} /> Locked
+                                                                </span>
+                                                            )}
+                                                            {isVerified && (
+                                                                <span className="text-[10px] font-mono text-emerald-400 font-bold shrink-0">
+                                                                    Passed
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <p className="text-[11px] text-slate-400 line-clamp-1">
+                                                            {m.description || "Milestone specification objectives"}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* TAB 3: PROJECT FILES */}
+                            {specTab === "files" && (
+                                <div className="space-y-3 animate-in fade-in duration-200">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs uppercase font-bold tracking-wider text-slate-300">
+                                            Workspace Files
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const name = prompt("Enter new file name (e.g., helper.rs, utils.py):");
+                                                if (name) handleCreateFile(name);
+                                            }}
+                                            className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
+                                        >
+                                            <Plus size={12} />
+                                            <span>New File</span>
+                                        </button>
+                                    </div>
+
+                                    <FileExplorerTree
+                                        files={files}
+                                        activeFileName={activeFileName}
+                                        onSelectFile={setActiveFileName}
+                                        onCreateFile={handleCreateFile}
+                                    />
+                                </div>
+                            )}
+
+                            {/* TAB 4: FORGE COPILOT */}
+                            {specTab === "copilot" && (
+                                <div className="space-y-4 animate-in fade-in duration-200">
+                                    {/* Mentor Header Card */}
+                                    <div className="p-3.5 rounded-2xl bg-gradient-to-br from-blue-950/40 via-[#0B0F1A] to-[#070A11] border border-blue-500/30 space-y-2 shadow-sm">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-7 h-7 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-300">
+                                                    <Sparkles size={14} />
+                                                </div>
+                                                <div>
+                                                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                                                        <span>Forge Copilot</span>
+                                                        <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                                                            Project Copilot
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <span className="text-[10px] font-mono text-blue-300">
+                                                {aiMentorState.modelUsed?.includes("Qwen") ? "Qwen 2.5 Coder" : "Ready"}
+                                            </span>
                                         </div>
-                                        <div className="grid grid-cols-3 gap-1.5 bg-[#05070B] p-1.5 rounded-xl border border-white/10 text-xs font-mono">
+                                        <p className="text-[11px] text-blue-100/80 leading-relaxed">
+                                            Analyzes failing assertions, unblocks architecture, and provides graduated hints without spoiling your solution.
+                                        </p>
+                                    </div>
+
+                                    {/* Active Failing Test Alert if present */}
+                                    {aiMentorState.activeFailingTest && (
+                                        <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-200 flex items-center justify-between gap-2">
+                                            <div className="flex items-center gap-2 truncate">
+                                                <XCircle size={14} className="text-rose-400 shrink-0" />
+                                                <span className="font-mono font-bold truncate">{aiMentorState.activeFailingTest}</span>
+                                            </div>
+                                            {aiMentorState.targetLine && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => jumpToLine(aiMentorState.targetLine)}
+                                                    className="px-2 py-0.5 rounded bg-rose-500/20 text-[11px] font-mono text-rose-200 flex items-center gap-1 font-semibold shrink-0"
+                                                >
+                                                    <Target size={11} /> Line {aiMentorState.targetLine}
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Graduated Hint Level Selector */}
+                                    <div className="space-y-1.5">
+                                        <div className="flex items-center justify-between text-xs font-mono text-slate-300">
+                                            <span className="font-bold">Guidance Level</span>
+                                            <span className="text-blue-400 text-[11px]">Graduated Hinting</span>
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-1 bg-[#05070B] p-1 rounded-xl border border-white/10 font-mono text-xs">
                                             {[
                                                 { lvl: 1, label: "1. Nudge", title: "Conceptual guidance" },
                                                 { lvl: 2, label: "2. Pinpoint", title: "Pinpoints exact flaw" },
-                                                { lvl: 3, label: "3. Structure", title: "Code pattern" }
+                                                { lvl: 3, label: "3. Structure", title: "Idiomatic code pattern" }
                                             ].map(tab => (
                                                 <button
                                                     key={tab.lvl}
                                                     type="button"
                                                     onClick={() => handleAskAiMentor({ requestedLevel: tab.lvl })}
-                                                    className={`py-2 px-2 rounded-lg text-center transition-all text-xs sm:text-sm font-semibold ${
+                                                    className={`py-1.5 px-1 rounded-lg text-center transition-all text-xs font-semibold ${
                                                         aiMentorState.level === tab.lvl
-                                                            ? "bg-blue-600 text-white shadow-md font-bold"
-                                                            : "text-slate-300 hover:text-white hover:bg-white/5"
+                                                            ? "bg-blue-600 text-white shadow-sm font-bold"
+                                                            : "text-slate-400 hover:text-white"
                                                     }`}
-                                                    title={tab.title}
                                                 >
                                                     {tab.label}
                                                 </button>
@@ -1585,83 +1279,78 @@ export default function ProjectWorkspace() {
                                     </div>
 
                                     {/* Diagnosis & Hint Box */}
-                                    <div className="p-4 rounded-2xl bg-[#05070B] border border-white/10 space-y-4">
+                                    <div className="p-3.5 rounded-2xl bg-[#05070B] border border-white/10 space-y-3">
                                         {aiMentorState.isLoading ? (
-                                            <div className="py-8 flex flex-col items-center justify-center gap-3 text-blue-300">
-                                                <RefreshCw size={24} className="animate-spin text-blue-400" />
-                                                <span className="text-sm font-mono font-medium">Consulting Forge Copilot...</span>
+                                            <div className="py-6 flex flex-col items-center justify-center gap-2 text-blue-300">
+                                                <RefreshCw size={20} className="animate-spin text-blue-400" />
+                                                <span className="text-xs font-mono">Forge Copilot is analyzing your code...</span>
                                             </div>
                                         ) : aiMentorState.hint || aiMentorState.diagnosis ? (
-                                            <div className="space-y-4">
-                                                {/* Diagnosis summary */}
+                                            <div className="space-y-3">
                                                 {aiMentorState.diagnosis && (
-                                                    <div className="space-y-2 border-b border-white/10 pb-3">
-                                                        <div className="text-xs font-mono uppercase text-blue-300 font-bold flex items-center gap-1.5 tracking-wide">
-                                                            <Sparkles size={13} />
+                                                    <div className="space-y-1.5 border-b border-white/10 pb-2.5">
+                                                        <div className="text-[11px] font-mono uppercase text-blue-300 font-bold flex items-center gap-1">
+                                                            <Sparkles size={12} />
                                                             <span>Diagnosis</span>
                                                         </div>
-                                                        <FormattedAiContent content={aiMentorState.diagnosis} className="text-slate-100" />
+                                                        <FormattedAiContent content={aiMentorState.diagnosis} />
                                                     </div>
                                                 )}
 
-                                                {/* Hint Body */}
                                                 {aiMentorState.hint && (
-                                                    <div className="space-y-2">
-                                                        <div className="text-xs font-mono uppercase text-cyan-300 font-bold flex items-center justify-between tracking-wide">
-                                                            <span className="flex items-center gap-1.5">
-                                                                <Lightbulb size={14} className="text-amber-400" />
+                                                    <div className="space-y-1.5">
+                                                        <div className="text-[11px] font-mono uppercase text-cyan-300 font-bold flex items-center justify-between">
+                                                            <span className="flex items-center gap-1">
+                                                                <Lightbulb size={12} className="text-amber-400" />
                                                                 <span>Level {aiMentorState.level} Hint</span>
                                                             </span>
                                                             {aiMentorState.targetLine && (
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => jumpToLine(aiMentorState.targetLine)}
-                                                                    className="text-xs text-cyan-300 hover:text-cyan-200 underline underline-offset-2 flex items-center gap-1 font-mono font-semibold"
+                                                                    className="text-xs text-cyan-300 hover:underline flex items-center gap-1 font-mono font-semibold"
                                                                 >
-                                                                    <Target size={12} />
-                                                                    <span>Jump to Line {aiMentorState.targetLine}</span>
+                                                                    <Target size={11} /> Line {aiMentorState.targetLine}
                                                                 </button>
                                                             )}
                                                         </div>
-                                                        <div className="p-3.5 rounded-xl bg-blue-500/15 border border-blue-500/30 text-slate-100 shadow-sm">
+                                                        <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-slate-200">
                                                             <FormattedAiContent content={aiMentorState.hint} />
                                                         </div>
                                                     </div>
                                                 )}
 
-                                                {/* Code Pattern Snippet (if available) */}
                                                 {aiMentorState.codePattern && (
-                                                    <div className="space-y-2">
-                                                        <div className="flex items-center justify-between text-xs font-mono text-slate-300">
-                                                            <span className="font-semibold text-slate-200">Suggested Structural Pattern:</span>
+                                                    <div className="space-y-1.5">
+                                                        <div className="flex items-center justify-between text-[11px] font-mono text-slate-300">
+                                                            <span>Suggested Code Pattern:</span>
                                                             <button
                                                                 type="button"
                                                                 onClick={() => {
                                                                     navigator.clipboard.writeText(aiMentorState.codePattern);
-                                                                    toast.success("Snippet copied to clipboard");
+                                                                    toast.success("Copied to clipboard");
                                                                 }}
-                                                                className="hover:text-white flex items-center gap-1.5 transition-colors px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-xs font-medium"
+                                                                className="hover:text-white flex items-center gap-1 px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[10px]"
                                                             >
-                                                                <Copy size={13} />
-                                                                <span>Copy Snippet</span>
+                                                                <Copy size={11} /> Copy
                                                             </button>
                                                         </div>
-                                                        <pre className="p-3.5 rounded-xl bg-[#090D16] border border-white/10 text-xs sm:text-sm font-mono text-cyan-200 overflow-x-auto leading-relaxed shadow-inner">
+                                                        <pre className="p-3 rounded-xl bg-[#090D16] border border-white/10 text-xs font-mono text-cyan-200 overflow-x-auto leading-relaxed">
                                                             <code>{aiMentorState.codePattern}</code>
                                                         </pre>
                                                     </div>
                                                 )}
                                             </div>
                                         ) : (
-                                            <div className="py-6 text-center space-y-3">
-                                                <Bot size={32} className="mx-auto text-blue-400/80" />
-                                                <p className="text-sm text-slate-200 font-medium">
-                                                    No active errors detected yet. Run tests or choose a quick prompt below to analyze your code.
+                                            <div className="py-5 text-center space-y-2.5">
+                                                <Bot size={28} className="mx-auto text-blue-400/80" />
+                                                <p className="text-xs text-slate-300">
+                                                    Run tests or choose a quick prompt to analyze your code architecture.
                                                 </p>
                                                 <button
                                                     type="button"
                                                     onClick={() => handleAskAiMentor({ prompt: "Review my code architecture for this milestone" })}
-                                                    className="px-4 py-2 rounded-xl bg-blue-600/30 hover:bg-blue-600/40 border border-blue-500/40 text-blue-200 font-mono text-xs sm:text-sm font-bold transition-all shadow-sm"
+                                                    className="px-3 py-1.5 rounded-xl bg-blue-600/30 hover:bg-blue-600/40 border border-blue-500/40 text-blue-200 font-mono text-xs font-bold transition-all"
                                                 >
                                                     ✨ Ask Copilot to Review Code
                                                 </button>
@@ -1669,23 +1358,18 @@ export default function ProjectWorkspace() {
                                         )}
                                     </div>
 
-                                    {/* Quick Action Prompts */}
-                                    <div className="space-y-2">
-                                        <div className="text-xs uppercase font-bold tracking-wider text-slate-300">
+                                    {/* Quick Prompts */}
+                                    <div className="space-y-1.5">
+                                        <div className="text-[11px] uppercase font-bold tracking-wider text-slate-400">
                                             Quick Prompts
                                         </div>
-                                        <div className="flex flex-wrap gap-2">
-                                            {(aiMentorState.quickPrompts || [
-                                                "Why did my test fail?",
-                                                "Give me a subtle hint",
-                                                "Explain milestone architecture",
-                                                "Check my code for edge cases"
-                                            ]).map((q, idx) => (
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {aiMentorState.quickPrompts.map((q, idx) => (
                                                 <button
                                                     key={idx}
                                                     type="button"
                                                     onClick={() => handleAskAiMentor({ prompt: q })}
-                                                    className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-blue-600/20 border border-white/10 hover:border-blue-500/30 text-xs sm:text-sm text-slate-200 hover:text-blue-100 transition-all text-left font-medium"
+                                                    className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-blue-600/20 border border-white/10 hover:border-blue-500/30 text-xs text-slate-300 hover:text-white transition-all text-left"
                                                 >
                                                     {q}
                                                 </button>
@@ -1693,7 +1377,7 @@ export default function ProjectWorkspace() {
                                         </div>
                                     </div>
 
-                                    {/* Interactive Chat Input */}
+                                    {/* Interactive Chat Composer */}
                                     <form
                                         onSubmit={(e) => {
                                             e.preventDefault();
@@ -1702,41 +1386,55 @@ export default function ProjectWorkspace() {
                                             setAiMentorInput("");
                                             handleAskAiMentor({ prompt: query });
                                         }}
-                                        className="flex items-center gap-2 pt-1"
+                                        className="flex items-center gap-1.5 pt-1"
                                     >
                                         <input
                                             type="text"
                                             value={aiMentorInput}
                                             onChange={(e) => setAiMentorInput(e.target.value)}
                                             placeholder="Ask Forge Copilot a question..."
-                                            className="flex-grow px-3.5 py-2.5 rounded-xl bg-[#05070B] border border-white/10 text-white placeholder-slate-400 text-sm focus:outline-none focus:border-blue-500/50 transition-colors shadow-inner"
+                                            className="flex-grow px-3 py-2 rounded-xl bg-[#05070B] border border-white/10 text-white placeholder-slate-400 text-xs focus:outline-none focus:border-blue-500/50 transition-colors shadow-inner"
                                         />
                                         <button
                                             type="submit"
                                             disabled={aiMentorState.isLoading || !aiMentorInput.trim()}
-                                            className="p-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white transition-all shrink-0 active:scale-95 shadow-md"
-                                            title="Send query to Forge Copilot"
+                                            className="p-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-30 text-white transition-all shrink-0 shadow-md"
                                         >
-                                            <Send size={16} />
+                                            <Send size={13} />
                                         </button>
                                     </form>
+                                </div>
+                            )}
 
-                                    {/* Static Milestone Reference Accordion */}
-                                    <div className="space-y-2 pt-2 border-t border-white/10">
-                                        <div className="text-xs uppercase font-bold tracking-wider text-slate-300 flex items-center gap-1.5">
-                                            <BookOpen size={14} className="text-blue-400" />
-                                            <span>Curated Spec Hints</span>
+                            {/* TAB 5: ARCHITECTURE PRD */}
+                            {specTab === "prd" && (
+                                <div className="space-y-4 animate-in fade-in duration-200">
+                                    <div className="p-4 rounded-2xl bg-[#0B0F1A] border border-white/10 space-y-2">
+                                        <div className="flex items-center gap-2 text-xs font-bold text-white uppercase tracking-wider">
+                                            <Layers size={14} className="text-blue-400" />
+                                            <span>Architecture & System Spec</span>
                                         </div>
-                                        <div className="space-y-2">
-                                            {milestoneGuide.hints?.map((hint, idx) => (
-                                                <div key={idx} className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-xs sm:text-sm text-slate-200 leading-relaxed">
-                                                    <span className="font-bold text-blue-300 font-mono mr-2">#{idx + 1}</span>
-                                                    <span>{hint}</span>
-                                                </div>
-                                            ))}
-                                        </div>
+                                        <h3 className="text-sm font-bold text-white">{project.title}</h3>
+                                        <p className="text-xs text-slate-300 leading-relaxed">
+                                            {project.description}
+                                        </p>
                                     </div>
 
+                                    {project.prerequisites && project.prerequisites.length > 0 && (
+                                        <div className="space-y-2">
+                                            <span className="text-xs uppercase font-bold tracking-wider text-slate-400">
+                                                Prerequisites & Knowledge Targets
+                                            </span>
+                                            <div className="space-y-1.5">
+                                                {project.prerequisites.map((p, i) => (
+                                                    <div key={i} className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center gap-2 text-xs text-slate-300">
+                                                        <CheckCircle2 size={13} className="text-blue-400 shrink-0" />
+                                                        <span>{p}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -1745,27 +1443,27 @@ export default function ProjectWorkspace() {
                 )}
 
                 {/* ---------------------------------------------------- */}
-                {/* 3. HORIZONTAL DRAGGABLE RESIZER HANDLE               */}
+                {/* 3. RESIZABLE VERTICAL SPLIT DIVIDER                  */}
                 {/* ---------------------------------------------------- */}
                 {!isSpecsCollapsed && (
                     <div
                         onMouseDown={() => setIsDraggingPanel(true)}
-                        onDoubleClick={() => setPanelWidth(380)}
+                        onDoubleClick={() => setPanelWidth(460)}
                         className={`w-1.5 hover:w-2 ${
                             isDraggingPanel ? "w-2 bg-blue-500 shadow-[0_0_10px_#2563eb]" : "bg-[#05070B] hover:bg-blue-500/40 active:bg-blue-500"
-                        } transition-colors cursor-col-resize flex items-center justify-center shrink-0 select-none group z-10`}
-                        title="Drag to resize panel (Double-click to reset)"
+                        } transition-colors cursor-col-resize flex items-center justify-center shrink-0 select-none group z-20`}
+                        title="Drag to resize pane (Double-click to reset)"
                     >
                         <div className={`h-8 w-0.5 rounded-full ${isDraggingPanel ? "bg-white" : "bg-white/20 group-hover:bg-blue-400"} transition-colors`} />
                     </div>
                 )}
 
                 {/* ---------------------------------------------------- */}
-                {/* 4. CENTER CODE EDITOR & RESIZABLE TEST DRAWER        */}
+                {/* 4. RIGHT PANE: CODE EDITOR (TOP) & TEST DRAWER (BTM) */}
                 {/* ---------------------------------------------------- */}
-                <main className="flex-grow flex flex-col h-full overflow-hidden bg-[#070A11] relative">
+                <main className="flex-grow flex flex-col h-full overflow-hidden bg-[#070A11] relative min-w-0">
                     
-                    {/* Monaco Code Studio Editor */}
+                    {/* Monaco Code Studio Editor Canvas */}
                     <div className={`flex-grow flex flex-col overflow-hidden min-h-0 ${isDraggingPanel || isDraggingTerminal ? "pointer-events-none select-none" : ""}`}>
                         <CodeStudioEditor
                             files={files}
@@ -1780,28 +1478,28 @@ export default function ProjectWorkspace() {
                         />
                     </div>
 
-                    {/* Draggable Terminal Drawer Resizer */}
+                    {/* Resizable Horizontal Test Drawer Divider */}
                     <div
                         onMouseDown={() => setIsDraggingTerminal(true)}
                         className={`h-1.5 hover:h-2 ${
                             isDraggingTerminal ? "h-2 bg-blue-500 shadow-[0_0_10px_#2563eb]" : "bg-[#0A0E17] hover:bg-blue-500/40 active:bg-blue-500"
-                        } transition-colors cursor-row-resize flex items-center justify-center border-t border-white/10 shrink-0 select-none group z-10`}
-                        title="Drag to resize test runner drawer"
+                        } transition-colors cursor-row-resize flex items-center justify-center border-t border-white/10 shrink-0 select-none group z-20`}
+                        title="Drag to resize test runner console"
                     >
                         <div className={`w-12 h-0.5 rounded-full ${isDraggingTerminal ? "bg-white" : "bg-white/20 group-hover:bg-blue-400"} transition-colors`} />
                     </div>
 
-                    {/* Integrated Terminal & Test Runner Drawer */}
+                    {/* Integrated Test Runner & Console Drawer */}
                     <div 
                         className="bg-[#05070B] flex flex-col shrink-0 overflow-hidden will-change-[height]"
                         style={{ height: `${terminalHeight}px` }}
                     >
-                        {/* Drawer Tabs */}
-                        <div className="h-9 border-b border-white/10 bg-[#0A0E17] px-4 flex items-center justify-between shrink-0">
-                            <div className="flex items-center gap-2">
+                        {/* Drawer Header Tabs */}
+                        <div className="h-9 border-b border-white/10 bg-[#080C14] px-3 flex items-center justify-between shrink-0">
+                            <div className="flex items-center gap-1.5">
                                 <button
                                     onClick={() => setTerminalTab("tests")}
-                                    className={`px-3 py-1 text-xs font-bold font-mono rounded flex items-center gap-1.5 transition-all ${
+                                    className={`px-3 py-1 text-xs font-bold font-mono rounded-lg flex items-center gap-1.5 transition-all ${
                                         terminalTab === "tests"
                                             ? "bg-blue-600/20 text-blue-400 border border-blue-500/30"
                                             : "text-slate-400 hover:text-white"
@@ -1810,32 +1508,32 @@ export default function ProjectWorkspace() {
                                     <CheckCircle2 size={13} />
                                     <span>Automated Tests</span>
                                     {testResults && (
-                                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${
+                                        <span className={`px-1.5 py-0.2 rounded text-[10px] font-mono font-bold ${
                                             testResults.status === "passed" 
                                                 ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" 
                                                 : "bg-rose-500/20 text-rose-400 border border-rose-500/30"
                                         }`}>
-                                            {testResults.passed}/{testResults.total}
+                                            {testResults.passed}/{testResults.total} Passed
                                         </span>
                                     )}
                                 </button>
 
                                 <button
                                     onClick={() => setTerminalTab("console")}
-                                    className={`px-3 py-1 text-xs font-bold font-mono rounded flex items-center gap-1.5 transition-all ${
+                                    className={`px-3 py-1 text-xs font-bold font-mono rounded-lg flex items-center gap-1.5 transition-all ${
                                         terminalTab === "console"
                                             ? "bg-blue-600/20 text-blue-400 border border-blue-500/30"
                                             : "text-slate-400 hover:text-white"
                                     }`}
                                 >
                                     <Terminal size={13} />
-                                    <span>Terminal & Logs</span>
+                                    <span>Terminal Logs</span>
                                 </button>
                             </div>
 
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5">
                                 <button
-                                    onClick={() => setTerminalHeight(prev => prev > 100 ? 50 : 260)}
+                                    onClick={() => setTerminalHeight(prev => prev > 100 ? 50 : 280)}
                                     className="p-1 rounded text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
                                     title={terminalHeight > 100 ? "Minimize Drawer" : "Expand Drawer"}
                                 >
@@ -1845,39 +1543,52 @@ export default function ProjectWorkspace() {
                         </div>
 
                         {/* Drawer Body */}
-                        <div className="flex-grow p-4 overflow-y-auto font-mono text-xs space-y-2 select-text">
+                        <div className="flex-grow p-3.5 overflow-y-auto font-mono text-xs space-y-2 select-text scrollbar-thin">
                             
                             {/* TESTS TAB */}
                             {terminalTab === "tests" && (
                                 <div className="space-y-3">
                                     {!testResults ? (
                                         <div className="h-full flex flex-col items-center justify-center text-center py-6 text-slate-500 space-y-2">
-                                            <Play size={24} className="text-blue-500/40" />
+                                            <Play size={22} className="text-blue-500/40" />
                                             <div>Click <strong>Run Tests</strong> or press <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-slate-300">Ctrl+Enter</kbd> to execute this milestone's test harness.</div>
                                         </div>
                                     ) : (
                                         <div className="space-y-2.5">
+                                            {/* Results Status Header */}
                                             <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-white/5 text-[11px] text-slate-400 gap-1.5">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-bold text-slate-300">Suite: {milestoneGuide.title}</span>
-                                                    {testResults.engineLabel && (
-                                                        <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-cyan-400 border border-blue-500/20 text-[10px] font-mono">
-                                                            {testResults.engineLabel}
-                                                        </span>
+                                                    <span className={`font-bold font-mono text-xs ${testResults.status === "passed" ? "text-emerald-400" : "text-rose-400"}`}>
+                                                        {testResults.status === "passed" ? "✓ VERIFICATION PASSED" : "✗ VERIFICATION FAILED"}
+                                                    </span>
+                                                    <span>• {testResults.passed}/{testResults.total} assertions met</span>
+                                                    <span>• {testResults.duration || "12ms"}</span>
+                                                </div>
+                                                <span className="text-[10px] font-mono text-slate-500">
+                                                    Runner: {testResults.engineLabel || "Sandbox MicroVM"}
+                                                </span>
+                                            </div>
+
+                                            {/* All Passed Celebration Banner */}
+                                            {testResults.status === "passed" && (
+                                                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between flex-wrap gap-2 text-emerald-300">
+                                                    <div className="flex items-center gap-2 font-bold text-xs">
+                                                        <CheckCircle2 size={16} className="text-emerald-400" />
+                                                        <span>Stage {currentMilestoneIndex + 1} Complete! All test assertions verified successfully.</span>
+                                                    </div>
+                                                    {currentMilestoneIndex < totalMilestones - 1 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleSelectMilestone(currentMilestoneIndex + 1)}
+                                                            className="px-3 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs transition-all shadow-md active:scale-95"
+                                                        >
+                                                            Advance to Stage {currentMilestoneIndex + 2} →
+                                                        </button>
                                                     )}
                                                 </div>
-                                                <span className="font-mono text-cyan-300">Duration: {testResults.duration || "0ms"}</span>
-                                            </div>
+                                            )}
 
-                                            {/* Progress Bar */}
-                                            <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
-                                                <div 
-                                                    className={`h-full transition-all duration-300 ${testResults.status === "passed" ? "bg-emerald-500" : "bg-rose-500"}`} 
-                                                    style={{ width: `${Math.round(((testResults.passed || 0) / (testResults.total || 1)) * 100)}%` }}
-                                                />
-                                            </div>
-
-                                            {/* Steps */}
+                                            {/* Test Steps List */}
                                             {testResults.steps?.map((step, idx) => {
                                                 const lineNum = extractLineNumber(step.output);
                                                 return (
@@ -1907,7 +1618,7 @@ export default function ProjectWorkspace() {
                                                                             className="px-2 py-0.5 rounded bg-blue-500/20 hover:bg-blue-500/40 text-cyan-300 text-xs font-mono flex items-center gap-1 transition-colors font-semibold"
                                                                             title={`Jump to line ${lineNum} in editor`}
                                                                         >
-                                                                            <Target size={12} />
+                                                                            <Target size={11} />
                                                                             <span>Line {lineNum}</span>
                                                                         </button>
                                                                     )}
@@ -1942,55 +1653,25 @@ export default function ProjectWorkspace() {
                                                 );
                                             })}
 
-                                            {/* Results Footer Message */}
+                                            {/* Results Footer Message if Failed */}
                                             {testResults.status === "failed" && (
-                                                <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 flex items-center justify-between flex-wrap gap-2.5">
-                                                    <div className="flex items-center gap-2 font-bold text-sm text-rose-200">
-                                                        <XCircle size={18} className="text-rose-400 shrink-0" />
+                                                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 flex items-center justify-between flex-wrap gap-2.5">
+                                                    <div className="flex items-center gap-2 font-bold text-xs text-rose-200">
+                                                        <XCircle size={16} className="text-rose-400 shrink-0" />
                                                         <span>Tests Failed ({testResults.passed}/{testResults.total} passed). Fix errors to verify this milestone.</span>
                                                     </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleAskAiMentor({
-                                                                testCase: testResults.steps?.find(s => !s.passed)?.name || "Milestone Tests",
-                                                                error: testResults.steps?.find(s => !s.passed)?.output || "Tests failed",
-                                                                requestedLevel: 1
-                                                            })}
-                                                            className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-600/30 to-blue-700/30 hover:from-blue-600/50 hover:to-blue-700/50 border border-blue-500/40 text-blue-200 text-xs sm:text-sm font-mono font-bold transition-all flex items-center gap-2 shadow-sm active:scale-95"
-                                                        >
-                                                            <Bot size={15} className="text-blue-300 animate-pulse" />
-                                                            <span>Forge Copilot: Diagnose All Failures</span>
-                                                        </button>
-                                                        <button
-                                                            onClick={() => setTerminalTab("console")}
-                                                            className="px-3 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 text-xs sm:text-sm font-mono font-bold transition-colors flex items-center gap-1.5"
-                                                        >
-                                                            <Terminal size={14} />
-                                                            <span>View Raw Logs</span>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {testResults.status === "passed" && (
-                                                <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-between flex-wrap gap-2.5">
-                                                    <div className="flex items-center gap-2 font-bold text-sm text-emerald-300">
-                                                        <CheckCircle2 size={18} className="shrink-0" />
-                                                        <span>All {testResults.passed} assertions passed! Milestone {currentMilestoneIndex + 1} verified.</span>
-                                                    </div>
-                                                    {currentMilestoneIndex + 1 < (project.milestones?.length || 5) && (
-                                                        <button
-                                                            onClick={() => {
-                                                                handleSelectMilestone(currentMilestoneIndex + 1);
-                                                                setTestResults(null);
-                                                            }}
-                                                            className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm transition-all flex items-center gap-2 shadow-md active:scale-95"
-                                                        >
-                                                            <span>Advance to Milestone {currentMilestoneIndex + 2}</span>
-                                                            <ChevronRight size={15} />
-                                                        </button>
-                                                    )}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleAskAiMentor({
+                                                            testCase: testResults.steps?.find(s => !s.passed)?.name || "Milestone Tests",
+                                                            error: testResults.steps?.find(s => !s.passed)?.output || "Tests failed",
+                                                            requestedLevel: 1
+                                                        })}
+                                                        className="px-3 py-1.5 rounded-lg bg-blue-600/30 hover:bg-blue-600/50 border border-blue-500/40 text-blue-200 text-xs font-mono font-bold transition-all flex items-center gap-2 shadow-sm active:scale-95"
+                                                    >
+                                                        <Bot size={14} className="text-blue-300 animate-pulse" />
+                                                        <span>Forge Copilot: Diagnose All Failures</span>
+                                                    </button>
                                                 </div>
                                             )}
                                         </div>
@@ -1998,23 +1679,37 @@ export default function ProjectWorkspace() {
                                 </div>
                             )}
 
-                            {/* CONSOLE TAB */}
+                            {/* CONSOLE LOGS TAB */}
                             {terminalTab === "console" && (
-                                <div className="space-y-1">
-                                    {consoleLogs.map((log, i) => (
-                                        <div key={i} className="text-slate-300">
-                                            {log}
-                                        </div>
-                                    ))}
-                                    
-                                    <form onSubmit={handleTerminalCommand} className="flex items-center gap-2 pt-2">
-                                        <span className="text-emerald-400 font-bold">skillforge@sandbox:~$</span>
-                                        <input 
+                                <div className="space-y-2 h-full flex flex-col justify-between">
+                                    <div className="space-y-1 font-mono text-xs overflow-y-auto">
+                                        {consoleLogs.map((log, i) => (
+                                            <div 
+                                                key={i} 
+                                                className={`leading-relaxed whitespace-pre-wrap ${
+                                                    log.startsWith("$") 
+                                                        ? "text-cyan-400 font-bold" 
+                                                        : log.includes("[stderr]") || log.includes("[fatal]") || log.includes("error") 
+                                                        ? "text-rose-400" 
+                                                        : log.includes("✓") || log.includes("Passed") 
+                                                        ? "text-emerald-400" 
+                                                        : "text-slate-300"
+                                                }`}
+                                            >
+                                                {log}
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Terminal Command Input */}
+                                    <form onSubmit={handleTerminalCommand} className="flex items-center gap-2 pt-2 border-t border-white/10 shrink-0">
+                                        <span className="text-blue-400 font-mono font-bold">$</span>
+                                        <input
                                             type="text"
                                             value={terminalInput}
                                             onChange={(e) => setTerminalInput(e.target.value)}
-                                            placeholder="Type command (test, ls, clear)..."
-                                            className="flex-grow bg-transparent text-white focus:outline-none border-none font-mono text-xs"
+                                            placeholder="Type a command (test, clear, ls, help)..."
+                                            className="flex-grow bg-transparent border-0 outline-none text-xs font-mono text-white placeholder-slate-600"
                                         />
                                     </form>
                                 </div>
@@ -2024,48 +1719,31 @@ export default function ProjectWorkspace() {
                     </div>
 
                 </main>
-
             </div>
 
-            {/* Global Drag Overlay (captures mouse events across window, prevents Monaco/DOM from stealing cursor focus) */}
-            {(isDraggingPanel || isDraggingTerminal) && (
-                <div 
-                    className="fixed inset-0 z-[99999] select-none"
-                    style={{ 
-                        cursor: isDraggingPanel ? "col-resize" : "row-resize",
-                        pointerEvents: "auto" 
-                    }}
-                />
-            )}
-
             {/* ======================================================== */}
-            {/* 5. VS CODE-STYLE STATUS BAR (Bottom 24px)                 */}
+            {/* 5. FOOTER STATUS STRIP                                   */}
             {/* ======================================================== */}
-            <footer className="h-6 bg-[#04060A] border-t border-white/10 px-3 flex items-center justify-between text-[11px] font-mono select-none text-slate-400 shrink-0 z-30">
+            <footer className="h-6 border-t border-white/10 bg-[#080C14] px-3 flex items-center justify-between text-[11px] font-mono text-slate-400 shrink-0 select-none z-30">
                 <div className="flex items-center gap-3">
-                    <div 
-                        className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer" 
-                        onClick={() => setIsCommandPaletteOpen(true)} 
-                        title="Git Branch (Ctrl+P)"
-                    >
-                        <GitBranch size={12} className="text-cyan-400" />
+                    <div className="flex items-center gap-1.5 text-slate-300">
+                        <GitBranch size={12} className="text-blue-400" />
                         <span>main</span>
                     </div>
 
                     <button
                         type="button"
                         onClick={() => {
-                            if (terminalHeight < 100) setTerminalHeight(240);
+                            if (terminalHeight < 100) setTerminalHeight(260);
                             setTerminalTab("tests");
                         }}
-                        className={`flex items-center gap-1.5 px-1.5 py-0.5 rounded transition-all ${
+                        className={`flex items-center gap-1.5 transition-colors ${
                             testResults?.status === "passed"
-                                ? "text-emerald-400 hover:bg-emerald-500/10"
+                                ? "text-emerald-400 font-bold"
                                 : testResults?.status === "failed"
-                                ? "text-rose-400 hover:bg-rose-500/10"
+                                ? "text-rose-400 font-bold"
                                 : "text-slate-400 hover:text-white"
                         }`}
-                        title="Click to view test suite"
                     >
                         {testResults?.status === "passed" ? (
                             <CheckCircle2 size={12} className="text-emerald-400" />
@@ -2076,31 +1754,26 @@ export default function ProjectWorkspace() {
                         )}
                         <span>
                             {testResults
-                                ? `${testResults.passed}/${testResults.total} Tests (${testResults.duration || "0ms"})`
-                                : "Test Runner: Ready"}
+                                ? `${testResults.passed}/${testResults.total} Tests Passed (${testResults.duration || "0ms"})`
+                                : "Test Suite: Ready"}
                         </span>
                     </button>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <span className="hover:text-white" title="Cursor Line and Column">
-                        Ln {cursorPosition.line}, Col {cursorPosition.col}
-                    </span>
-                    <span className="hidden md:inline hover:text-white" title="Indentation">Spaces: 4</span>
-                    <span className="hidden sm:inline hover:text-white" title="Encoding">UTF-8</span>
-                    <span className="hover:text-cyan-300 font-bold uppercase" title="Language Mode">
+                <div className="flex items-center gap-3">
+                    <span>Ln {cursorPosition.line}, Col {cursorPosition.col}</span>
+                    <span className="hidden sm:inline">UTF-8</span>
+                    <span className="font-bold text-blue-400 uppercase">
                         {workspaceData.language || project.language || "code"}
                     </span>
-                    <span className="hidden lg:inline text-[10px] text-slate-500 font-mono" title="Execution Engine">
-                        {isClientSideLanguage(workspaceData.language || project.language)
-                            ? "Client-Side V8"
-                            : "Backend Sandbox Service"}
+                    <span className="hidden md:inline text-slate-500">
+                        {isClientSideLanguage(workspaceData.language || project.language) ? "V8 Engine" : "MicroVM Sandbox"}
                     </span>
                 </div>
             </footer>
 
             {/* ======================================================== */}
-            {/* COMMAND PALETTE MODAL                                    */}
+            {/* 6. MODALS: COMMAND PALETTE & CELEBRATION                 */}
             {/* ======================================================== */}
             <CommandPalette
                 isOpen={isCommandPaletteOpen}
@@ -2116,9 +1789,6 @@ export default function ProjectWorkspace() {
                 }}
             />
 
-            {/* ======================================================== */}
-            {/* CELEBRATION MODAL ON MILESTONE COMPLETION                */}
-            {/* ======================================================== */}
             <AnimatePresence>
                 {showCelebration && (
                     <motion.div 
@@ -2133,7 +1803,7 @@ export default function ProjectWorkspace() {
                             exit={{ scale: 0.9, y: 20 }}
                             className="w-full max-w-md p-6 rounded-3xl bg-[#090D16] border border-blue-500/30 text-center space-y-4 shadow-2xl relative overflow-hidden"
                         >
-                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-400 mx-auto flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-blue-400 mx-auto flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
                                 <Award size={32} />
                             </div>
 
@@ -2145,7 +1815,7 @@ export default function ProjectWorkspace() {
                             </div>
 
                             <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-300 font-mono space-y-1">
-                                <div>Total Session Time: <span className="text-cyan-400 font-bold">{formattedTime}</span></div>
+                                <div>Total Session Time: <span className="text-blue-400 font-bold">{formattedTime}</span></div>
                                 <div>Total Passed Assertions: <span className="text-emerald-400 font-bold">{project.milestones?.reduce((acc, m) => acc + (m.testCount || 4), 0)} Tests</span></div>
                             </div>
 
@@ -2158,7 +1828,7 @@ export default function ProjectWorkspace() {
                                 </button>
                                 <button
                                     onClick={() => navigate("/projects")}
-                                    className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-xs font-bold text-white transition-all shadow-lg hover:from-blue-500 hover:to-cyan-400"
+                                    className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-xs font-bold text-white transition-all shadow-lg hover:from-blue-500 hover:to-blue-400"
                                 >
                                     Forge Next Project
                                 </button>
