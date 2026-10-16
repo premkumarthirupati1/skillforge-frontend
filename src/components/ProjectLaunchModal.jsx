@@ -20,7 +20,8 @@ import {
     ShieldCheck,
     Target,
     Milestone,
-    BookOpen
+    BookOpen,
+    RotateCw
 } from "lucide-react";
 import SkillForgeLogo from "./SkillForgeLogo";
 import { getProjectWorkspaceData } from "../data/projectWorkspacesData";
@@ -28,13 +29,13 @@ import toast from "react-hot-toast";
 
 /**
  * ProjectLaunchModal
- * Fullscreen / centered modal showing the dramatic transition from the Main Logo 
- * into The Code Anvil with compiler startup sequence, blinking anvil, and project brief.
+ * Fullscreen / centered modal showing the SkillForge Compiler Sandbox
+ * startup sequence, live container allocation, and project brief.
  */
 export default function ProjectLaunchModal({ project, isOpen, onClose }) {
     const navigate = useNavigate();
     const [activeModalTab, setActiveModalTab] = useState("roadmap"); // "roadmap" | "runtime"
-    const [bootPhase, setBootPhase] = useState(1); // 1: Main Logo, 2: Morphing to Anvil, 3: Anvil Compiler Blinking / Booting, 4: Ready
+    const [bootPhase, setBootPhase] = useState(1); // 1: Connecting, 2: Allocating Container, 3: Compiler Booting, 4: Ready
     const [terminalLines, setTerminalLines] = useState([]);
     const [copied, setCopied] = useState(false);
     const [selectedRoadmapIdx, setSelectedRoadmapIdx] = useState(0);
@@ -51,6 +52,42 @@ export default function ProjectLaunchModal({ project, isOpen, onClose }) {
         testCases: []
     };
 
+    const startBootSequence = () => {
+        setBootPhase(1);
+        setTerminalLines(["[1/4] Connecting to SkillForge cloud sandbox network..."]);
+
+        const t1 = setTimeout(() => {
+            setBootPhase(2);
+            setTerminalLines(prev => [
+                ...prev, 
+                `[2/4] Initializing isolated SkillForge microVM container for [${project?.title || "Project"}]...`
+            ]);
+        }, 800);
+
+        const t2 = setTimeout(() => {
+            setBootPhase(3);
+            setTerminalLines(prev => [
+                ...prev, 
+                `[3/4] SkillForge compiler kernel active. Mounting AST analyzer, language runtime & milestone assertions...`,
+                `> Syncing automated test harnesses and specifications...`
+            ]);
+        }, 1800);
+
+        const t3 = setTimeout(() => {
+            setBootPhase(4);
+            setTerminalLines(prev => [
+                ...prev,
+                `[4/4] SkillForge Compiler Runtime ready! All milestone test harnesses loaded. Happy forging!`
+            ]);
+        }, 3200);
+
+        return () => {
+            clearTimeout(t1);
+            clearTimeout(t2);
+            clearTimeout(t3);
+        };
+    };
+
     useEffect(() => {
         if (!isOpen) {
             setBootPhase(1);
@@ -58,42 +95,8 @@ export default function ProjectLaunchModal({ project, isOpen, onClose }) {
             return;
         }
 
-        // Sequence timing:
-        // Phase 1: 0 - 800ms -> Main Logo
-        // Phase 2: 800 - 1800ms -> Morphing Shockwave
-        // Phase 3: 1800 - 3200ms -> Anvil Blinking / Compiler Booting
-        // Phase 4: 3200ms+ -> Workspace Ready
-
-        setBootPhase(1);
-        setTerminalLines(["[1/4] Connecting to SkillForge cloud sandbox..."]);
-
-        const t1 = setTimeout(() => {
-            setBootPhase(2);
-            setTerminalLines(prev => [...prev, "[2/4] Switching platform mode: Transforming brandmark to The Code Anvil..."]);
-        }, 900);
-
-        const t2 = setTimeout(() => {
-            setBootPhase(3);
-            setTerminalLines(prev => [
-                ...prev, 
-                `[3/4] Compiler kernel active. Spawning isolated runtime for ${project?.title || "Project"}...`,
-                `> Mounting test runner and architectural specifications...`
-            ]);
-        }, 2000);
-
-        const t3 = setTimeout(() => {
-            setBootPhase(4);
-            setTerminalLines(prev => [
-                ...prev,
-                `[4/4] Environment ready! All 5 milestone test harnesses loaded. Happy forging!`
-            ]);
-        }, 3400);
-
-        return () => {
-            clearTimeout(t1);
-            clearTimeout(t2);
-            clearTimeout(t3);
-        };
+        const cleanup = startBootSequence();
+        return cleanup;
     }, [isOpen, project]);
 
     if (!isOpen || !project) return null;
@@ -433,72 +436,76 @@ export default function ProjectLaunchModal({ project, isOpen, onClose }) {
                     {activeModalTab === "runtime" && (
                         <div className="space-y-6 animate-in fade-in duration-200">
                             
-                            {/* Dramatic Logo Transition & Compiler Boot Stage */}
-                            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-[#111827] to-[#0A0E17] border border-blue-500/20 p-8 flex flex-col items-center justify-center min-h-[260px] shadow-inner text-center">
+                            {/* SkillForge Compiler Runtime Boot Stage */}
+                            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-[#0c1222] via-[#090D16] to-[#05070B] border border-blue-500/30 p-8 flex flex-col items-center justify-center min-h-[280px] shadow-2xl text-center">
                                 
                                 {/* Ambient Radial Energy Glow */}
-                                <div className="absolute inset-0 bg-blue-600/10 blur-[60px] pointer-events-none" />
+                                <div className="absolute inset-0 bg-blue-600/15 blur-[70px] pointer-events-none" />
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-cyan-500/10 blur-[50px] rounded-full pointer-events-none" />
 
                                 {/* Particle Ring Shockwaves */}
-                                {(bootPhase === 2 || bootPhase === 3) && (
+                                {bootPhase < 4 && (
                                     <motion.div
                                         initial={{ scale: 0.8, opacity: 0.9 }}
-                                        animate={{ scale: 2.3, opacity: 0 }}
-                                        transition={{ duration: 1.5, repeat: Infinity, ease: "easeOut" }}
-                                        className="absolute w-40 h-40 rounded-full border-2 border-blue-400/50 pointer-events-none"
+                                        animate={{ scale: 2.4, opacity: 0 }}
+                                        transition={{ duration: 1.6, repeat: Infinity, ease: "easeOut" }}
+                                        className="absolute w-44 h-44 rounded-full border-2 border-cyan-400/40 pointer-events-none"
                                     />
                                 )}
 
-                                <div className="relative z-10 min-h-[100px] flex items-center justify-center">
-                                    <AnimatePresence mode="wait">
-                                        {bootPhase === 1 ? (
-                                            /* Phase 1: Main Platform Logo */
-                                            <motion.div
-                                                key="step-main"
-                                                initial={{ opacity: 0, scale: 0.8 }}
-                                                animate={{ opacity: 1, scale: 1 }}
-                                                exit={{ opacity: 0, scale: 1.3, filter: "blur(8px)" }}
-                                                transition={{ duration: 0.5 }}
-                                                className="flex flex-col items-center gap-2"
-                                            >
-                                                <SkillForgeLogo size="lg" />
-                                                <span className="text-[11px] font-mono text-slate-400 tracking-wider">
-                                                    Platform Curriculum Mode
-                                                </span>
-                                            </motion.div>
-                                        ) : (
-                                            /* Phase 2, 3, 4: SkillForge Logo in Compiler Runtime */
-                                            <motion.div
-                                                key="step-anvil"
-                                                initial={{ opacity: 0, scale: 0.85, filter: "blur(12px)" }}
-                                                animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-                                                transition={{ duration: 0.6, type: "spring", stiffness: 120 }}
-                                                className="flex flex-col items-center gap-3"
-                                            >
-                                                <div className="relative p-3.5 rounded-2xl bg-[#070A11] border border-blue-500/40 shadow-[0_0_30px_rgba(37,99,235,0.3)]">
-                                                    <div className="absolute inset-0 bg-blue-500/20 blur-xl rounded-2xl animate-pulse" />
-                                                    <img 
-                                                        src="/images/code-anvil-logo.png" 
-                                                        alt="The Code Anvil" 
-                                                        className="h-14 w-auto object-contain relative z-10 drop-shadow-[0_0_15px_rgba(56,189,248,0.8)]" 
-                                                    />
-                                                </div>
-                                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-300 text-xs font-mono font-bold uppercase tracking-widest">
-                                                    <span className={`w-2 h-2 rounded-full ${bootPhase === 4 ? "bg-emerald-400" : "bg-cyan-400 animate-ping"}`} />
-                                                    <span>
-                                                        {bootPhase === 4 ? "Compiler Ready" : "Compiler Booting..."}
-                                                    </span>
-                                                </div>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
+                                {/* SkillForge Compiler Brand Showcase */}
+                                <div className="relative z-10 flex flex-col items-center justify-center gap-4">
+                                    
+                                    {/* Glowing Pedestal with Official SkillForge Logo */}
+                                    <motion.div
+                                        animate={bootPhase < 4 ? { scale: [1, 1.04, 1] } : { scale: 1 }}
+                                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                                        className="relative p-4 sm:p-5 rounded-2xl bg-[#070A11]/90 border border-blue-500/40 shadow-[0_0_35px_rgba(37,99,235,0.35)] flex items-center justify-center backdrop-blur-md"
+                                    >
+                                        <div className={`absolute inset-0 rounded-2xl transition-opacity duration-500 ${
+                                            bootPhase === 4 ? "bg-emerald-500/10" : "bg-blue-500/20 blur-xl animate-pulse"
+                                        }`} />
+                                        
+                                        {/* Official SkillForge Logo (Transparent PNG) */}
+                                        <img 
+                                            src="/images/skillforge-logo.png" 
+                                            alt="SkillForge" 
+                                            className="h-12 sm:h-16 w-auto object-contain relative z-10 drop-shadow-[0_0_18px_rgba(56,189,248,0.7)]" 
+                                        />
+                                    </motion.div>
+
+                                    {/* Live Compiler Status Badge */}
+                                    <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-mono font-bold uppercase tracking-widest transition-all ${
+                                        bootPhase === 4 
+                                            ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.25)]" 
+                                            : "bg-blue-500/20 border-cyan-500/40 text-cyan-300 shadow-[0_0_15px_rgba(56,189,248,0.25)]"
+                                    }`}>
+                                        <span className={`w-2 h-2 rounded-full ${
+                                            bootPhase === 4 ? "bg-emerald-400" : "bg-cyan-400 animate-ping"
+                                        }`} />
+                                        <span>
+                                            {bootPhase === 4 ? "SkillForge Compiler Ready" : "SkillForge Compiler Booting..."}
+                                        </span>
+                                    </div>
+
+                                    {/* Re-run boot sequence trigger */}
+                                    {bootPhase === 4 && (
+                                        <button
+                                            type="button"
+                                            onClick={startBootSequence}
+                                            className="inline-flex items-center gap-1.5 text-[11px] font-mono text-slate-400 hover:text-cyan-300 transition-colors pt-0.5"
+                                            title="Re-run compiler bootup sequence"
+                                        >
+                                            <RotateCw size={11} /> Re-run Boot Check
+                                        </button>
+                                    )}
                                 </div>
 
                                 {/* Status Label Below Logo */}
-                                <p className="relative z-10 text-xs text-slate-400 max-w-sm mt-4 font-medium">
+                                <p className="relative z-10 text-xs text-slate-300 max-w-md mt-4 font-medium leading-relaxed">
                                     {bootPhase < 4 
-                                        ? "Switching from study mode to interactive compiler sandbox. Initializing container allocation."
-                                        : "Runtime container synchronized. All automated test suites and specifications ready."
+                                        ? "Allocating isolated microVM sandbox. Mounting AST analyzer, language compiler, and automated test specifications."
+                                        : "SkillForge runtime synchronized. All automated test suites and architectural specifications ready."
                                     }
                                 </p>
                             </div>

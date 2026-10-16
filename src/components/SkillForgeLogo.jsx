@@ -13,6 +13,7 @@ import React from "react";
 export default function SkillForgeLogo({ 
     size = "md", 
     iconOnly = false,
+    variant = "auto", // "auto" | "dark" | "light"
     className = "" 
 }) {
     // Height mappings for navbar and headers
@@ -30,6 +31,30 @@ export default function SkillForgeLogo({
                 alt="SkillForge" 
                 className={`${heights} w-auto object-contain shrink-0 transition-transform duration-200 group-hover:scale-105 ${className}`}
             />
+        );
+    }
+
+    if (variant === "dark") {
+        return (
+            <div className={`inline-flex items-center select-none ${className}`}>
+                <img 
+                    src="/images/skillforge-logo.png" 
+                    alt="SkillForge" 
+                    className={`${heights} w-auto object-contain transition-transform duration-200 group-hover:scale-102`}
+                />
+            </div>
+        );
+    }
+
+    if (variant === "light") {
+        return (
+            <div className={`inline-flex items-center select-none ${className}`}>
+                <img 
+                    src="/images/skillforge-logo-light.png" 
+                    alt="SkillForge" 
+                    className={`${heights} w-auto object-contain transition-transform duration-200 group-hover:scale-102`}
+                />
+            </div>
         );
     }
 

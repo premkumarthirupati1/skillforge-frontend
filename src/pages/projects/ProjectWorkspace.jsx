@@ -807,6 +807,18 @@ export default function ProjectWorkspace() {
                         <ArrowLeft size={16} />
                     </button>
 
+                    <button
+                        onClick={() => navigate("/dashboard")}
+                        className="flex items-center gap-1.5 hover:opacity-85 transition-opacity"
+                        title="SkillForge Platform"
+                    >
+                        <img 
+                            src="/images/skillforge-icon.png" 
+                            alt="SkillForge" 
+                            className="h-6 w-auto object-contain" 
+                        />
+                    </button>
+
                     <div className="h-4 w-px bg-white/10 hidden sm:block" />
 
                     <div className="flex items-center gap-1.5 text-xs truncate">
