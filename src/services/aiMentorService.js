@@ -14,6 +14,9 @@ export async function fetchAiMentorAdvice({
     milestoneIndex = 0,
     milestoneTitle = "Milestone 1",
     milestoneObjective = "",
+    specRules = [],
+    testCases = [],
+    allFiles = [],
     activeFileName = "main.rs",
     userCode = "",
     testResults = null,
@@ -28,6 +31,9 @@ export async function fetchAiMentorAdvice({
             milestoneIndex,
             milestoneTitle,
             milestoneObjective,
+            specRules,
+            testCases,
+            allFiles,
             activeFileName,
             userCode,
             testResults,
@@ -47,6 +53,8 @@ export async function fetchAiMentorAdvice({
             milestoneIndex,
             milestoneTitle,
             milestoneObjective,
+            specRules,
+            testCases,
             userCode,
             testResults,
             userQuery,
@@ -63,6 +71,8 @@ function getClientSideHeuristicFallback({
     milestoneIndex = 0,
     milestoneTitle = "Milestone 1",
     milestoneObjective = "",
+    specRules = [],
+    testCases = [],
     userCode = "",
     testResults,
     userQuery = "",
@@ -74,12 +84,17 @@ function getClientSideHeuristicFallback({
     const testOutput = failedStep?.output || "Assertion requirement not met.";
     const query = (userQuery || "").toLowerCase();
 
+    // Check for TODO in code
+    const lines = (userCode || "").split("\n");
+    const todoLineIdx = lines.findIndex(l => /TODO/i.test(l));
+    const detectedLine = todoLineIdx !== -1 ? todoLineIdx + 1 : null;
+
     // Query intent: edge cases
     if (query.includes("edge case") || query.includes("cases")) {
         return {
             diagnosis: `Edge Cases for Milestone ${milestoneIndex + 1}: ${milestoneTitle}`,
             level: hintLevel,
-            targetLine: 1,
+            targetLine: null,
             hint: "Crucial edge cases:\n1. Empty payloads and malformed delimiters\n2. Concurrency race conditions on shared state\n3. Out of bounds indexing and buffer framing\n4. Error recovery rather than panics.",
             codePattern: "",
             quickPrompts: ["Why did my test fail?", "Give me a subtle hint", "Show code pattern"],
@@ -93,7 +108,7 @@ function getClientSideHeuristicFallback({
         return {
             diagnosis: `Architectural Nudge for ${milestoneTitle}`,
             level: 1,
-            targetLine: 1,
+            targetLine: detectedLine,
             hint: milestoneObjective || "Review the production spec rules on the left panel to ensure all required contracts and invariants are met.",
             codePattern: "",
             quickPrompts: ["Pinpoint the bug", "Show code pattern", "Why did my test fail?"],
@@ -107,7 +122,7 @@ function getClientSideHeuristicFallback({
             ? `Assertion Failed in '${testName}': ${testOutput}` 
             : `Specification check for Milestone ${milestoneIndex + 1}: ${milestoneTitle}`,
         level: hintLevel,
-        targetLine: 1,
+        targetLine: detectedLine,
         hint: hintLevel === 1
             ? (milestoneObjective || "Review the milestone specification in the Spec Guide tab to satisfy the required assertions.")
             : hintLevel === 2

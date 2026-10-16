@@ -50,6 +50,82 @@ import FileExplorerTree from "../../components/workspace/FileExplorerTree";
 import toast from "react-hot-toast";
 import api from "../../api";
 
+/**
+ * Renders AI mentor output with structured markdown-like formatting:
+ * Highlights inline code, lists, bullet points, and code blocks cleanly.
+ */
+function FormattedAiContent({ content, className = "" }) {
+    if (!content) return null;
+
+    // Split into paragraphs
+    const paragraphs = String(content).split(/\n{2,}/);
+
+    return (
+        <div className={`space-y-2.5 text-sm sm:text-[15px] leading-relaxed ${className}`}>
+            {paragraphs.map((p, pIdx) => {
+                const lines = p.split('\n');
+                return (
+                    <div key={pIdx} className="space-y-1.5">
+                        {lines.map((line, lIdx) => {
+                            const trimmed = line.trim();
+                            // Check for list item (e.g. "1. ", "- ", "* ")
+                            const listMatch = trimmed.match(/^(\d+\.|\-|\*)\s+(.*)$/);
+                            if (listMatch) {
+                                const bullet = listMatch[1];
+                                const rest = listMatch[2];
+                                return (
+                                    <div key={lIdx} className="flex items-start gap-2 pl-1">
+                                        <span className="font-mono text-xs text-purple-400 font-bold shrink-0 mt-0.5">{bullet}</span>
+                                        <span className="flex-grow text-slate-100">{renderInlineText(rest)}</span>
+                                    </div>
+                                );
+                            }
+                            return (
+                                <p key={lIdx} className="leading-relaxed text-slate-100">
+                                    {renderInlineText(line)}
+                                </p>
+                            );
+                        })}
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
+function renderInlineText(text) {
+    if (!text) return null;
+    const parts = [];
+    const regex = /(`[^`]+`|\*\*[^*]+\*\*)/g;
+    let lastIdx = 0;
+    let match;
+
+    while ((match = regex.exec(text)) !== null) {
+        if (match.index > lastIdx) {
+            parts.push(text.substring(lastIdx, match.index));
+        }
+        const token = match[0];
+        if (token.startsWith('`') && token.endsWith('`')) {
+            parts.push(
+                <code key={match.index} className="px-1.5 py-0.5 mx-0.5 rounded bg-purple-500/20 text-purple-200 font-mono text-xs border border-purple-500/30 font-semibold inline-block">
+                    {token.slice(1, -1)}
+                </code>
+            );
+        } else if (token.startsWith('**') && token.endsWith('**')) {
+            parts.push(
+                <strong key={match.index} className="font-bold text-white">
+                    {token.slice(2, -2)}
+                </strong>
+            );
+        }
+        lastIdx = regex.lastIndex;
+    }
+    if (lastIdx < text.length) {
+        parts.push(text.substring(lastIdx));
+    }
+    return parts;
+}
+
 export default function ProjectWorkspace() {
     const { projectId } = useParams();
     const navigate = useNavigate();
@@ -491,6 +567,13 @@ export default function ProjectWorkspace() {
                 milestoneIndex: currentMilestoneIndex,
                 milestoneTitle: milestoneGuide.title,
                 milestoneObjective: milestoneGuide.objective,
+                specRules: milestoneGuide.specRules || [],
+                testCases: milestoneGuide.testCases || [],
+                allFiles: files.map(f => ({ 
+                    name: f.name, 
+                    language: f.language, 
+                    content: f.content ? f.content.slice(0, 2000) : "" 
+                })),
                 activeFileName,
                 userCode: activeCode,
                 testResults: testResults || (failingErr ? { steps: [{ name: failingName || "Assertion", passed: false, output: failingErr }] } : null),
@@ -502,7 +585,7 @@ export default function ProjectWorkspace() {
             let cleanDiagnosis = advice.diagnosis || "";
             let cleanHint = advice.hint || "";
             let cleanPattern = advice.codePattern || "";
-            let cleanLine = line || advice.targetLine || null;
+            let cleanLine = line || (typeof advice.targetLine === "number" ? advice.targetLine : (parseInt(advice.targetLine, 10) || null));
             let cleanPrompts = advice.quickPrompts || [];
 
             if (typeof cleanHint === "string" && (cleanHint.trim().startsWith("{") || cleanHint.includes('"diagnosis"') || cleanHint.includes('"hint"'))) {
@@ -537,9 +620,8 @@ export default function ProjectWorkspace() {
                 history: prompt ? [...prev.history, { query: prompt, reply: cleanHint }] : prev.history
             }));
 
-            if ((line || advice.targetLine) && (line > 0 || advice.targetLine > 0)) {
-                const targetL = line || advice.targetLine;
-                jumpToLine(targetL);
+            if (cleanLine && cleanLine > 0) {
+                jumpToLine(cleanLine);
             }
             toast("Forge Copilot ready with insights", { icon: "🤖" });
         } catch (err) {
@@ -1428,7 +1510,12 @@ export default function ProjectWorkspace() {
                                             <div className="flex items-center gap-1.5">
                                                 <span className="w-2.5 h-2.5 rounded-full bg-purple-400 animate-pulse" />
                                                 <span className="text-xs font-mono text-purple-200 font-medium">
-                                                    {aiMentorState.modelUsed ? (aiMentorState.modelUsed.includes("Gemini") ? "Gemini 1.5" : "Diagnostic Engine") : "Ready"}
+                                                    {aiMentorState.modelUsed ? (
+                                                        aiMentorState.modelUsed.includes("Qwen") ? "Qwen 2.5 Coder 32B" :
+                                                        aiMentorState.modelUsed.includes("Gemini") ? "Gemini 1.5" :
+                                                        aiMentorState.modelUsed.includes("Heuristic") ? "Diagnostic Engine" :
+                                                        aiMentorState.modelUsed
+                                                    ) : "Ready"}
                                                 </span>
                                             </div>
                                         </div>
@@ -1513,9 +1600,7 @@ export default function ProjectWorkspace() {
                                                             <Sparkles size={13} />
                                                             <span>Diagnosis</span>
                                                         </div>
-                                                        <p className="text-sm sm:text-[15px] text-slate-100 leading-relaxed font-normal">
-                                                            {aiMentorState.diagnosis}
-                                                        </p>
+                                                        <FormattedAiContent content={aiMentorState.diagnosis} className="text-slate-100" />
                                                     </div>
                                                 )}
 
@@ -1538,8 +1623,8 @@ export default function ProjectWorkspace() {
                                                                 </button>
                                                             )}
                                                         </div>
-                                                        <div className="p-3.5 rounded-xl bg-purple-500/15 border border-purple-500/30 text-sm sm:text-[15px] text-slate-100 leading-relaxed font-normal shadow-sm">
-                                                            {aiMentorState.hint}
+                                                        <div className="p-3.5 rounded-xl bg-purple-500/15 border border-purple-500/30 text-slate-100 shadow-sm">
+                                                            <FormattedAiContent content={aiMentorState.hint} />
                                                         </div>
                                                     </div>
                                                 )}
