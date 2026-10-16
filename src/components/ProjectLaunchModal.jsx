@@ -35,7 +35,7 @@ import toast from "react-hot-toast";
  */
 export default function ProjectLaunchModal({ project, isOpen, onClose }) {
     const navigate = useNavigate();
-    const [activeModalTab, setActiveModalTab] = useState("roadmap"); // "roadmap" | "runtime"
+    const [activeModalTab, setActiveModalTab] = useState("runtime"); // "runtime" | "roadmap"
     const [bootPhase, setBootPhase] = useState(1); // 1: Connecting, 2: Allocating Container, 3: Compiler Booting, 4: Ready
     const [terminalLines, setTerminalLines] = useState([]);
     const [copied, setCopied] = useState(false);
@@ -93,9 +93,11 @@ export default function ProjectLaunchModal({ project, isOpen, onClose }) {
         if (!isOpen) {
             setBootPhase(1);
             setTerminalLines([]);
+            setActiveModalTab("runtime");
             return;
         }
 
+        setActiveModalTab("runtime");
         const cleanup = startBootSequence();
         return cleanup;
     }, [isOpen, project]);
