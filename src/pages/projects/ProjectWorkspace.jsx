@@ -59,43 +59,16 @@ import CommandPalette from "../../components/workspace/CommandPalette";
 import FileExplorerTree from "../../components/workspace/FileExplorerTree";
 import toast from "react-hot-toast";
 import api from "../../api";
+import ForgeCopilotMarkdown from "../../components/copilot/ForgeCopilotMarkdown";
 
 /**
- * Structured AI / Markdown Content Formatter
+ * Structured AI / Markdown Content Formatter with Mermaid & Visual Diagram support
  */
 function FormattedAiContent({ content, className = "" }) {
     if (!content) return null;
-
-    const paragraphs = String(content).split(/\n{2,}/);
-
     return (
-        <div className={`space-y-2 text-xs leading-relaxed ${className}`}>
-            {paragraphs.map((p, pIdx) => {
-                const lines = p.split('\n');
-                return (
-                    <div key={pIdx} className="space-y-1">
-                        {lines.map((line, lIdx) => {
-                            const trimmed = line.trim();
-                            const listMatch = trimmed.match(/^(\d+\.|\-|\*)\s+(.*)$/);
-                            if (listMatch) {
-                                const bullet = listMatch[1];
-                                const rest = listMatch[2];
-                                return (
-                                    <div key={lIdx} className="flex items-start gap-2 pl-0.5">
-                                        <span className="font-mono text-xs text-[#388bfd] font-bold shrink-0 mt-0.5">{bullet}</span>
-                                        <span className="flex-grow text-[#cfd3dc]">{renderInlineText(rest)}</span>
-                                    </div>
-                                );
-                            }
-                            return (
-                                <p key={lIdx} className="leading-relaxed text-[#cfd3dc]">
-                                    {renderInlineText(line)}
-                                </p>
-                            );
-                        })}
-                    </div>
-                );
-            })}
+        <div className={`text-xs leading-relaxed ${className}`}>
+            <ForgeCopilotMarkdown content={String(content)} />
         </div>
     );
 }

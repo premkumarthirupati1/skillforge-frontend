@@ -89,6 +89,47 @@ function getClientSideHeuristicFallback({
     const todoLineIdx = lines.findIndex(l => /TODO/i.test(l));
     const detectedLine = todoLineIdx !== -1 ? todoLineIdx + 1 : null;
 
+    // Helper to generate Mermaid SVG URL
+    const getMermaidInkUrl = (mermaidCode) => {
+        try {
+            const payload = { code: mermaidCode.trim(), mermaid: { theme: "dark" } };
+            const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+            return `https://mermaid.ink/svg/${b64}`;
+        } catch (e) {
+            return "";
+        }
+    };
+
+    // Query intent: architecture & diagrams
+    const isArch = /(architecture|system design|topology|diagram|flowchart|data flow|components|how it works|high level design|hld|low level design|lld|visual|image|structure)/i.test(query);
+    if (isArch) {
+        const defaultMermaid = `graph TD
+    Client[Client Sockets / HTTP] --> Listener[TCP / WebSocket Listener]
+    Listener --> Parser[Protocol Framing & Command Parser]
+    Parser --> Dispatcher[Execution & State Engine]
+    Dispatcher --> Store[(Thread-Safe In-Memory Store)]
+    Store --> Worker[Active Eviction & Worker Pool]
+    Dispatcher --> Serializer[Protocol Serializer]
+    Serializer --> Client`;
+
+        const imgUrl = getMermaidInkUrl(defaultMermaid);
+
+        return {
+            diagnosis: `Staff Architecture Blueprint: ${milestoneTitle}`,
+            level: hintLevel,
+            targetLine: null,
+            hint: `High-level system topology and component architecture for **${milestoneTitle}**.\n\n### 📐 Visual Architecture Diagram\n![${milestoneTitle} Architecture Diagram](${imgUrl})\n\n\`\`\`mermaid\n${defaultMermaid}\n\`\`\`\n\n### Core System Planes\n- **I/O & Ingestion Plane**: Non-blocking event loop accepting incoming client connections.\n- **Protocol Plane**: Delimiter framing, binary parser, and error isolation boundary.\n- **Execution & Storage**: Thread-safe state maps protected by mutex concurrency primitives.\n- **Eviction & Recovery**: Active background TTL worker and disk persistence serializer.`,
+            codePattern: "// Core architectural engine pattern\npub trait SystemEngine {\n    fn execute(&mut self, cmd: &str) -> Result<String, SystemError>;\n}",
+            quickPrompts: [
+                "How do components communicate?",
+                "What concurrency primitives are used?",
+                "Explain the data flow pipeline"
+            ],
+            modelUsed: "Forge Client Heuristics (Offline)",
+            isLiveAI: false
+        };
+    }
+
     // Query intent: edge cases
     if (query.includes("edge case") || query.includes("cases")) {
         return {
