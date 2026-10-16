@@ -10,17 +10,20 @@ import {
     LogOut,
     ChevronDown,
     Search,
-    GraduationCap
+    GraduationCap,
+    Sparkles
 } from "lucide-react";
 import SearchBar from "./SearchBar";
 import SkillForgeLogo from "./SkillForgeLogo";
 import api from "../api";
+import { useForgeCopilot } from "../context/ForgeCopilotContext";
 
 function NavBar() {
     const navigate = useNavigate();
     const location = useLocation();
     const [menuOpen, setMenuOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
+    const { toggleCopilot } = useForgeCopilot();
 
     const token = localStorage.getItem("token");
 
@@ -186,6 +189,17 @@ function NavBar() {
                     <div className="hidden lg:flex relative group w-44 xl:w-56">
                         <SearchBar placeholder="Search..." />
                     </div>
+
+                    {/* Forge Copilot Assistant Trigger */}
+                    <button
+                        onClick={toggleCopilot}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-surface border border-brand-border hover:border-brand-primary/50 text-brand-text hover:text-brand-primary transition-all duration-300 shrink-0 text-xs font-semibold shadow-sm group"
+                        title="Open Forge Copilot"
+                        aria-label="Open Forge Copilot"
+                    >
+                        <Sparkles size={14} className="text-brand-primary group-hover:scale-110 transition-transform" />
+                        <span className="hidden xl:inline">Forge Copilot</span>
+                    </button>
 
                     <button
                         onClick={toggleTheme}

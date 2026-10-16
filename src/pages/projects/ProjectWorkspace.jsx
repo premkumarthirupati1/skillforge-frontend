@@ -75,7 +75,7 @@ function FormattedAiContent({ content, className = "" }) {
                                 const rest = listMatch[2];
                                 return (
                                     <div key={lIdx} className="flex items-start gap-2 pl-1">
-                                        <span className="font-mono text-xs text-purple-400 font-bold shrink-0 mt-0.5">{bullet}</span>
+                                        <span className="font-mono text-xs text-blue-400 font-bold shrink-0 mt-0.5">{bullet}</span>
                                         <span className="flex-grow text-slate-100">{renderInlineText(rest)}</span>
                                     </div>
                                 );
@@ -107,7 +107,7 @@ function renderInlineText(text) {
         const token = match[0];
         if (token.startsWith('`') && token.endsWith('`')) {
             parts.push(
-                <code key={match.index} className="px-1.5 py-0.5 mx-0.5 rounded bg-purple-500/20 text-purple-200 font-mono text-xs border border-purple-500/30 font-semibold inline-block">
+                <code key={match.index} className="px-1.5 py-0.5 mx-0.5 rounded bg-blue-500/20 text-blue-200 font-mono text-xs border border-blue-500/30 font-semibold inline-block">
                     {token.slice(1, -1)}
                 </code>
             );
@@ -989,7 +989,7 @@ export default function ProjectWorkspace() {
                                     {item.count !== undefined && item.count !== null && (
                                         <span className={`absolute -bottom-0.5 -right-0.5 text-[8px] font-mono px-1 rounded-full border ${
                                             item.count === "!" 
-                                                ? "bg-purple-600 text-white border-purple-400 font-extrabold animate-pulse shadow-[0_0_8px_#c084fc]" 
+                                                ? "bg-blue-600 text-white border-blue-400 font-extrabold animate-pulse shadow-[0_0_8px_rgba(37,99,235,0.6)]" 
                                                 : "bg-blue-500/30 text-cyan-200 border-blue-500/40"
                                         }`}>
                                             {item.count}
@@ -1049,14 +1049,14 @@ export default function ProjectWorkspace() {
                                 {specTab === "explorer" && <FolderTree size={13} className="text-cyan-400" />}
                                 {specTab === "roadmap" && <Milestone size={13} className="text-cyan-400" />}
                                 {specTab === "spec" && <BookOpen size={13} className="text-cyan-400" />}
-                                {(specTab === "copilot" || specTab === "hints") && <Bot size={13} className="text-purple-400" />}
+                                {(specTab === "copilot" || specTab === "hints") && <Bot size={13} className="text-blue-400" />}
                                 {specTab === "prereq" && <CheckCircle2 size={13} className="text-cyan-400" />}
                                 {specTab === "prd" && <Layers size={13} className="text-cyan-400" />}
                                 <span>
                                     {specTab === "explorer" && "Project Files"}
                                     {specTab === "roadmap" && "Milestone Roadmap"}
                                     {specTab === "spec" && "Milestone Spec"}
-                                    {(specTab === "copilot" || specTab === "hints") && "Forge AI Copilot"}
+                                    {(specTab === "copilot" || specTab === "hints") && "Forge Copilot"}
                                     {specTab === "prereq" && "Prerequisites"}
                                     {specTab === "prd" && "Architecture PRD"}
                                 </span>
@@ -1488,17 +1488,17 @@ export default function ProjectWorkspace() {
                                 <div className="p-4 space-y-4 animate-in fade-in duration-200">
                                     
                                     {/* Mentor Header Card */}
-                                    <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-950/40 via-[#0E0F1E] to-[#070A11] border border-purple-500/30 space-y-2.5 relative overflow-hidden shadow-lg">
+                                    <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-950/40 via-[#0C1220] to-[#070A11] border border-blue-500/30 space-y-2.5 relative overflow-hidden shadow-lg">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2.5">
-                                                <div className="w-8 h-8 rounded-lg bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-300">
+                                                <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-300">
                                                     <Bot size={18} />
                                                 </div>
                                                 <div>
                                                     <div className="text-sm font-bold text-white flex items-center gap-2">
                                                         <span>Forge Copilot</span>
-                                                        <span className="text-[10px] uppercase px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 font-mono font-bold tracking-wide">
-                                                            Staff AI
+                                                        <span className="text-[10px] uppercase px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/40 font-mono font-bold tracking-wide">
+                                                            Project Copilot
                                                         </span>
                                                     </div>
                                                     <div className="text-xs text-slate-300 font-mono">
@@ -1508,8 +1508,8 @@ export default function ProjectWorkspace() {
                                             </div>
 
                                             <div className="flex items-center gap-1.5">
-                                                <span className="w-2.5 h-2.5 rounded-full bg-purple-400 animate-pulse" />
-                                                <span className="text-xs font-mono text-purple-200 font-medium">
+                                                <span className="w-2.5 h-2.5 rounded-full bg-blue-400 animate-pulse" />
+                                                <span className="text-xs font-mono text-blue-200 font-medium">
                                                     {aiMentorState.modelUsed ? (
                                                         aiMentorState.modelUsed.includes("Qwen") ? "Qwen 2.5 Coder 32B" :
                                                         aiMentorState.modelUsed.includes("Gemini") ? "Gemini 1.5" :
@@ -1520,7 +1520,7 @@ export default function ProjectWorkspace() {
                                             </div>
                                         </div>
 
-                                        <p className="text-xs sm:text-sm text-purple-100/90 leading-relaxed font-normal">
+                                        <p className="text-xs sm:text-sm text-blue-100/90 leading-relaxed font-normal">
                                             Analyzes failing assertions, unblocks architecture, and provides graduated hints without spoiling your solution.
                                         </p>
                                     </div>
@@ -1559,7 +1559,7 @@ export default function ProjectWorkspace() {
                                     <div className="space-y-2">
                                         <div className="text-xs uppercase font-bold tracking-wider text-slate-300 flex items-center justify-between">
                                             <span>Guidance Level</span>
-                                            <span className="text-xs font-mono text-purple-400">Graduated Hinting</span>
+                                            <span className="text-xs font-mono text-blue-400">Graduated Hinting</span>
                                         </div>
                                         <div className="grid grid-cols-3 gap-1.5 bg-[#05070B] p-1.5 rounded-xl border border-white/10 text-xs font-mono">
                                             {[
@@ -1573,7 +1573,7 @@ export default function ProjectWorkspace() {
                                                     onClick={() => handleAskAiMentor({ requestedLevel: tab.lvl })}
                                                     className={`py-2 px-2 rounded-lg text-center transition-all text-xs sm:text-sm font-semibold ${
                                                         aiMentorState.level === tab.lvl
-                                                            ? "bg-purple-600 text-white shadow-md font-bold"
+                                                            ? "bg-blue-600 text-white shadow-md font-bold"
                                                             : "text-slate-300 hover:text-white hover:bg-white/5"
                                                     }`}
                                                     title={tab.title}
@@ -1587,8 +1587,8 @@ export default function ProjectWorkspace() {
                                     {/* Diagnosis & Hint Box */}
                                     <div className="p-4 rounded-2xl bg-[#05070B] border border-white/10 space-y-4">
                                         {aiMentorState.isLoading ? (
-                                            <div className="py-8 flex flex-col items-center justify-center gap-3 text-purple-300">
-                                                <RefreshCw size={24} className="animate-spin text-purple-400" />
+                                            <div className="py-8 flex flex-col items-center justify-center gap-3 text-blue-300">
+                                                <RefreshCw size={24} className="animate-spin text-blue-400" />
                                                 <span className="text-sm font-mono font-medium">Consulting Forge Copilot...</span>
                                             </div>
                                         ) : aiMentorState.hint || aiMentorState.diagnosis ? (
@@ -1596,7 +1596,7 @@ export default function ProjectWorkspace() {
                                                 {/* Diagnosis summary */}
                                                 {aiMentorState.diagnosis && (
                                                     <div className="space-y-2 border-b border-white/10 pb-3">
-                                                        <div className="text-xs font-mono uppercase text-purple-300 font-bold flex items-center gap-1.5 tracking-wide">
+                                                        <div className="text-xs font-mono uppercase text-blue-300 font-bold flex items-center gap-1.5 tracking-wide">
                                                             <Sparkles size={13} />
                                                             <span>Diagnosis</span>
                                                         </div>
@@ -1623,7 +1623,7 @@ export default function ProjectWorkspace() {
                                                                 </button>
                                                             )}
                                                         </div>
-                                                        <div className="p-3.5 rounded-xl bg-purple-500/15 border border-purple-500/30 text-slate-100 shadow-sm">
+                                                        <div className="p-3.5 rounded-xl bg-blue-500/15 border border-blue-500/30 text-slate-100 shadow-sm">
                                                             <FormattedAiContent content={aiMentorState.hint} />
                                                         </div>
                                                     </div>
@@ -1654,14 +1654,14 @@ export default function ProjectWorkspace() {
                                             </div>
                                         ) : (
                                             <div className="py-6 text-center space-y-3">
-                                                <Bot size={32} className="mx-auto text-purple-400/80" />
+                                                <Bot size={32} className="mx-auto text-blue-400/80" />
                                                 <p className="text-sm text-slate-200 font-medium">
                                                     No active errors detected yet. Run tests or choose a quick prompt below to analyze your code.
                                                 </p>
                                                 <button
                                                     type="button"
                                                     onClick={() => handleAskAiMentor({ prompt: "Review my code architecture for this milestone" })}
-                                                    className="px-4 py-2 rounded-xl bg-purple-600/30 hover:bg-purple-600/40 border border-purple-500/40 text-purple-200 font-mono text-xs sm:text-sm font-bold transition-all shadow-sm"
+                                                    className="px-4 py-2 rounded-xl bg-blue-600/30 hover:bg-blue-600/40 border border-blue-500/40 text-blue-200 font-mono text-xs sm:text-sm font-bold transition-all shadow-sm"
                                                 >
                                                     ✨ Ask Copilot to Review Code
                                                 </button>
@@ -1685,7 +1685,7 @@ export default function ProjectWorkspace() {
                                                     key={idx}
                                                     type="button"
                                                     onClick={() => handleAskAiMentor({ prompt: q })}
-                                                    className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-purple-600/20 border border-white/10 hover:border-purple-500/30 text-xs sm:text-sm text-slate-200 hover:text-purple-100 transition-all text-left font-medium"
+                                                    className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-blue-600/20 border border-white/10 hover:border-blue-500/30 text-xs sm:text-sm text-slate-200 hover:text-blue-100 transition-all text-left font-medium"
                                                 >
                                                     {q}
                                                 </button>
@@ -1709,12 +1709,12 @@ export default function ProjectWorkspace() {
                                             value={aiMentorInput}
                                             onChange={(e) => setAiMentorInput(e.target.value)}
                                             placeholder="Ask Forge Copilot a question..."
-                                            className="flex-grow px-3.5 py-2.5 rounded-xl bg-[#05070B] border border-white/10 text-white placeholder-slate-400 text-sm focus:outline-none focus:border-purple-500/50 transition-colors shadow-inner"
+                                            className="flex-grow px-3.5 py-2.5 rounded-xl bg-[#05070B] border border-white/10 text-white placeholder-slate-400 text-sm focus:outline-none focus:border-blue-500/50 transition-colors shadow-inner"
                                         />
                                         <button
                                             type="submit"
                                             disabled={aiMentorState.isLoading || !aiMentorInput.trim()}
-                                            className="p-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-40 text-white transition-all shrink-0 active:scale-95 shadow-md"
+                                            className="p-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white transition-all shrink-0 active:scale-95 shadow-md"
                                             title="Send query to Forge Copilot"
                                         >
                                             <Send size={16} />
@@ -1920,10 +1920,10 @@ export default function ProjectWorkspace() {
                                                                                 line: lineNum,
                                                                                 requestedLevel: 1
                                                                             })}
-                                                                            className="px-2.5 py-0.5 rounded-md bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 border border-purple-500/30 text-xs font-mono flex items-center gap-1.5 transition-all shadow-sm active:scale-95 font-semibold"
+                                                                            className="px-2.5 py-0.5 rounded-md bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 border border-blue-500/30 text-xs font-mono flex items-center gap-1.5 transition-all shadow-sm active:scale-95 font-semibold"
                                                                             title="Get AI diagnosis & graduated hints for this test"
                                                                         >
-                                                                            <Sparkles size={12} className="text-purple-300 animate-pulse" />
+                                                                            <Sparkles size={12} className="text-blue-300 animate-pulse" />
                                                                             <span>Explain & Get Hint</span>
                                                                         </button>
                                                                     )}
@@ -1957,9 +1957,9 @@ export default function ProjectWorkspace() {
                                                                 error: testResults.steps?.find(s => !s.passed)?.output || "Tests failed",
                                                                 requestedLevel: 1
                                                             })}
-                                                            className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-600/30 to-indigo-600/30 hover:from-purple-600/50 hover:to-indigo-600/50 border border-purple-500/40 text-purple-200 text-xs sm:text-sm font-mono font-bold transition-all flex items-center gap-2 shadow-sm active:scale-95"
+                                                            className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-600/30 to-blue-700/30 hover:from-blue-600/50 hover:to-blue-700/50 border border-blue-500/40 text-blue-200 text-xs sm:text-sm font-mono font-bold transition-all flex items-center gap-2 shadow-sm active:scale-95"
                                                         >
-                                                            <Bot size={15} className="text-purple-300 animate-pulse" />
+                                                            <Bot size={15} className="text-blue-300 animate-pulse" />
                                                             <span>Forge Copilot: Diagnose All Failures</span>
                                                         </button>
                                                         <button

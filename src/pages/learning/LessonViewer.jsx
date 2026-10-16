@@ -3,11 +3,13 @@ import api from "../../api";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import NavBar from "../../components/NavBar";
-import { ChevronLeft, PlayCircle, FileText, CheckCircle, Circle, Loader2, Play, Pause, Volume2, VolumeX, Maximize, RotateCcw, RotateCw, PanelRightClose, PanelRightOpen, Award } from "lucide-react";
+import { ChevronLeft, PlayCircle, FileText, CheckCircle, Circle, Loader2, Play, Pause, Volume2, VolumeX, Maximize, RotateCcw, RotateCw, PanelRightClose, PanelRightOpen, Award, Sparkles } from "lucide-react";
+import { useForgeCopilot } from "../../context/ForgeCopilotContext";
 
 function LessonViewer() {
     const { lessonId } = useParams();
     const navigate = useNavigate();
+    const { setLessonContext, setIsOpen, sendMessage } = useForgeCopilot();
 
     const [searchParams] = useSearchParams();
     const urlCourseId = searchParams.get("courseId");
@@ -21,6 +23,13 @@ function LessonViewer() {
 
     const [loading, setIsLoading] = useState(true);
     const [isToggling, setIsToggling] = useState(null);
+
+    // Clean up Copilot context on unmount
+    useEffect(() => {
+        return () => {
+            setLessonContext(null);
+        };
+    }, [setLessonContext]);
 
     // Custom Video Player State
     const videoRef = useRef(null);
@@ -223,6 +232,24 @@ function LessonViewer() {
                     if (currentModule) {
                         setExpandedModuleId(currentModule._id);
                     }
+
+                    // Feed active lesson context into Forge Copilot (Mode B: Learning Assistant)
+                    setLessonContext({
+                        id: lessonId,
+                        title: lessonData.title,
+                        description: lessonData.description,
+                        content: lessonData.content,
+                        moduleTitle: currentModule?.title || "Module",
+                        courseTitle: fullCourseRes.data?.course?.title || "SkillForge Course",
+                        progress: progressRes.data?.progress || 0
+                    });
+                } else {
+                    setLessonContext({
+                        id: lessonId,
+                        title: lessonData.title,
+                        description: lessonData.description,
+                        content: lessonData.content
+                    });
                 }
             } catch (err) {
                 console.error("Screen initialization sequence error:", err);
@@ -483,22 +510,37 @@ function LessonViewer() {
                                 </p>
                             </div>
 
-                            <button
-                                onClick={() => handleToggleComplete(lessonId)}
-                                disabled={isToggling === lessonId}
-                                className={`px-6 py-2.5 rounded-lg font-bold transition-all shadow-sm text-sm border flex items-center gap-2 shrink-0 ${isCurrentLessonDone
-                                    ? "bg-green-500/10 border-green-500/20 text-green-400 hover:bg-green-500/20"
-                                    : "bg-brand-text text-brand-bg hover:bg-brand-text/90 border-transparent"
-                                    }`}
-                            >
-                                {isToggling === lessonId ? (
-                                    <Loader2 size={16} className="animate-spin" />
-                                ) : isCurrentLessonDone ? (
-                                    <><CheckCircle size={16} /> Completed</>
-                                ) : (
-                                    "Mark as Completed"
-                                )}
-                            </button>
+                            <div className="flex items-center gap-3 shrink-0 flex-wrap">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsOpen(true);
+                                        sendMessage(`Can you explain the key concepts and intuition behind the lesson "${lesson.title}"?`);
+                                    }}
+                                    className="px-4 py-2.5 rounded-lg bg-brand-primary/10 hover:bg-brand-primary/20 text-brand-primary border border-brand-primary/30 text-sm font-semibold flex items-center gap-2 transition-all shadow-sm active:scale-95"
+                                    title="Ask Forge Copilot about this lesson"
+                                >
+                                    <Sparkles size={16} />
+                                    <span>Ask Copilot</span>
+                                </button>
+
+                                <button
+                                    onClick={() => handleToggleComplete(lessonId)}
+                                    disabled={isToggling === lessonId}
+                                    className={`px-6 py-2.5 rounded-lg font-bold transition-all shadow-sm text-sm border flex items-center gap-2 shrink-0 ${isCurrentLessonDone
+                                        ? "bg-green-500/10 border-green-500/20 text-green-400 hover:bg-green-500/20"
+                                        : "bg-brand-text text-brand-bg hover:bg-brand-text/90 border-transparent"
+                                        }`}
+                                >
+                                    {isToggling === lessonId ? (
+                                        <Loader2 size={16} className="animate-spin" />
+                                    ) : isCurrentLessonDone ? (
+                                        <><CheckCircle size={16} /> Completed</>
+                                    ) : (
+                                        "Mark as Completed"
+                                    )}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

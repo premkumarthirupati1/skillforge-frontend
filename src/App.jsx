@@ -42,10 +42,16 @@ import PaymentSuccess from "./pages/common/PaymentSuccess";
 // Smooth Route Transition with Animated Logo Layer
 import RouteTransitionLayout from "./components/RouteTransitionLayout";
 
+// Forge Copilot Native AI Assistant Suite
+import { ForgeCopilotProvider } from "./context/ForgeCopilotContext";
+import ForgeCopilotLauncher from "./components/copilot/ForgeCopilotLauncher";
+import ForgeCopilotPanel from "./components/copilot/ForgeCopilotPanel";
+
 function App() {
   return (
     <BrowserRouter>
-      <Toaster 
+      <ForgeCopilotProvider>
+        <Toaster 
         position="bottom-right" 
         toastOptions={{ 
             style: { 
@@ -181,6 +187,9 @@ function App() {
         } />
       </Routes>
       </RouteTransitionLayout>
+      <ForgeCopilotLauncher />
+      <ForgeCopilotPanel />
+      </ForgeCopilotProvider>
     </BrowserRouter>
   );
 }
