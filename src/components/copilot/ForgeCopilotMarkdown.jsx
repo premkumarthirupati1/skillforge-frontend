@@ -223,7 +223,7 @@ export default function ForgeCopilotMarkdown({ content, onLinkClick }) {
                                 return (
                                     <code
                                         key={j}
-                                        className="px-1.5 py-0.5 rounded bg-white/10 font-mono text-[12px] text-cyan-300 border border-white/5"
+                                        className="px-1.5 py-0.5 rounded bg-white/10 font-mono text-[12px] text-cyan-300 border border-white/5 break-all break-words [overflow-wrap:anywhere] inline max-w-full"
                                     >
                                         {sub}
                                     </code>

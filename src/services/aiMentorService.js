@@ -21,7 +21,8 @@ export async function fetchAiMentorAdvice({
     userCode = "",
     testResults = null,
     userQuery = "",
-    hintLevel = 1
+    hintLevel = 1,
+    isAgent = false
 }) {
     try {
         const payload = {
@@ -38,7 +39,8 @@ export async function fetchAiMentorAdvice({
             userCode,
             testResults,
             userQuery,
-            hintLevel
+            hintLevel,
+            isAgent
         };
 
         const res = await api.post("/api/runner/ai-assist", payload);
@@ -58,7 +60,8 @@ export async function fetchAiMentorAdvice({
             userCode,
             testResults,
             userQuery,
-            hintLevel
+            hintLevel,
+            isAgent
         });
     }
 }
@@ -76,7 +79,8 @@ function getClientSideHeuristicFallback({
     userCode = "",
     testResults,
     userQuery = "",
-    hintLevel = 1
+    hintLevel = 1,
+    isAgent = false
 }) {
     const code = userCode.trim();
     const failedStep = testResults?.steps?.find(s => !s.passed);
@@ -128,6 +132,37 @@ function getClientSideHeuristicFallback({
             modelUsed: "Forge Client Heuristics (Offline)",
             isLiveAI: false
         };
+    }
+
+    // Query intent: why did test fail?
+    if (query.includes("why") && (query.includes("fail") || query.includes("test") || query.includes("error"))) {
+        if (failedStep) {
+            return {
+                diagnosis: `Assertion Failed in '${testName}': ${testOutput}`,
+                level: isAgent ? 3 : hintLevel,
+                targetLine: detectedLine,
+                hint: isAgent || hintLevel === 3
+                    ? `Review assertion '${testName}' in the test drawer. Ensure your implementation exports the required signatures and handles edge cases.`
+                    : hintLevel === 2
+                    ? `Check assertion '${testName}'. The runner received an unexpected response: ${testOutput}. Inspect line ${detectedLine || 'in your active file'}.`
+                    : (milestoneObjective || `The test harness expects milestone requirements to be met. Check test output in the runner.`),
+                codePattern: isAgent || hintLevel === 3 ? "// Implement required return data structure\n" : "",
+                quickPrompts: ["Give me a subtle hint", "Check my code for edge cases", "Explain milestone architecture"],
+                modelUsed: isAgent ? "Forge Client Heuristics (Agent Mode)" : "Forge Client Heuristics (Offline)",
+                isLiveAI: false
+            };
+        } else {
+            return {
+                diagnosis: `No Failing Test Detected in Workspace Runner`,
+                level: hintLevel,
+                targetLine: null,
+                hint: `There are currently no failing test results in your runner for Milestone ${milestoneIndex + 1} (${milestoneTitle}).\n\nTo diagnose a test failure:\n1. Click the **Run Tests** button in the bottom drawer to execute the automated verification suite.\n2. If a specific assertion fails, Copilot will automatically analyze the failure trace, pinpoint the problematic line, and explain why it failed.\n\nIf you have a question about implementing this milestone, ask me how to structure the logic or request an architecture blueprint!`,
+                codePattern: "",
+                quickPrompts: ["What edge cases exist?", "Explain milestone architecture", "Show code pattern"],
+                modelUsed: "Forge Client Heuristics (Offline)",
+                isLiveAI: false
+            };
+        }
     }
 
     // Query intent: edge cases

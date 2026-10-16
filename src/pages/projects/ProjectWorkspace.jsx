@@ -547,7 +547,8 @@ export default function ProjectWorkspace() {
 
         setIsCopilotOpen(true);
 
-        const targetLevel = requestedLevel !== null ? requestedLevel : (aiMentorState.level || 1);
+        const isAgent = Boolean(aiMentorState.isAgentMode);
+        const targetLevel = requestedLevel !== null ? requestedLevel : (isAgent ? 3 : (prompt ? 2 : (aiMentorState.level || 1)));
         const failingStep = testResults?.status === "failed" ? testResults?.steps?.find(s => !s.passed) : null;
         const failingName = testCase || (testCase === null && prompt ? null : (failingStep?.name || null));
         const failingErr = error || (failingName ? (failingStep?.output || testResults?.error || "") : "");
@@ -579,7 +580,8 @@ export default function ProjectWorkspace() {
                 userCode: activeCode,
                 testResults: testResults || (failingErr ? { steps: [{ name: failingName || "Assertion", passed: false, output: failingErr }] } : null),
                 userQuery: prompt || (failingName ? `Why is test '${failingName}' failing: ${failingErr}` : `Review code and guide me for ${milestoneGuide.title}`),
-                hintLevel: targetLevel
+                hintLevel: targetLevel,
+                isAgent
             });
 
             let cleanDiagnosis = advice.diagnosis || "";
@@ -591,14 +593,23 @@ export default function ProjectWorkspace() {
             setAiMentorState(prev => ({
                 ...prev,
                 isLoading: false,
-                diagnosis: cleanDiagnosis,
-                hint: cleanHint,
+                diagnosis: prompt ? prev.diagnosis : cleanDiagnosis,
+                hint: prompt ? prev.hint : cleanHint,
                 level: advice.level || targetLevel,
                 targetLine: cleanLine,
-                codePattern: cleanPattern,
+                codePattern: prompt ? prev.codePattern : cleanPattern,
                 quickPrompts: cleanPrompts.length > 0 ? cleanPrompts : prev.quickPrompts,
                 modelUsed: advice.modelUsed,
-                history: prompt ? [...prev.history, { query: prompt, reply: cleanHint }] : prev.history
+                history: prompt 
+                    ? [...prev.history, { 
+                        query: prompt, 
+                        reply: cleanHint, 
+                        diagnosis: cleanDiagnosis, 
+                        codePattern: cleanPattern, 
+                        targetLine: cleanLine,
+                        isAgent 
+                      }] 
+                    : prev.history
             }));
 
             if (cleanLine && cleanLine > 0) {
@@ -1715,108 +1726,173 @@ export default function ProjectWorkspace() {
                                 </div>
                             </div>
 
-                            {/* Diagnosis & Hint Box or LeetCode Empty State */}
-                            <div className="p-3 rounded-lg bg-[#1f1f1f] border border-[#333333] space-y-2.5">
-                                {aiMentorState.isLoading ? (
-                                    <div className="py-6 flex flex-col items-center justify-center gap-2 text-[#8c8c8c]">
-                                        <RefreshCw size={18} className="animate-spin text-[#388bfd]" />
-                                        <span className="text-xs font-mono">Analyzing code architecture...</span>
-                                    </div>
-                                ) : aiMentorState.hint || aiMentorState.diagnosis ? (
-                                    <div className="space-y-2.5">
-                                        {aiMentorState.diagnosis && (
-                                            <div className="space-y-1 border-b border-[#2e2e2e] pb-2">
-                                                <div className="text-[10px] font-mono uppercase text-[#388bfd] font-semibold flex items-center gap-1">
-                                                    <Sparkles size={11} />
-                                                    <span>Diagnosis</span>
+                            {/* Milestone Diagnostic & Hint Box (When active or initial empty state) */}
+                            {(aiMentorState.isLoading || aiMentorState.hint || aiMentorState.diagnosis || (!aiMentorState.history || aiMentorState.history.length === 0)) && (
+                                <div className="p-3 rounded-lg bg-[#1f1f1f] border border-[#333333] space-y-2.5">
+                                    {aiMentorState.isLoading ? (
+                                        <div className="py-6 flex flex-col items-center justify-center gap-2 text-[#8c8c8c]">
+                                            <RefreshCw size={18} className="animate-spin text-[#388bfd]" />
+                                            <span className="text-xs font-mono">Analyzing code architecture...</span>
+                                        </div>
+                                    ) : aiMentorState.hint || aiMentorState.diagnosis ? (
+                                        <div className="space-y-2.5">
+                                            {aiMentorState.diagnosis && (
+                                                <div className="space-y-1 border-b border-[#2e2e2e] pb-2">
+                                                    <div className="text-[10px] font-mono uppercase text-[#388bfd] font-semibold flex items-center gap-1">
+                                                        <Sparkles size={11} />
+                                                        <span>Diagnosis</span>
+                                                    </div>
+                                                    <div className="break-words [overflow-wrap:anywhere] max-w-full text-xs">
+                                                        <FormattedAiContent content={aiMentorState.diagnosis} />
+                                                    </div>
                                                 </div>
-                                                <FormattedAiContent content={aiMentorState.diagnosis} />
-                                            </div>
-                                        )}
+                                            )}
 
-                                        {aiMentorState.hint && (
-                                            <div className="space-y-1">
-                                                <div className="text-[10px] font-mono uppercase text-[#eff1f6] font-semibold flex items-center justify-between">
-                                                    <span className="flex items-center gap-1">
-                                                        <Lightbulb size={11} className="text-amber-400" />
-                                                        <span>Level {aiMentorState.level} Hint</span>
-                                                    </span>
-                                                    {aiMentorState.targetLine && (
+                                            {aiMentorState.hint && (
+                                                <div className="space-y-1">
+                                                    <div className="text-[10px] font-mono uppercase text-[#eff1f6] font-semibold flex items-center justify-between">
+                                                        <span className="flex items-center gap-1">
+                                                            <Lightbulb size={11} className="text-amber-400" />
+                                                            <span>Level {aiMentorState.level} Hint</span>
+                                                        </span>
+                                                        {aiMentorState.targetLine && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => jumpToLine(aiMentorState.targetLine)}
+                                                                className="text-xs text-[#388bfd] hover:underline flex items-center gap-1 font-mono font-medium"
+                                                            >
+                                                                <Target size={10} /> Line {aiMentorState.targetLine}
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                    <div className="p-2.5 rounded-md bg-[#262626] border border-[#333333] text-[#cfd3dc] break-words [overflow-wrap:anywhere] max-w-full overflow-hidden">
+                                                        <FormattedAiContent content={aiMentorState.hint} />
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {aiMentorState.codePattern && (
+                                                <div className="space-y-1 pt-1">
+                                                    <div className="flex items-center justify-between text-[10px] font-mono text-[#8c8c8c]">
+                                                        <span>Suggested Code Pattern:</span>
                                                         <button
                                                             type="button"
-                                                            onClick={() => jumpToLine(aiMentorState.targetLine)}
-                                                            className="text-xs text-[#388bfd] hover:underline flex items-center gap-1 font-mono font-medium"
+                                                            onClick={() => {
+                                                                navigator.clipboard.writeText(aiMentorState.codePattern);
+                                                                toast.success("Copied to clipboard");
+                                                            }}
+                                                            className="hover:text-white flex items-center gap-1 px-1.5 py-0.2 rounded bg-[#262626] border border-[#383838] text-[9px]"
                                                         >
-                                                            <Target size={10} /> Line {aiMentorState.targetLine}
+                                                            <Copy size={10} /> Copy
                                                         </button>
-                                                    )}
+                                                    </div>
+                                                    <pre className="p-2.5 rounded-md bg-[#161616] border border-[#2e2e2e] text-[11px] font-mono text-[#cfd3dc] overflow-x-auto leading-relaxed">
+                                                        <code>{aiMentorState.codePattern}</code>
+                                                    </pre>
                                                 </div>
-                                                <div className="p-2.5 rounded-md bg-[#262626] border border-[#333333] text-[#cfd3dc]">
-                                                    <FormattedAiContent content={aiMentorState.hint} />
-                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        /* LeetCode exact empty state 😎 */
+                                        <div className="py-6 text-center space-y-2.5">
+                                            <div className="text-3xl select-none">
+                                                😎
                                             </div>
-                                        )}
+                                            <div className="space-y-1">
+                                                <h5 className="text-xs font-semibold text-[#eff1f6]">
+                                                    Stuck? Copilot guides you through every line.
+                                                </h5>
+                                                <p className="text-[11px] text-[#8c8c8c] max-w-xs mx-auto leading-relaxed">
+                                                    Senior engineering mentor for diagnosing failures, reviewing architecture, and unblocking milestones.
+                                                </p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleAskAiMentor({ prompt: "Review my code architecture for this milestone" })}
+                                                className="px-3 py-1.5 rounded-md bg-[#262626] hover:bg-[#333333] border border-[#383838] text-[#eff1f6] font-mono text-xs font-medium transition-colors inline-flex items-center gap-1.5 shadow-sm"
+                                            >
+                                                <Sparkles size={11} className="text-[#388bfd]" />
+                                                <span>Review Architecture</span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
-                                        {aiMentorState.codePattern && (
-                                            <div className="space-y-1 pt-1">
-                                                <div className="flex items-center justify-between text-[10px] font-mono text-[#8c8c8c]">
-                                                    <span>Suggested Code Pattern:</span>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            navigator.clipboard.writeText(aiMentorState.codePattern);
-                                                            toast.success("Copied to clipboard");
-                                                        }}
-                                                        className="hover:text-white flex items-center gap-1 px-1.5 py-0.2 rounded bg-[#262626] border border-[#383838] text-[9px]"
-                                                    >
-                                                        <Copy size={10} /> Copy
-                                                    </button>
-                                                </div>
-                                                <pre className="p-2.5 rounded-md bg-[#161616] border border-[#2e2e2e] text-[11px] font-mono text-[#cfd3dc] overflow-x-auto leading-relaxed">
-                                                    <code>{aiMentorState.codePattern}</code>
-                                                </pre>
-                                            </div>
-                                        )}
-                                    </div>
-                                ) : (
-                                    /* LeetCode exact empty state 😎 */
-                                    <div className="py-6 text-center space-y-2.5">
-                                        <div className="text-3xl select-none">
-                                            😎
-                                        </div>
-                                        <div className="space-y-1">
-                                            <h5 className="text-xs font-semibold text-[#eff1f6]">
-                                                Stuck? Copilot guides you through every line.
-                                            </h5>
-                                            <p className="text-[11px] text-[#8c8c8c] max-w-xs mx-auto leading-relaxed">
-                                                Senior engineering mentor for diagnosing failures, reviewing architecture, and unblocking milestones.
-                                            </p>
-                                        </div>
+                            {/* Chat Conversation History */}
+                            {aiMentorState.history && aiMentorState.history.length > 0 && (
+                                <div className="space-y-2.5 pt-1 border-t border-[#333333]">
+                                    <div className="flex items-center justify-between text-[10px] font-mono text-[#8c8c8c] uppercase">
+                                        <span>Copilot Discussion</span>
                                         <button
                                             type="button"
-                                            onClick={() => handleAskAiMentor({ prompt: "Review my code architecture for this milestone" })}
-                                            className="px-3 py-1.5 rounded-md bg-[#262626] hover:bg-[#333333] border border-[#383838] text-[#eff1f6] font-mono text-xs font-medium transition-colors inline-flex items-center gap-1.5 shadow-sm"
+                                            onClick={() => setAiMentorState(prev => ({ ...prev, history: [] }))}
+                                            className="text-[9px] hover:text-[#eff1f6] text-[#8c8c8c] underline cursor-pointer"
                                         >
-                                            <Sparkles size={11} className="text-[#388bfd]" />
-                                            <span>Review Architecture</span>
+                                            Clear
                                         </button>
                                     </div>
-                                )}
-                            </div>
-
-                            {/* Chat Conversation History if available */}
-                            {aiMentorState.history && aiMentorState.history.length > 0 && (
-                                <div className="space-y-2 pt-1 border-t border-[#333333]">
-                                    <div className="text-[10px] font-mono text-[#8c8c8c] uppercase">Previous Inquiries</div>
-                                    <div className="space-y-2">
+                                    <div className="space-y-3">
                                         {aiMentorState.history.map((h, hIdx) => (
-                                            <div key={hIdx} className="space-y-1 text-xs">
-                                                <div className="p-2 rounded-md bg-[#262626] text-[#eff1f6] border border-[#383838]">
-                                                    <span className="text-[#8c8c8c] text-[10px] block mb-0.5">You asked:</span>
-                                                    {h.query}
+                                            <div key={hIdx} className="space-y-1.5 text-xs">
+                                                {/* Developer query bubble */}
+                                                <div className="p-2.5 rounded-md bg-[#262626] text-[#eff1f6] border border-[#383838] break-words [overflow-wrap:anywhere] max-w-full">
+                                                    <div className="flex items-center gap-1.5 text-[#8c8c8c] text-[10px] font-mono mb-1">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-[#388bfd]" />
+                                                        <span>You asked:</span>
+                                                    </div>
+                                                    <p className="text-xs text-[#eff1f6] leading-relaxed font-medium">{h.query}</p>
                                                 </div>
-                                                <div className="p-2 rounded-md bg-[#1f1f1f] text-[#cfd3dc] border border-[#333333]">
-                                                    <FormattedAiContent content={h.reply} />
+
+                                                {/* Copilot answer bubble */}
+                                                <div className="p-2.5 rounded-md bg-[#1f1f1f] text-[#cfd3dc] border border-[#333333] space-y-2 break-words [overflow-wrap:anywhere] max-w-full overflow-hidden">
+                                                    {h.diagnosis && (
+                                                        <div className="text-[10px] font-mono text-[#388bfd] font-semibold flex items-center justify-between border-b border-[#2e2e2e] pb-1.5">
+                                                            <span className="flex items-center gap-1">
+                                                                <Sparkles size={11} />
+                                                                <span>{h.diagnosis}</span>
+                                                            </span>
+                                                            {h.isAgent && (
+                                                                <span className="px-1.5 py-0.2 rounded bg-blue-900/40 border border-blue-500/40 text-[9px] text-blue-300">
+                                                                    Agent Audit
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                    <div className="break-words [overflow-wrap:anywhere] max-w-full overflow-hidden">
+                                                        <FormattedAiContent content={h.reply} />
+                                                    </div>
+                                                    {h.codePattern && (
+                                                        <div className="space-y-1 pt-1 border-t border-[#2e2e2e]">
+                                                            <div className="flex items-center justify-between text-[10px] font-mono text-[#8c8c8c]">
+                                                                <span>Suggested Code Pattern:</span>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        navigator.clipboard.writeText(h.codePattern);
+                                                                        toast.success("Copied to clipboard");
+                                                                    }}
+                                                                    className="hover:text-white flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#262626] border border-[#383838] text-[9px]"
+                                                                >
+                                                                    <Copy size={10} /> Copy
+                                                                </button>
+                                                            </div>
+                                                            <pre className="p-2 rounded bg-[#161616] border border-[#2e2e2e] text-[11px] font-mono text-[#cfd3dc] overflow-x-auto leading-relaxed">
+                                                                <code>{h.codePattern}</code>
+                                                            </pre>
+                                                        </div>
+                                                    )}
+                                                    {h.targetLine && (
+                                                        <div className="pt-1">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => jumpToLine(h.targetLine)}
+                                                                className="text-[10px] text-[#388bfd] hover:underline flex items-center gap-1 font-mono font-medium"
+                                                            >
+                                                                <Target size={10} /> Jump to Line {h.targetLine}
+                                                            </button>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         ))}
