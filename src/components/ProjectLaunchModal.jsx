@@ -24,6 +24,7 @@ import {
     RotateCw
 } from "lucide-react";
 import SkillForgeLogo from "./SkillForgeLogo";
+import CodeAnvilLogo from "./CodeAnvilLogo";
 import { getProjectWorkspaceData } from "../data/projectWorkspacesData";
 import toast from "react-hot-toast";
 
@@ -436,55 +437,71 @@ export default function ProjectLaunchModal({ project, isOpen, onClose }) {
                     {activeModalTab === "runtime" && (
                         <div className="space-y-6 animate-in fade-in duration-200">
                             
-                            {/* SkillForge Compiler Runtime Boot Stage */}
-                            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-[#0c1222] via-[#090D16] to-[#05070B] border border-blue-500/30 p-8 flex flex-col items-center justify-center min-h-[280px] shadow-2xl text-center">
+                            {/* SkillForge Compiler Runtime Boot Stage & Animated Logo Morph */}
+                            <div className="relative overflow-hidden rounded-2xl bg-[#0d1017] border border-white/10 p-8 flex flex-col items-center justify-center min-h-[280px] shadow-xl text-center">
                                 
-                                {/* Ambient Radial Energy Glow */}
-                                <div className="absolute inset-0 bg-blue-600/15 blur-[70px] pointer-events-none" />
-                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-cyan-500/10 blur-[50px] rounded-full pointer-events-none" />
+                                {/* Subtle Ambient Lighting (Clean & restrained) */}
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-36 bg-blue-600/10 blur-[60px] rounded-full pointer-events-none" />
 
-                                {/* Particle Ring Shockwaves */}
-                                {bootPhase < 4 && (
-                                    <motion.div
-                                        initial={{ scale: 0.8, opacity: 0.9 }}
-                                        animate={{ scale: 2.4, opacity: 0 }}
-                                        transition={{ duration: 1.6, repeat: Infinity, ease: "easeOut" }}
-                                        className="absolute w-44 h-44 rounded-full border-2 border-cyan-400/40 pointer-events-none"
-                                    />
-                                )}
-
-                                {/* SkillForge Compiler Brand Showcase */}
+                                {/* Dual-Logo Transformation Showcase */}
                                 <div className="relative z-10 flex flex-col items-center justify-center gap-4">
                                     
-                                    {/* Glowing Pedestal with Official SkillForge Logo */}
-                                    <motion.div
-                                        animate={bootPhase < 4 ? { scale: [1, 1.04, 1] } : { scale: 1 }}
-                                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                                        className="relative p-4 sm:p-5 rounded-2xl bg-[#070A11]/90 border border-blue-500/40 shadow-[0_0_35px_rgba(37,99,235,0.35)] flex items-center justify-center backdrop-blur-md"
-                                    >
-                                        <div className={`absolute inset-0 rounded-2xl transition-opacity duration-500 ${
-                                            bootPhase === 4 ? "bg-emerald-500/10" : "bg-blue-500/20 blur-xl animate-pulse"
-                                        }`} />
-                                        
-                                        {/* Official SkillForge Logo (Transparent PNG) */}
-                                        <img 
-                                            src="/images/skillforge-logo.png" 
-                                            alt="SkillForge" 
-                                            className="h-12 sm:h-16 w-auto object-contain relative z-10 drop-shadow-[0_0_18px_rgba(56,189,248,0.7)]" 
-                                        />
-                                    </motion.div>
+                                    {/* Logo Morphing Stage: SkillForge SF -> The Code Anvil */}
+                                    <div className="relative h-24 flex items-center justify-center">
+                                        <AnimatePresence mode="wait">
+                                            {bootPhase === 1 ? (
+                                                /* STEP 1: SkillForge SF Brandmark */
+                                                <motion.div
+                                                    key="sf-logo"
+                                                    initial={{ opacity: 0, scale: 0.9, filter: "blur(4px)" }}
+                                                    animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                                                    exit={{ opacity: 0, scale: 0.85, filter: "blur(6px)" }}
+                                                    transition={{ duration: 0.4, ease: "easeInOut" }}
+                                                    className="p-3.5 rounded-2xl bg-[#090b10] border border-white/10 shadow-lg flex items-center justify-center"
+                                                >
+                                                    <img 
+                                                        src="/images/skillforge-logo.png" 
+                                                        alt="SkillForge" 
+                                                        className="h-12 w-auto object-contain" 
+                                                    />
+                                                </motion.div>
+                                            ) : (
+                                                /* STEP 2, 3, 4: Transformed to The Code Anvil */
+                                                <motion.div
+                                                    key="anvil-logo"
+                                                    initial={{ opacity: 0, scale: 0.85, filter: "blur(8px)" }}
+                                                    animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                                                    exit={{ opacity: 0, scale: 1.05, filter: "blur(4px)" }}
+                                                    transition={{ duration: 0.5, type: "spring", stiffness: 140, damping: 18 }}
+                                                    className="p-3.5 rounded-2xl bg-[#090b10] border border-blue-500/30 shadow-[0_0_25px_rgba(37,99,235,0.25)] flex items-center justify-center"
+                                                >
+                                                    <CodeAnvilLogo 
+                                                        size="xl" 
+                                                        pulsing={bootPhase < 4} 
+                                                    />
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
 
                                     {/* Live Compiler Status Badge */}
-                                    <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-mono font-bold uppercase tracking-widest transition-all ${
+                                    <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-mono font-medium tracking-wide transition-all ${
                                         bootPhase === 4 
-                                            ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.25)]" 
-                                            : "bg-blue-500/20 border-cyan-500/40 text-cyan-300 shadow-[0_0_15px_rgba(56,189,248,0.25)]"
+                                            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300" 
+                                            : bootPhase === 1
+                                            ? "bg-blue-500/10 border-blue-500/20 text-blue-300"
+                                            : "bg-blue-500/15 border-blue-500/30 text-blue-300"
                                     }`}>
                                         <span className={`w-2 h-2 rounded-full ${
-                                            bootPhase === 4 ? "bg-emerald-400" : "bg-cyan-400 animate-ping"
+                                            bootPhase === 4 
+                                                ? "bg-emerald-400" 
+                                                : "bg-blue-400 animate-ping"
                                         }`} />
                                         <span>
-                                            {bootPhase === 4 ? "SkillForge Compiler Ready" : "SkillForge Compiler Booting..."}
+                                            {bootPhase === 1 && "Connecting to SkillForge Network..."}
+                                            {bootPhase === 2 && "Morphing into Sandbox MicroVM..."}
+                                            {bootPhase === 3 && "Code Anvil Compiler Booting..."}
+                                            {bootPhase === 4 && "Code Anvil Compiler Ready"}
                                         </span>
                                     </div>
 
@@ -493,7 +510,7 @@ export default function ProjectLaunchModal({ project, isOpen, onClose }) {
                                         <button
                                             type="button"
                                             onClick={startBootSequence}
-                                            className="inline-flex items-center gap-1.5 text-[11px] font-mono text-slate-400 hover:text-cyan-300 transition-colors pt-0.5"
+                                            className="inline-flex items-center gap-1.5 text-[11px] font-mono text-slate-400 hover:text-white transition-colors pt-0.5"
                                             title="Re-run compiler bootup sequence"
                                         >
                                             <RotateCw size={11} /> Re-run Boot Check
@@ -502,11 +519,11 @@ export default function ProjectLaunchModal({ project, isOpen, onClose }) {
                                 </div>
 
                                 {/* Status Label Below Logo */}
-                                <p className="relative z-10 text-xs text-slate-300 max-w-md mt-4 font-medium leading-relaxed">
-                                    {bootPhase < 4 
-                                        ? "Allocating isolated microVM sandbox. Mounting AST analyzer, language compiler, and automated test specifications."
-                                        : "SkillForge runtime synchronized. All automated test suites and architectural specifications ready."
-                                    }
+                                <p className="relative z-10 text-xs text-slate-400 max-w-md mt-3 font-normal leading-relaxed">
+                                    {bootPhase === 1 && "Authenticating session and establishing secure websocket to SkillForge cloud network."}
+                                    {bootPhase === 2 && "Transforming workspace to isolated Code Anvil sandbox microVM with hot-reload compiler."}
+                                    {bootPhase === 3 && "Mounting AST language runtime, milestone harnesses, and assertions."}
+                                    {bootPhase === 4 && "Code Anvil compiler runtime initialized. All milestone test harnesses loaded."}
                                 </p>
                             </div>
 

@@ -30,9 +30,9 @@ export default function ForgeCopilotCard({ course, onNavigate }) {
         : "/images/skillforge-icon.png";
 
     return (
-        <div className="group relative my-2.5 rounded-xl border border-white/10 bg-[#0C101A] hover:border-brand-primary/40 transition-all p-3 shadow-md flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+        <div className="group relative my-2.5 rounded-xl border border-neutral-800 bg-[#161619] hover:border-neutral-700 transition-all p-3 shadow-sm flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
             <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-lg overflow-hidden bg-black/40 border border-white/5 shrink-0 flex items-center justify-center">
+                <div className="w-14 h-14 rounded-lg overflow-hidden bg-neutral-900 border border-neutral-800 shrink-0 flex items-center justify-center">
                     <img 
                         src={thumbnailSrc} 
                         alt={course.title} 
@@ -58,11 +58,11 @@ export default function ForgeCopilotCard({ course, onNavigate }) {
                             </span>
                         )}
                     </div>
-                    <h4 className="text-xs sm:text-sm font-semibold text-white group-hover:text-brand-primary transition-colors line-clamp-1">
+                    <h4 className="text-xs sm:text-sm font-semibold text-white group-hover:text-blue-400 transition-colors line-clamp-1">
                         {course.title}
                     </h4>
                     {course.tags && course.tags.length > 0 && (
-                        <p className="text-[11px] text-brand-muted line-clamp-1 mt-0.5">
+                        <p className="text-[11px] text-neutral-400 line-clamp-1 mt-0.5">
                             {course.tags.slice(0, 3).join(" • ")}
                         </p>
                     )}
@@ -72,7 +72,7 @@ export default function ForgeCopilotCard({ course, onNavigate }) {
             <button
                 type="button"
                 onClick={handleClick}
-                className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-primary/20 hover:bg-brand-primary text-brand-primary hover:text-white border border-brand-primary/30 text-xs font-semibold transition-all"
+                className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white border border-neutral-700/60 text-xs font-semibold transition-all"
             >
                 <span>View Course</span>
                 <ArrowRight size={13} />

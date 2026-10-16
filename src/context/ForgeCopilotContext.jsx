@@ -75,8 +75,10 @@ export function ForgeCopilotProvider({ children }) {
         setMessages([getInitialMessage(activeMode)]);
     }, [activeMode]);
 
-    const sendMessage = useCallback(async (text) => {
+    const sendMessage = useCallback(async (text, options = {}) => {
         if (!text || !text.trim() || isLoading) return;
+
+        const isAgent = Boolean(options?.isAgent);
 
         const userMsg = {
             id: `user-${Date.now()}`,
@@ -103,7 +105,8 @@ export function ForgeCopilotProvider({ children }) {
                     role: m.role,
                     content: m.content
                 })),
-                context: contextPayload
+                context: contextPayload,
+                isAgent
             };
 
             const response = await api.post("/copilot/chat", payload);

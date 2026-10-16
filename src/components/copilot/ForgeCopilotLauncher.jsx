@@ -25,12 +25,12 @@ export default function ForgeCopilotLauncher() {
                         animate={{ opacity: 1, x: 0, scale: 1 }}
                         exit={{ opacity: 0, x: 10, scale: 0.95 }}
                         transition={{ duration: 0.15 }}
-                        className="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#090D16] border border-white/10 text-white shadow-xl text-xs font-medium pointer-events-none"
+                        className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#18181b] border border-neutral-700/80 text-white shadow-xl text-xs font-medium pointer-events-none"
                     >
-                        <Sparkles size={13} className="text-brand-primary" />
+                        <Sparkles size={13} className="text-blue-400" />
                         <span>Ask Forge Copilot</span>
                         {activeMode === "learning" && (
-                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
                                 Lesson Mode
                             </span>
                         )}
@@ -46,18 +46,14 @@ export default function ForgeCopilotLauncher() {
                 onMouseLeave={() => setIsHovered(false)}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className={`relative group flex items-center justify-center w-14 h-14 rounded-2xl shadow-[0_10px_25px_rgba(0,0,0,0.5)] border transition-all duration-300 ${
+                className={`relative group flex items-center justify-center w-12 h-12 rounded-2xl border transition-all duration-200 ${
                     isOpen
-                        ? "bg-[#090D16] border-white/20 text-white"
-                        : "bg-gradient-to-br from-brand-primary via-blue-600 to-blue-700 text-white border-blue-400/30 hover:shadow-[0_0_25px_rgba(37,99,235,0.5)]"
+                        ? "bg-[#18181b] border-neutral-700 text-white shadow-lg"
+                        : "bg-[#18181b] hover:bg-neutral-800 text-blue-400 hover:text-white border-neutral-700/80 shadow-md"
                 }`}
                 aria-label="Ask Forge Copilot"
                 title="Ask Forge Copilot"
             >
-                {/* Glow ring */}
-                {!isOpen && (
-                    <span className="absolute -inset-1 rounded-2xl bg-blue-500/20 blur-md group-hover:bg-blue-500/35 transition-all -z-10" />
-                )}
 
                 <AnimatePresence mode="wait">
                     {isOpen ? (
