@@ -51,36 +51,36 @@ function CodeStudioEditor({
     const internalEditorRef = useRef(null);
 
     const handleBeforeMount = (monaco) => {
-        // Define SkillForge Obsidian Deep Dark Theme for Monaco
+        // Define SkillForge Matte Dark Theme for Monaco
         monaco.editor.defineTheme("skillforge-dark", {
             base: "vs-dark",
             inherit: true,
             rules: [
-                { token: "comment", foreground: "64748B", fontStyle: "italic" },
-                { token: "keyword", foreground: "38BDF8", fontStyle: "bold" },
-                { token: "string", foreground: "34D399" },
-                { token: "number", foreground: "FBBF24" },
-                { token: "type", foreground: "818CF8" },
-                { token: "function", foreground: "60A5FA" },
-                { token: "variable", foreground: "E2E8F0" },
-                { token: "delimiter", foreground: "94A3B8" }
+                { token: "comment", foreground: "6A737D", fontStyle: "italic" },
+                { token: "keyword", foreground: "79C0FF", fontStyle: "bold" },
+                { token: "string", foreground: "7EE787" },
+                { token: "number", foreground: "FFA657" },
+                { token: "type", foreground: "D2A8FF" },
+                { token: "function", foreground: "A5D6FF" },
+                { token: "variable", foreground: "E6EDF3" },
+                { token: "delimiter", foreground: "8B949E" }
             ],
             colors: {
-                "editor.background": "#070A11",
-                "editor.foreground": "#E2E8F0",
-                "editor.lineHighlightBackground": "#0F172A44",
-                "editor.selectionBackground": "#2563EB44",
-                "editor.inactiveSelectionBackground": "#2563EB22",
-                "editorCursor.foreground": "#38BDF8",
-                "editorWhitespace.foreground": "#1E293B",
-                "editorLineNumber.foreground": "#475569",
-                "editorLineNumber.activeForeground": "#38BDF8",
-                "editorIndentGuide.background": "#1E293B",
-                "editorIndentGuide.activeBackground": "#38BDF844",
-                "minimap.background": "#070A11",
-                "scrollbarSlider.background": "#1E293B44",
-                "scrollbarSlider.hoverBackground": "#33415588",
-                "scrollbarSlider.activeBackground": "#38BDF855"
+                "editor.background": "#1e1e1e",
+                "editor.foreground": "#E6EDF3",
+                "editor.lineHighlightBackground": "#26262655",
+                "editor.selectionBackground": "#388bfd33",
+                "editor.inactiveSelectionBackground": "#388bfd1a",
+                "editorCursor.foreground": "#388bfd",
+                "editorWhitespace.foreground": "#2b2b2b",
+                "editorLineNumber.foreground": "#6e7681",
+                "editorLineNumber.activeForeground": "#eff1f6",
+                "editorIndentGuide.background": "#262626",
+                "editorIndentGuide.activeBackground": "#388bfd44",
+                "minimap.background": "#1e1e1e",
+                "scrollbarSlider.background": "#33333344",
+                "scrollbarSlider.hoverBackground": "#44444488",
+                "scrollbarSlider.activeBackground": "#388bfd55"
             }
         });
     };
@@ -141,10 +141,10 @@ function CodeStudioEditor({
     }), [showMinimap]);
 
     return (
-        <div className="flex flex-col h-full bg-[#070A11] border-r border-white/10 select-none overflow-hidden">
+        <div className="flex flex-col h-full bg-[#1e1e1e] select-none overflow-hidden">
             
             {/* Top Editor Tab Bar */}
-            <div className="flex items-center justify-between border-b border-white/10 bg-[#05070B] px-2 h-10 shrink-0 overflow-x-auto">
+            <div className="flex items-center justify-between border-b border-[#333333] bg-[#262626] px-2 h-9 shrink-0 overflow-x-auto">
                 {/* Tabs */}
                 <div className="flex items-center gap-1 overflow-x-auto">
                     {files.map(file => {
@@ -155,10 +155,10 @@ function CodeStudioEditor({
                                 key={file.name}
                                 type="button"
                                 onClick={() => onSelectFile(file.name)}
-                                className={`px-3 py-1.5 rounded-t-lg text-xs font-mono font-bold flex items-center gap-2 border-t-2 transition-all shrink-0 ${
+                                className={`px-3 py-1.5 rounded-t-md text-xs font-mono font-medium flex items-center gap-2 border-t-2 transition-all shrink-0 ${
                                     isActive
-                                        ? "bg-[#070A11] text-white border-blue-500 shadow-sm"
-                                        : "text-slate-400 hover:text-slate-200 hover:bg-white/5 border-transparent"
+                                        ? "bg-[#1e1e1e] text-[#eff1f6] border-[#388bfd] shadow-sm"
+                                        : "text-[#8c8c8c] hover:text-[#eff1f6] hover:bg-white/5 border-transparent"
                                 }`}
                             >
                                 <span className={`text-[10px] ${iconMeta.color}`}>{iconMeta.label}</span>
@@ -172,21 +172,21 @@ function CodeStudioEditor({
                 <div className="flex items-center gap-1 shrink-0 pl-2">
                     <button
                         onClick={() => setShowMinimap(prev => !prev)}
-                        className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-white/5 transition-colors text-xs flex items-center gap-1"
+                        className="p-1 rounded text-[#8c8c8c] hover:text-[#eff1f6] hover:bg-white/5 transition-colors text-xs flex items-center gap-1"
                         title={showMinimap ? "Hide Minimap" : "Show Minimap"}
                     >
-                        {showMinimap ? <Eye size={13} className="text-cyan-400" /> : <EyeOff size={13} />}
+                        {showMinimap ? <Eye size={13} className="text-[#388bfd]" /> : <EyeOff size={13} />}
                     </button>
                     <button
                         onClick={handleCopy}
-                        className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
+                        className="p-1 rounded text-[#8c8c8c] hover:text-[#eff1f6] hover:bg-white/5 transition-colors"
                         title="Copy Code"
                     >
-                        {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                        {copied ? <Check size={13} className="text-[#2cbb5d]" /> : <Copy size={13} />}
                     </button>
                     <button
                         onClick={onResetFile}
-                        className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
+                        className="p-1 rounded text-[#8c8c8c] hover:text-[#eff1f6] hover:bg-white/5 transition-colors"
                         title="Reset File to Starter Code"
                     >
                         <RotateCcw size={13} />
@@ -195,11 +195,11 @@ function CodeStudioEditor({
             </div>
 
             {/* Breadcrumb Path Bar */}
-            <div className="flex items-center gap-1.5 px-4 py-1.5 border-b border-white/5 bg-[#070A11] text-[11px] font-mono text-slate-400 shrink-0">
-                <Code2 size={12} className="text-blue-400" />
-                <span className="text-slate-500">workspace</span>
-                <ChevronRight size={10} className="text-slate-600" />
-                <span className="text-slate-400">{activeFile.path || activeFile.name}</span>
+            <div className="flex items-center gap-1.5 px-3.5 py-1 border-b border-[#2e2e2e] bg-[#1e1e1e] text-[11px] font-mono text-[#8c8c8c] shrink-0">
+                <Code2 size={12} className="text-[#388bfd]" />
+                <span className="text-[#595959]">workspace</span>
+                <ChevronRight size={10} className="text-[#595959]" />
+                <span className="text-[#cfd3dc]">{activeFile.path || activeFile.name}</span>
             </div>
 
             {/* Monaco Editor Container */}

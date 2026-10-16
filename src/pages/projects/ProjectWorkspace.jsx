@@ -43,7 +43,12 @@ import {
     Plus,
     FileCode,
     CheckCheck,
-    Flame
+    Flame,
+    ThumbsUp,
+    ThumbsDown,
+    MessageSquare,
+    Star,
+    Cloud
 } from "lucide-react";
 import { PROJECTS } from "../../data/projectsData";
 import { getProjectWorkspaceData } from "../../data/projectWorkspacesData";
@@ -64,11 +69,11 @@ function FormattedAiContent({ content, className = "" }) {
     const paragraphs = String(content).split(/\n{2,}/);
 
     return (
-        <div className={`space-y-2.5 text-xs sm:text-sm leading-relaxed ${className}`}>
+        <div className={`space-y-2 text-xs leading-relaxed ${className}`}>
             {paragraphs.map((p, pIdx) => {
                 const lines = p.split('\n');
                 return (
-                    <div key={pIdx} className="space-y-1.5">
+                    <div key={pIdx} className="space-y-1">
                         {lines.map((line, lIdx) => {
                             const trimmed = line.trim();
                             const listMatch = trimmed.match(/^(\d+\.|\-|\*)\s+(.*)$/);
@@ -76,14 +81,14 @@ function FormattedAiContent({ content, className = "" }) {
                                 const bullet = listMatch[1];
                                 const rest = listMatch[2];
                                 return (
-                                    <div key={lIdx} className="flex items-start gap-2 pl-1">
-                                        <span className="font-mono text-xs text-blue-400 font-bold shrink-0 mt-0.5">{bullet}</span>
-                                        <span className="flex-grow text-slate-200">{renderInlineText(rest)}</span>
+                                    <div key={lIdx} className="flex items-start gap-2 pl-0.5">
+                                        <span className="font-mono text-xs text-[#388bfd] font-bold shrink-0 mt-0.5">{bullet}</span>
+                                        <span className="flex-grow text-[#cfd3dc]">{renderInlineText(rest)}</span>
                                     </div>
                                 );
                             }
                             return (
-                                <p key={lIdx} className="leading-relaxed text-slate-200">
+                                <p key={lIdx} className="leading-relaxed text-[#cfd3dc]">
                                     {renderInlineText(line)}
                                 </p>
                             );
@@ -109,13 +114,13 @@ function renderInlineText(text) {
         const token = match[0];
         if (token.startsWith('`') && token.endsWith('`')) {
             parts.push(
-                <code key={match.index} className="px-1.5 py-0.5 mx-0.5 rounded bg-blue-500/20 text-blue-200 font-mono text-xs border border-blue-500/30 font-semibold inline-block">
+                <code key={match.index} className="px-1.5 py-0.5 mx-0.5 rounded bg-[#1e1e1e] text-[#79c0ff] font-mono text-[11px] border border-[#383838] font-medium inline-block">
                     {token.slice(1, -1)}
                 </code>
             );
         } else if (token.startsWith('**') && token.endsWith('**')) {
             parts.push(
-                <strong key={match.index} className="font-bold text-white">
+                <strong key={match.index} className="font-semibold text-[#eff1f6]">
                     {token.slice(2, -2)}
                 </strong>
             );
@@ -233,24 +238,41 @@ export default function ProjectWorkspace() {
 
     const [activeFileName, setActiveFileName] = useState(workspaceData.files[0]?.name || "main.rs");
 
-    // Active Left Pane Tab ('spec' | 'roadmap' | 'files' | 'copilot' | 'prd')
+    // Active Left Pane Tab ('spec' | 'roadmap' | 'files' | 'prd')
     const [specTab, setSpecTab] = useState("spec");
     const [selectedRoadmapIdx, setSelectedRoadmapIdx] = useState(0);
     const [isSpecsCollapsed, setIsSpecsCollapsed] = useState(false);
+    const [expandedHints, setExpandedHints] = useState({});
 
-    // Resizable Left Panel width (persisted in localStorage, default 460px)
+    const toggleHint = (idx) => {
+        setExpandedHints(prev => ({ ...prev, [idx]: !prev[idx] }));
+    };
+
+    // Resizable Left Panel width (persisted in localStorage, default 390px)
     const [panelWidth, setPanelWidth] = useState(() => {
         try {
             const saved = localStorage.getItem("skillforge_sidepanel_width");
-            return saved ? parseInt(saved, 10) || 460 : 460;
+            return saved ? parseInt(saved, 10) || 390 : 390;
         } catch {
-            return 460;
+            return 390;
         }
     });
     const [isDraggingPanel, setIsDraggingPanel] = useState(false);
 
+    // Resizable Right Copilot Panel width (default 380px) & open toggle
+    const [isCopilotOpen, setIsCopilotOpen] = useState(true);
+    const [copilotWidth, setCopilotWidth] = useState(() => {
+        try {
+            const saved = localStorage.getItem("skillforge_copilot_width");
+            return saved ? parseInt(saved, 10) || 380 : 380;
+        } catch {
+            return 380;
+        }
+    });
+    const [isDraggingCopilot, setIsDraggingCopilot] = useState(false);
+
     // Resizable bottom test runner drawer height
-    const [terminalHeight, setTerminalHeight] = useState(260);
+    const [terminalHeight, setTerminalHeight] = useState(240);
     const [isDraggingTerminal, setIsDraggingTerminal] = useState(false);
 
     // Test Runner tab ('tests' | 'console')
@@ -391,6 +413,7 @@ export default function ProjectWorkspace() {
     // Performance refs for resize handlers
     const panelWidthRef = useRef(panelWidth);
     const terminalHeightRef = useRef(terminalHeight);
+    const copilotWidthRef = useRef(copilotWidth);
     const resizeRafIdRef = useRef(null);
 
     useEffect(() => {
@@ -401,20 +424,27 @@ export default function ProjectWorkspace() {
         terminalHeightRef.current = terminalHeight;
     }, [terminalHeight]);
 
+    useEffect(() => {
+        copilotWidthRef.current = copilotWidth;
+    }, [copilotWidth]);
+
     // High-performance resize listener
     useEffect(() => {
-        if (!isDraggingPanel && !isDraggingTerminal) return;
+        if (!isDraggingPanel && !isDraggingTerminal && !isDraggingCopilot) return;
 
         document.body.style.userSelect = "none";
-        document.body.style.cursor = isDraggingPanel ? "col-resize" : "row-resize";
+        document.body.style.cursor = (isDraggingPanel || isDraggingCopilot) ? "col-resize" : "row-resize";
 
         const handleMouseMove = (e) => {
             if (resizeRafIdRef.current) return;
             resizeRafIdRef.current = requestAnimationFrame(() => {
                 resizeRafIdRef.current = null;
                 if (isDraggingPanel) {
-                    const newWidth = Math.max(320, Math.min(e.clientX, window.innerWidth - 400));
+                    const newWidth = Math.max(280, Math.min(e.clientX, window.innerWidth - 450));
                     setPanelWidth(newWidth);
+                } else if (isDraggingCopilot) {
+                    const newWidth = Math.max(280, Math.min(window.innerWidth - e.clientX, 650));
+                    setCopilotWidth(newWidth);
                 } else if (isDraggingTerminal) {
                     const newHeight = Math.max(60, Math.min(window.innerHeight - e.clientY, window.innerHeight - 150));
                     setTerminalHeight(newHeight);
@@ -434,6 +464,12 @@ export default function ProjectWorkspace() {
                 setIsDraggingPanel(false);
                 try {
                     localStorage.setItem("skillforge_sidepanel_width", panelWidthRef.current.toString());
+                } catch (e) {}
+            }
+            if (isDraggingCopilot) {
+                setIsDraggingCopilot(false);
+                try {
+                    localStorage.setItem("skillforge_copilot_width", copilotWidthRef.current.toString());
                 } catch (e) {}
             }
             if (isDraggingTerminal) {
@@ -456,7 +492,7 @@ export default function ProjectWorkspace() {
             window.removeEventListener("mousemove", handleMouseMove);
             window.removeEventListener("mouseup", handleMouseUp);
         };
-    }, [isDraggingPanel, isDraggingTerminal]);
+    }, [isDraggingPanel, isDraggingTerminal, isDraggingCopilot]);
 
     // Handle File Content Change
     const handleCodeChange = (newCode) => {
@@ -536,8 +572,7 @@ export default function ProjectWorkspace() {
             return;
         }
 
-        setSpecTab("copilot");
-        setIsSpecsCollapsed(false);
+        setIsCopilotOpen(true);
 
         const targetLevel = requestedLevel !== null ? requestedLevel : (aiMentorState.level || 1);
         const failingStep = testResults?.status === "failed" ? testResults?.steps?.find(s => !s.passed) : null;
@@ -804,71 +839,57 @@ export default function ProjectWorkspace() {
     const totalMilestones = project.milestones?.length || 5;
 
     return (
-        <div className="h-screen w-screen bg-[#070A11] text-white flex flex-col overflow-hidden font-sans select-none">
+        <div className="h-screen w-screen bg-[#1a1a1a] text-[#eff1f6] flex flex-col overflow-hidden font-sans select-none">
             
             {/* ======================================================== */}
-            {/* 1. TOP GLOBAL ACTION HEADER                              */}
+            {/* 1. TOP GLOBAL ACTION HEADER (LeetCode Clean Bar, h-11)    */}
             {/* ======================================================== */}
-            <header className="h-13 border-b border-white/10 bg-[#090D16] px-3.5 flex items-center justify-between shrink-0 z-30">
+            <header className="h-11 border-b border-[#2e2e2e] bg-[#1a1a1a] px-3 flex items-center justify-between shrink-0 z-30">
                 
-                {/* Left: Brand, Back & Project Title */}
-                <div className="flex items-center gap-2.5 sm:gap-3 truncate">
+                {/* Left: Brand, Back & Project Title Stepper */}
+                <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
                     <button
                         onClick={() => navigate("/projects")}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
+                        className="p-1 rounded text-[#8c8c8c] hover:text-[#eff1f6] hover:bg-[#262626] transition-colors"
                         title="Back to Projects"
                     >
-                        <ArrowLeft size={16} />
+                        <ArrowLeft size={15} />
                     </button>
 
                     <button
                         onClick={() => navigate("/dashboard")}
-                        className="flex items-center gap-2 hover:opacity-85 transition-opacity"
+                        className="flex items-center gap-1.5 hover:opacity-85 transition-opacity shrink-0"
                         title="SkillForge Dashboard"
                     >
                         <img 
                             src="/images/skillforge-icon.png" 
                             alt="SkillForge" 
-                            className="h-6 w-auto object-contain" 
+                            className="h-5 w-auto object-contain" 
                         />
                     </button>
 
-                    <div className="h-4 w-px bg-white/10 hidden sm:block" />
+                    <div className="h-3.5 w-px bg-[#333333] hidden sm:block shrink-0" />
 
-                    <div className="flex items-center gap-2 text-xs truncate">
-                        <span className="font-bold text-white tracking-tight truncate max-w-[140px] sm:max-w-xs text-sm">
-                            {project.title}
-                        </span>
-                        <span className="hidden md:inline-flex px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-400 font-mono text-[10px] font-bold uppercase">
-                            {workspaceData.language || project.language || "Code"}
-                        </span>
-                    </div>
-                </div>
-
-                {/* Center: Stage Navigator, Run Tests & Copilot Trigger */}
-                <div className="flex items-center gap-2 sm:gap-3">
-                    
-                    {/* Milestone Stepper */}
-                    <div className="hidden sm:flex items-center gap-1 bg-[#05070B] border border-white/10 p-0.5 rounded-xl">
+                    {/* Milestone Stepper (< Stage X >) */}
+                    <div className="flex items-center gap-1 min-w-0">
                         <button
                             type="button"
                             disabled={currentMilestoneIndex === 0}
                             onClick={() => handleSelectMilestone(currentMilestoneIndex - 1)}
-                            className="p-1 rounded-lg text-slate-400 hover:text-white disabled:opacity-30 disabled:hover:text-slate-400 transition-colors"
-                            title="Previous Milestone"
+                            className="p-1 rounded text-[#8c8c8c] hover:text-[#eff1f6] hover:bg-[#262626] disabled:opacity-25 disabled:hover:bg-transparent transition-colors"
+                            title="Previous Stage"
                         >
                             <ChevronLeft size={14} />
                         </button>
 
-                        <div className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono">
-                            <span className="text-slate-400 font-medium">Stage {currentMilestoneIndex + 1}/{totalMilestones}:</span>
-                            <span className="font-bold text-white truncate max-w-[120px] lg:max-w-[160px]">
-                                {currentMilestone?.title}
+                        <div className="flex items-center gap-1.5 px-1 min-w-0 text-xs">
+                            <span className="font-semibold text-[#eff1f6] truncate max-w-[130px] sm:max-w-xs">
+                                Stage {currentMilestoneIndex + 1}/{totalMilestones}: {currentMilestone?.title || project.title}
                             </span>
                             {isCurrentMilestoneVerified ? (
-                                <span className="w-2 h-2 rounded-full bg-emerald-400 ml-0.5" title="Stage Verified" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#2cbb5d] shrink-0" title="Stage Verified" />
                             ) : (
-                                <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse ml-0.5" title="Stage Active" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#388bfd] shrink-0" title="Stage Active" />
                             )}
                         </div>
 
@@ -876,103 +897,117 @@ export default function ProjectWorkspace() {
                             type="button"
                             disabled={currentMilestoneIndex >= totalMilestones - 1}
                             onClick={() => handleSelectMilestone(currentMilestoneIndex + 1)}
-                            className="p-1 rounded-lg text-slate-400 hover:text-white disabled:opacity-30 disabled:hover:text-slate-400 transition-colors"
-                            title="Next Milestone"
+                            className="p-1 rounded text-[#8c8c8c] hover:text-[#eff1f6] hover:bg-[#262626] disabled:opacity-25 disabled:hover:bg-transparent transition-colors"
+                            title="Next Stage"
                         >
                             <ChevronRight size={14} />
                         </button>
-                    </div>
 
+                        <span className="hidden md:inline-flex px-1.5 py-0.5 rounded text-[10px] font-mono bg-[#262626] border border-[#383838] text-[#8c8c8c] uppercase ml-1">
+                            {workspaceData.language || project.language || "Code"}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Center: Action Buttons (Run, Submit, Copilot) */}
+                <div className="flex items-center gap-2 shrink-0">
                     {/* Primary Run Tests Button */}
                     <button
                         onClick={handleRunTests}
                         disabled={isRunningTests}
-                        className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 hover:from-blue-500 hover:to-blue-400 text-white text-xs font-bold transition-all shadow-[0_0_20px_rgba(37,99,235,0.4)] flex items-center gap-2 active:scale-95 disabled:opacity-50 shrink-0"
+                        className="px-3 py-1.5 rounded-lg bg-[#333333] hover:bg-[#3d3d3d] active:bg-[#282828] text-[#eff1f6] border border-[#444444] text-xs font-medium transition-colors flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+                        title="Run Tests (Ctrl+Enter)"
                     >
-                        <Play size={13} fill="currentColor" className={isRunningTests ? "animate-spin" : ""} />
-                        <span>{isRunningTests ? "Running Tests..." : "Run Tests"}</span>
-                        <kbd className="hidden lg:inline text-[10px] bg-black/30 px-1.5 py-0.5 rounded font-mono text-blue-200">
-                            Ctrl+↵
+                        <Play size={12} fill="currentColor" className={isRunningTests ? "animate-spin text-[#388bfd]" : "text-[#8c8c8c]"} />
+                        <span>{isRunningTests ? "Running..." : "Run"}</span>
+                        <kbd className="hidden lg:inline text-[9px] bg-[#262626] border border-[#444444] px-1 py-0.2 rounded font-mono text-[#8c8c8c]">
+                            Ctrl+'
                         </kbd>
                     </button>
 
-                    {/* Dedicated Forge Copilot Action Button */}
+                    {/* Submit Stage Button */}
                     <button
-                        onClick={() => {
-                            setSpecTab("copilot");
-                            setIsSpecsCollapsed(false);
-                            if (!aiMentorState.diagnosis && testResults?.status === "failed") {
-                                handleAskAiMentor({ prompt: "Diagnose my failing test assertions" });
-                            }
-                        }}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl border text-xs font-semibold transition-all shadow-sm active:scale-95 shrink-0 ${
-                            specTab === "copilot" && !isSpecsCollapsed
-                                ? "bg-blue-600/30 text-white border-blue-400 shadow-[0_0_15px_rgba(37,99,235,0.3)]"
-                                : "bg-white/5 hover:bg-blue-600/20 text-blue-300 border-blue-500/30 hover:text-white"
-                        }`}
-                        title="Open Forge Copilot Senior AI Mentor"
+                        onClick={handleRunTests}
+                        disabled={isRunningTests}
+                        className="px-3.5 py-1.5 rounded-lg bg-[#2cbb5d]/15 hover:bg-[#2cbb5d]/25 active:bg-[#2cbb5d]/35 text-[#2cbb5d] border border-[#2cbb5d]/40 text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+                        title="Submit Stage Verification"
                     >
-                        <Sparkles size={14} className="text-blue-400 animate-pulse" />
-                        <span className="hidden md:inline font-mono">Forge Copilot</span>
+                        <Cloud size={13} />
+                        <span>Submit</span>
+                        <kbd className="hidden lg:inline text-[9px] bg-[#2cbb5d]/20 border border-[#2cbb5d]/40 px-1 py-0.2 rounded font-mono text-[#2cbb5d]">
+                            ↵
+                        </kbd>
+                    </button>
+
+                    {/* Dedicated Forge Copilot Action Toggle */}
+                    <button
+                        onClick={() => setIsCopilotOpen(prev => !prev)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all shadow-sm ${
+                            isCopilotOpen
+                                ? "bg-[#388bfd]/20 text-[#388bfd] border-[#388bfd]/40"
+                                : "bg-[#333333] hover:bg-[#3d3d3d] text-[#eff1f6] border-[#444444]"
+                        }`}
+                        title="Toggle Forge Copilot Senior AI Mentor"
+                    >
+                        <Sparkles size={13} className={isCopilotOpen ? "text-[#388bfd]" : "text-[#8c8c8c]"} />
+                        <span className="hidden sm:inline">Copilot</span>
                     </button>
                 </div>
 
-                {/* Right: Timer, Quick Open & Panel Toggle */}
-                <div className="flex items-center gap-2 sm:gap-2.5">
-                    
+                {/* Right: Timer, Quick Open & Panel Toggles */}
+                <div className="flex items-center gap-2 shrink-0">
                     {/* Session Timer */}
                     <div 
-                        className="hidden md:flex items-center gap-1.5 text-xs font-mono text-slate-400 bg-white/5 px-2.5 py-1.5 rounded-lg border border-white/5 transition-colors"
+                        className="hidden md:flex items-center gap-1.5 text-xs font-mono text-[#8c8c8c] px-2 py-1"
                         title="Session Time Elapsed (Auto-saved)"
                     >
-                        <Clock size={12} className="text-blue-400 animate-pulse" />
+                        <Clock size={12} className="text-[#8c8c8c]" />
                         <span>{formattedTime}</span>
                     </div>
 
                     {/* Quick Command Palette */}
                     <button
                         onClick={() => setIsCommandPaletteOpen(true)}
-                        className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 text-xs text-slate-400 hover:text-slate-200 transition-colors"
+                        className="hidden lg:flex items-center gap-1.5 px-2 py-1 rounded text-xs text-[#8c8c8c] hover:text-[#eff1f6] hover:bg-[#262626] transition-colors"
                         title="Quick File Open (Ctrl+P)"
                     >
-                        <Search size={12} className="text-blue-400" />
-                        <kbd className="px-1 py-0.2 bg-black/40 rounded text-[10px] font-mono">Ctrl+P</kbd>
+                        <Search size={12} />
+                        <kbd className="px-1 py-0.2 bg-[#262626] border border-[#383838] rounded text-[9px] font-mono">Ctrl+P</kbd>
                     </button>
 
                     {/* Toggle Left Spec Panel */}
                     <button
                         onClick={() => setIsSpecsCollapsed(prev => !prev)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
-                        title={isSpecsCollapsed ? "Open Spec Panel" : "Collapse Spec Panel"}
+                        className="p-1 rounded text-[#8c8c8c] hover:text-[#eff1f6] hover:bg-[#262626] transition-colors"
+                        title={isSpecsCollapsed ? "Open Description Pane" : "Collapse Description Pane"}
                     >
-                        {isSpecsCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+                        {isSpecsCollapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
                     </button>
                 </div>
             </header>
 
             {/* ======================================================== */}
-            {/* 2. MAIN 2-COLUMN SPLIT STUDIO                            */}
+            {/* 2. MAIN 3-ZONE STUDIO WORKSPACE                          */}
             {/* ======================================================== */}
-            <div className="flex-grow flex overflow-hidden relative">
+            <div className="flex-grow flex p-2 gap-2 overflow-hidden bg-[#1a1a1a] relative">
 
                 {/* ---------------------------------------------------- */}
-                {/* LEFT PANE: SPEC, ROADMAP, FILES & COPILOT HUB        */}
+                {/* ZONE 1: LEFT PANE (SPEC, ROADMAP, FILES, PRD)        */}
                 {/* ---------------------------------------------------- */}
                 {!isSpecsCollapsed && (
                     <aside 
                         style={{ width: `${panelWidth}px` }}
-                        className={`border-r border-white/10 bg-[#080C14] flex flex-col shrink-0 h-full overflow-hidden relative z-10 will-change-[width] ${
+                        className={`bg-[#262626] border border-[#333333] rounded-lg flex flex-col shrink-0 h-full overflow-hidden shadow-sm select-text will-change-[width] ${
                             isDraggingPanel ? "select-none" : ""
                         }`}
                     >
-                        {/* Segmented Top Nav Tabs */}
-                        <div className="flex items-center justify-between border-b border-white/10 bg-[#06090F] px-2 h-10 shrink-0">
+                        {/* Tab Header Bar */}
+                        <div className="h-9 bg-[#262626] border-b border-[#333333] px-2.5 flex items-center justify-between shrink-0">
                             <div className="flex items-center gap-1 overflow-x-auto scrollbar-none py-1">
                                 {[
-                                    { id: "spec", label: "Spec", icon: BookOpen },
+                                    { id: "spec", label: "Description", icon: BookOpen },
                                     { id: "roadmap", label: "Roadmap", icon: Milestone, count: totalMilestones },
                                     { id: "files", label: "Files", icon: FolderTree, count: files.length },
-                                    { id: "copilot", label: "Copilot", icon: Sparkles, count: testResults?.status === "failed" ? "!" : null },
                                     { id: "prd", label: "PRD", icon: Layers }
                                 ].map(tab => {
                                     const Icon = tab.icon;
@@ -982,20 +1017,16 @@ export default function ProjectWorkspace() {
                                             key={tab.id}
                                             type="button"
                                             onClick={() => setSpecTab(tab.id)}
-                                            className={`px-2.5 py-1 rounded-lg text-xs font-mono font-semibold flex items-center gap-1.5 transition-all shrink-0 ${
+                                            className={`px-2.5 py-1 text-xs font-medium flex items-center gap-1.5 transition-colors rounded-md shrink-0 ${
                                                 isActive
-                                                    ? "bg-blue-600/20 text-white border border-blue-500/40 shadow-sm"
-                                                    : "text-slate-400 hover:text-white hover:bg-white/5"
+                                                    ? "bg-[#333333] text-[#eff1f6] font-semibold"
+                                                    : "text-[#8c8c8c] hover:text-[#eff1f6] hover:bg-white/5"
                                             }`}
                                         >
-                                            <Icon size={12} className={isActive ? "text-blue-400" : ""} />
+                                            <Icon size={12} className={isActive ? "text-[#388bfd]" : "text-[#8c8c8c]"} />
                                             <span>{tab.label}</span>
                                             {tab.count !== undefined && tab.count !== null && (
-                                                <span className={`text-[9px] px-1 rounded-full font-mono font-bold ${
-                                                    tab.count === "!" 
-                                                        ? "bg-rose-500/30 text-rose-300 border border-rose-500/40 animate-pulse" 
-                                                        : "bg-white/10 text-slate-300"
-                                                }`}>
+                                                <span className="text-[10px] px-1 rounded bg-[#1e1e1e] text-[#8c8c8c]">
                                                     {tab.count}
                                                 </span>
                                             )}
@@ -1006,60 +1037,57 @@ export default function ProjectWorkspace() {
 
                             <button
                                 onClick={() => setIsSpecsCollapsed(true)}
-                                className="p-1 rounded text-slate-500 hover:text-white hover:bg-white/5 transition-colors"
+                                className="p-1 rounded text-[#8c8c8c] hover:text-[#eff1f6] hover:bg-white/5 transition-colors"
                                 title="Collapse Side Panel"
                             >
-                                <PanelLeftClose size={14} />
+                                <PanelLeftClose size={13} />
                             </button>
                         </div>
 
                         {/* Content Area */}
-                        <div className="flex-grow overflow-y-auto p-4 space-y-4 font-sans text-xs scrollbar-thin select-text">
+                        <div className="flex-grow overflow-y-auto p-4 space-y-4 text-xs scrollbar-thin select-text">
                             
-                            {/* TAB 1: MILESTONE SPEC */}
+                            {/* TAB 1: MILESTONE SPEC / DESCRIPTION */}
                             {specTab === "spec" && (
                                 <div className="space-y-4 animate-in fade-in duration-200">
-                                    {/* Milestone Header Card */}
-                                    <div className="p-4 rounded-2xl bg-[#0B0F1A] border border-white/10 space-y-2 relative overflow-hidden shadow-sm">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-[10px] font-mono uppercase tracking-wider font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                                                Stage {currentMilestoneIndex + 1} of {totalMilestones}
+                                    {/* Problem Title & Stage */}
+                                    <div className="space-y-1.5">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm font-bold text-[#eff1f6]">
+                                                Stage {currentMilestoneIndex + 1}: {milestoneGuide.title}
                                             </span>
                                             {isCurrentMilestoneVerified ? (
-                                                <span className="text-xs font-mono font-bold text-emerald-400 flex items-center gap-1">
-                                                    <CheckCircle2 size={13} /> Verified
+                                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#2cbb5d]/20 text-[#2cbb5d] font-medium border border-[#2cbb5d]/40">
+                                                    Verified
                                                 </span>
                                             ) : (
-                                                <span className="text-xs font-mono font-bold text-blue-400 flex items-center gap-1.5">
-                                                    <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" /> Active In-Progress
+                                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#388bfd]/20 text-[#388bfd] font-medium border border-[#388bfd]/40">
+                                                    In Progress
                                                 </span>
                                             )}
                                         </div>
-                                        <h2 className="text-base font-bold text-white tracking-tight">
-                                            {milestoneGuide.title}
-                                        </h2>
-                                        <p className="text-slate-300 leading-relaxed text-xs">
+                                        <p className="text-[#cfd3dc] leading-relaxed">
                                             {milestoneGuide.objective}
                                         </p>
                                     </div>
 
                                     {/* Specification Rules */}
                                     {milestoneGuide.specRules && milestoneGuide.specRules.length > 0 && (
-                                        <div className="space-y-2">
-                                            <div className="text-xs uppercase font-bold tracking-wider text-slate-300 flex items-center gap-1.5">
-                                                <ShieldCheck size={14} className="text-blue-400" />
-                                                <span>Production Specification Rules</span>
+                                        <div className="space-y-2 pt-1">
+                                            <div className="text-[11px] font-semibold text-[#eff1f6] flex items-center gap-1.5 uppercase tracking-wide">
+                                                <ShieldCheck size={13} className="text-[#388bfd]" />
+                                                <span>Specification Rules</span>
                                             </div>
                                             <div className="space-y-1.5">
                                                 {milestoneGuide.specRules.map((rule, idx) => (
                                                     <div 
                                                         key={idx}
-                                                        className="p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:border-blue-500/20 transition-colors flex items-start gap-2.5"
+                                                        className="p-2.5 rounded-lg bg-[#1f1f1f] border border-[#333333] flex items-start gap-2.5 text-[#cfd3dc]"
                                                     >
-                                                        <span className="font-mono text-xs text-blue-400 font-bold shrink-0 mt-0.5">
+                                                        <span className="font-mono text-xs text-[#388bfd] font-bold shrink-0 mt-0.5">
                                                             {idx + 1}.
                                                         </span>
-                                                        <span className="text-slate-200 leading-relaxed">
+                                                        <span className="leading-relaxed">
                                                             {renderInlineText(rule)}
                                                         </span>
                                                     </div>
@@ -1068,45 +1096,88 @@ export default function ProjectWorkspace() {
                                         </div>
                                     )}
 
-                                    {/* Verification Test Suite Checklist */}
-                                    {milestoneGuide.testCases && milestoneGuide.testCases.length > 0 && (
-                                        <div className="space-y-2">
-                                            <div className="text-xs uppercase font-bold tracking-wider text-slate-300 flex items-center gap-1.5">
-                                                <Target size={14} className="text-cyan-400" />
-                                                <span>Verification Checklist ({milestoneGuide.testCases.length} Targets)</span>
-                                            </div>
-                                            <div className="space-y-1.5">
-                                                {milestoneGuide.testCases.map((tc, idx) => (
-                                                    <div 
-                                                        key={idx}
-                                                        className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between gap-2"
-                                                    >
-                                                        <div className="flex items-center gap-2 truncate">
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0" />
-                                                            <span className="font-mono text-slate-200 truncate">{tc.name}</span>
-                                                        </div>
-                                                        {tc.expected && (
-                                                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/40 text-slate-400 border border-white/5 shrink-0">
-                                                                {tc.expected}
-                                                            </span>
+                                    {/* LeetCode Collapsible Hints Accordion */}
+                                    {milestoneGuide.hints && milestoneGuide.hints.length > 0 && (
+                                        <div className="space-y-1.5 pt-1">
+                                            {milestoneGuide.hints.map((hint, hIdx) => {
+                                                const isExpanded = !!expandedHints[hIdx];
+                                                return (
+                                                    <div key={hIdx} className="rounded-lg border border-[#333333] bg-[#1f1f1f] overflow-hidden">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => toggleHint(hIdx)}
+                                                            className="w-full px-3 py-2 flex items-center justify-between text-left text-xs font-medium text-[#eff1f6] hover:bg-[#262626] transition-colors"
+                                                        >
+                                                            <div className="flex items-center gap-2">
+                                                                <Lightbulb size={13} className="text-amber-400" />
+                                                                <span>Hint {hIdx + 1}</span>
+                                                            </div>
+                                                            <ChevronDown size={14} className={`text-[#8c8c8c] transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                                                        </button>
+                                                        {isExpanded && (
+                                                            <div className="px-3 pb-3 pt-1 border-t border-[#2e2e2e] text-[#cfd3dc] leading-relaxed">
+                                                                {renderInlineText(hint)}
+                                                            </div>
                                                         )}
                                                     </div>
-                                                ))}
-                                            </div>
+                                                );
+                                            })}
                                         </div>
                                     )}
 
-                                    {/* Action Banner */}
-                                    <div className="pt-2">
-                                        <button
-                                            type="button"
-                                            onClick={handleRunTests}
-                                            disabled={isRunningTests}
-                                            className="w-full py-2.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-300 font-semibold text-xs transition-all flex items-center justify-center gap-2 shadow-sm"
-                                        >
-                                            <Play size={13} fill="currentColor" />
-                                            <span>Run Automated Tests For This Stage</span>
-                                        </button>
+                                    {/* Target Verification Checklist Accordion */}
+                                    {milestoneGuide.testCases && milestoneGuide.testCases.length > 0 && (
+                                        <div className="rounded-lg border border-[#333333] bg-[#1f1f1f] overflow-hidden">
+                                            <button
+                                                type="button"
+                                                onClick={() => toggleHint("targets")}
+                                                className="w-full px-3 py-2 flex items-center justify-between text-left text-xs font-medium text-[#eff1f6] hover:bg-[#262626] transition-colors"
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <Target size={13} className="text-[#388bfd]" />
+                                                    <span>Target Assertions ({milestoneGuide.testCases.length})</span>
+                                                </div>
+                                                <ChevronDown size={14} className={`text-[#8c8c8c] transition-transform ${expandedHints["targets"] ? "rotate-180" : ""}`} />
+                                            </button>
+                                            {expandedHints["targets"] && (
+                                                <div className="p-2 space-y-1.5 border-t border-[#2e2e2e]">
+                                                    {milestoneGuide.testCases.map((tc, idx) => (
+                                                        <div key={idx} className="p-2 rounded bg-[#262626] border border-[#333333] flex items-center justify-between font-mono text-[11px]">
+                                                            <span className="text-[#cfd3dc] truncate">{tc.name}</span>
+                                                            <span className="text-[#2cbb5d] text-[10px]">{tc.expected}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* LeetCode Footer Stats (Accepted, Rate, Topics, Like/Dislike) */}
+                                    <div className="pt-4 border-t border-[#333333] space-y-3">
+                                        <div className="flex items-center gap-4 text-xs text-[#8c8c8c]">
+                                            <span>Accepted <strong className="text-[#eff1f6] font-mono">54,125</strong></span>
+                                            <span>Acceptance Rate <strong className="text-[#eff1f6] font-mono">53.2%</strong></span>
+                                        </div>
+                                        <div className="flex items-center gap-3 text-xs text-[#8c8c8c]">
+                                            <button type="button" className="flex items-center gap-1 hover:text-white transition-colors">
+                                                <ThumbsUp size={13} />
+                                                <span>354</span>
+                                            </button>
+                                            <button type="button" className="flex items-center gap-1 hover:text-white transition-colors">
+                                                <ThumbsDown size={13} />
+                                            </button>
+                                            <button type="button" className="flex items-center gap-1 hover:text-white transition-colors">
+                                                <MessageSquare size={13} />
+                                                <span>163</span>
+                                            </button>
+                                            <button type="button" className="flex items-center gap-1 hover:text-white transition-colors">
+                                                <Star size={13} />
+                                            </button>
+                                            <span className="ml-auto flex items-center gap-1.5 text-[#2cbb5d] font-mono text-[11px]">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-[#2cbb5d]" />
+                                                <span>1860 Online</span>
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -1114,9 +1185,9 @@ export default function ProjectWorkspace() {
                             {/* TAB 2: MILESTONE ROADMAP */}
                             {specTab === "roadmap" && (
                                 <div className="space-y-3 animate-in fade-in duration-200">
-                                    <div className="text-xs uppercase font-bold tracking-wider text-slate-300 flex items-center justify-between">
+                                    <div className="text-xs uppercase font-medium tracking-wider text-[#8c8c8c] flex items-center justify-between">
                                         <span>Milestone Progression</span>
-                                        <span className="text-blue-400 font-mono font-bold">
+                                        <span className="text-[#388bfd] font-mono font-bold">
                                             {verifiedMilestones.size}/{totalMilestones} Passed
                                         </span>
                                     </div>
@@ -1131,27 +1202,27 @@ export default function ProjectWorkspace() {
                                                 <div
                                                     key={idx}
                                                     onClick={() => isUnlocked && handleSelectMilestone(idx)}
-                                                    className={`p-3.5 rounded-xl border transition-all text-left flex items-start gap-3 ${
+                                                    className={`p-3 rounded-lg border transition-colors text-left flex items-start gap-3 ${
                                                         !isUnlocked
-                                                            ? "opacity-50 bg-black/20 border-white/5 cursor-not-allowed"
+                                                            ? "opacity-40 bg-[#1f1f1f] border-[#333333] cursor-not-allowed"
                                                             : isActive
-                                                            ? "bg-blue-600/15 border-blue-500/40 shadow-sm cursor-pointer"
-                                                            : "bg-white/[0.02] border-white/5 hover:border-white/10 hover:bg-white/[0.04] cursor-pointer"
+                                                            ? "bg-[#1f1f1f] border-[#388bfd] shadow-sm cursor-pointer"
+                                                            : "bg-[#1f1f1f] border-[#333333] hover:border-[#444444] cursor-pointer"
                                                     }`}
                                                 >
-                                                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center font-mono font-bold text-xs shrink-0 ${
+                                                    <div className={`w-5 h-5 rounded flex items-center justify-center font-mono font-bold text-xs shrink-0 ${
                                                         isVerified
-                                                            ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+                                                            ? "bg-[#2cbb5d]/20 text-[#2cbb5d]"
                                                             : isActive
-                                                            ? "bg-blue-500/30 text-white border border-blue-400"
-                                                            : "bg-white/5 text-slate-400 border border-white/10"
+                                                            ? "bg-[#388bfd]/20 text-[#388bfd]"
+                                                            : "bg-[#262626] text-[#8c8c8c]"
                                                     }`}>
                                                         {isVerified ? <Check size={12} /> : idx + 1}
                                                     </div>
 
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex items-center justify-between gap-1 mb-0.5">
-                                                            <span className="font-semibold text-white truncate text-xs">
+                                                            <span className="font-semibold text-[#eff1f6] truncate text-xs">
                                                                 {m.title}
                                                             </span>
                                                             {!isUnlocked && (
@@ -1160,12 +1231,12 @@ export default function ProjectWorkspace() {
                                                                 </span>
                                                             )}
                                                             {isVerified && (
-                                                                <span className="text-[10px] font-mono text-emerald-400 font-bold shrink-0">
+                                                                <span className="text-[10px] font-mono text-[#2cbb5d] font-bold shrink-0">
                                                                     Passed
                                                                 </span>
                                                             )}
                                                         </div>
-                                                        <p className="text-[11px] text-slate-400 line-clamp-1">
+                                                        <p className="text-[11px] text-[#8c8c8c] line-clamp-1">
                                                             {m.description || "Milestone specification objectives"}
                                                         </p>
                                                     </div>
@@ -1180,7 +1251,7 @@ export default function ProjectWorkspace() {
                             {specTab === "files" && (
                                 <div className="space-y-3 animate-in fade-in duration-200">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-xs uppercase font-bold tracking-wider text-slate-300">
+                                        <span className="text-xs uppercase font-medium tracking-wider text-[#8c8c8c]">
                                             Workspace Files
                                         </span>
                                         <button
@@ -1189,7 +1260,7 @@ export default function ProjectWorkspace() {
                                                 const name = prompt("Enter new file name (e.g., helper.rs, utils.py):");
                                                 if (name) handleCreateFile(name);
                                             }}
-                                            className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
+                                            className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded bg-[#1f1f1f] hover:bg-[#333333] text-[#cfd3dc] hover:text-white transition-colors border border-[#383838]"
                                         >
                                             <Plus size={12} />
                                             <span>New File</span>
@@ -1205,278 +1276,29 @@ export default function ProjectWorkspace() {
                                 </div>
                             )}
 
-                            {/* TAB 4: FORGE COPILOT */}
-                            {specTab === "copilot" && (
-                                <div className="space-y-3.5 animate-in fade-in duration-200">
-                                    {/* Mentor Header Card (Matte Developer Styling) */}
-                                    <div className="p-3 rounded-xl bg-[#141416] border border-neutral-800 space-y-1.5 shadow-sm">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-7 h-7 rounded-lg bg-neutral-800/80 border border-neutral-700/60 flex items-center justify-center text-blue-400">
-                                                    <Sparkles size={14} />
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-xs font-semibold text-white">Forge Copilot</span>
-                                                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-300 border border-neutral-700/60">
-                                                        AI Mentor
-                                                    </span>
-                                                </div>
-                                            </div>
-
-                                            <span className="text-[10px] font-mono text-neutral-400">
-                                                {aiMentorState.modelUsed?.includes("Qwen") ? "Qwen 2.5 Coder" : "Ready"}
-                                            </span>
-                                        </div>
-                                        <p className="text-[11px] text-neutral-400 leading-relaxed">
-                                            Senior engineering mentor for diagnosing failing assertions, reviewing architecture, and unblocking milestones.
-                                        </p>
-                                    </div>
-
-                                    {/* Active Failing Test Alert if present */}
-                                    {aiMentorState.activeFailingTest && (
-                                        <div className="p-2.5 rounded-xl bg-neutral-800/90 border border-neutral-700/60 text-xs text-neutral-200 flex items-center justify-between gap-2 shadow-sm">
-                                            <div className="flex items-center gap-2 truncate">
-                                                <XCircle size={14} className="text-rose-400 shrink-0" />
-                                                <span className="font-mono font-medium truncate">{aiMentorState.activeFailingTest}</span>
-                                            </div>
-                                            {aiMentorState.targetLine && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => jumpToLine(aiMentorState.targetLine)}
-                                                    className="px-2 py-0.5 rounded bg-neutral-700/70 text-[11px] font-mono text-blue-300 hover:text-white flex items-center gap-1 font-semibold shrink-0"
-                                                >
-                                                    <Target size={11} /> Line {aiMentorState.targetLine}
-                                                </button>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {/* Guidance Level Selector */}
-                                    <div className="space-y-1.5">
-                                        <div className="flex items-center justify-between text-xs font-mono text-neutral-400">
-                                            <span className="font-medium text-neutral-300">Guidance Level</span>
-                                            <span className="text-neutral-500 text-[11px]">Graduated Hinting</span>
-                                        </div>
-                                        <div className="grid grid-cols-3 gap-1 bg-[#141416] p-1 rounded-xl border border-neutral-800 font-mono text-xs">
-                                            {[
-                                                { lvl: 1, label: "1. Nudge", title: "Conceptual guidance" },
-                                                { lvl: 2, label: "2. Pinpoint", title: "Pinpoints exact flaw" },
-                                                { lvl: 3, label: "3. Structure", title: "Idiomatic code pattern" }
-                                            ].map(tab => (
-                                                <button
-                                                    key={tab.lvl}
-                                                    type="button"
-                                                    onClick={() => handleAskAiMentor({ requestedLevel: tab.lvl })}
-                                                    className={`py-1.5 px-1 rounded-lg text-center transition-all text-xs ${
-                                                        aiMentorState.level === tab.lvl
-                                                            ? "bg-neutral-800 text-white border border-neutral-700/60 shadow-sm font-semibold"
-                                                            : "text-neutral-400 hover:text-white"
-                                                    }`}
-                                                >
-                                                    {tab.label}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Diagnosis & Hint Box */}
-                                    <div className="p-3.5 rounded-2xl bg-[#18181b] border border-neutral-800 space-y-3">
-                                        {aiMentorState.isLoading ? (
-                                            <div className="py-6 flex flex-col items-center justify-center gap-2 text-neutral-400">
-                                                <RefreshCw size={20} className="animate-spin text-blue-400" />
-                                                <span className="text-xs font-mono">Forge Copilot is analyzing your code...</span>
-                                            </div>
-                                        ) : aiMentorState.hint || aiMentorState.diagnosis ? (
-                                            <div className="space-y-3">
-                                                {aiMentorState.diagnosis && (
-                                                    <div className="space-y-1.5 border-b border-neutral-800 pb-2.5">
-                                                        <div className="text-[11px] font-mono uppercase text-blue-400 font-semibold flex items-center gap-1">
-                                                            <Sparkles size={12} />
-                                                            <span>Diagnosis</span>
-                                                        </div>
-                                                        <FormattedAiContent content={aiMentorState.diagnosis} />
-                                                    </div>
-                                                )}
-
-                                                {aiMentorState.hint && (
-                                                    <div className="space-y-1.5">
-                                                        <div className="text-[11px] font-mono uppercase text-neutral-300 font-semibold flex items-center justify-between">
-                                                            <span className="flex items-center gap-1">
-                                                                <Lightbulb size={12} className="text-amber-400" />
-                                                                <span>Level {aiMentorState.level} Hint</span>
-                                                            </span>
-                                                            {aiMentorState.targetLine && (
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => jumpToLine(aiMentorState.targetLine)}
-                                                                    className="text-xs text-blue-400 hover:underline flex items-center gap-1 font-mono font-medium"
-                                                                >
-                                                                    <Target size={11} /> Line {aiMentorState.targetLine}
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                        <div className="p-3 rounded-xl bg-[#202024] border border-neutral-800 text-neutral-200">
-                                                            <FormattedAiContent content={aiMentorState.hint} />
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {aiMentorState.codePattern && (
-                                                    <div className="space-y-1.5">
-                                                        <div className="flex items-center justify-between text-[11px] font-mono text-neutral-400">
-                                                            <span>Suggested Code Pattern:</span>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    navigator.clipboard.writeText(aiMentorState.codePattern);
-                                                                    toast.success("Copied to clipboard");
-                                                                }}
-                                                                className="hover:text-white flex items-center gap-1 px-2 py-0.5 rounded bg-neutral-800 border border-neutral-700/60 text-[10px]"
-                                                            >
-                                                                <Copy size={11} /> Copy
-                                                            </button>
-                                                        </div>
-                                                        <pre className="p-3 rounded-xl bg-[#141416] border border-neutral-800 text-xs font-mono text-neutral-200 overflow-x-auto leading-relaxed">
-                                                            <code>{aiMentorState.codePattern}</code>
-                                                        </pre>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ) : (
-                                            /* LeetCode-inspired empty state */
-                                            <div className="py-6 text-center space-y-3">
-                                                <div className="text-3xl select-none">
-                                                    😎
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <h5 className="text-xs font-semibold text-neutral-200">
-                                                        Stuck? Forge Copilot guides you through every line.
-                                                    </h5>
-                                                    <p className="text-[11px] text-neutral-400 max-w-xs mx-auto">
-                                                        Run tests or ask a question to diagnose assertions without spoiling your solution.
-                                                    </p>
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleAskAiMentor({ prompt: "Review my code architecture for this milestone" })}
-                                                    className="px-3.5 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 border border-neutral-700/60 text-neutral-200 font-mono text-xs font-medium transition-all inline-flex items-center gap-1.5 shadow-sm"
-                                                >
-                                                    <Sparkles size={12} className="text-blue-400" />
-                                                    <span>Review Code Architecture</span>
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Quick Prompts */}
-                                    <div className="space-y-1.5">
-                                        <div className="text-[11px] uppercase font-mono font-medium tracking-wider text-neutral-400">
-                                            Quick Prompts
-                                        </div>
-                                        <div className="flex flex-wrap gap-1.5">
-                                            {aiMentorState.quickPrompts.map((q, idx) => (
-                                                <button
-                                                    key={idx}
-                                                    type="button"
-                                                    onClick={() => handleAskAiMentor({ prompt: q })}
-                                                    className="px-2.5 py-1 rounded-lg bg-neutral-800/60 hover:bg-neutral-800 border border-neutral-700/50 text-xs text-neutral-300 hover:text-white transition-all text-left"
-                                                >
-                                                    {q}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Interactive Chat Composer (LeetCode-inspired Clean Studio Style) */}
-                                    <div className="rounded-2xl border border-neutral-700/60 bg-[#1e1e22] focus-within:border-neutral-500 p-3 transition-colors shadow-sm">
-                                        <textarea
-                                            value={aiMentorInput}
-                                            onChange={(e) => setAiMentorInput(e.target.value)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === "Enter" && !e.shiftKey) {
-                                                    e.preventDefault();
-                                                    if (!aiMentorInput.trim() || aiMentorState.isLoading) return;
-                                                    const query = aiMentorInput.trim();
-                                                    setAiMentorInput("");
-                                                    handleAskAiMentor({ prompt: query });
-                                                }
-                                            }}
-                                            placeholder="Shift + Enter to insert a line break."
-                                            rows={1}
-                                            className="w-full bg-transparent border-0 outline-none resize-none text-xs sm:text-sm text-neutral-100 placeholder-neutral-500 max-h-24 overflow-y-auto leading-relaxed"
-                                        />
-
-                                        {/* Bottom Control Bar inside Composer */}
-                                        <div className="flex items-center justify-between pt-2 mt-1 border-t border-neutral-800/80">
-                                            {/* Left: Model Pill */}
-                                            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[#161619] border border-neutral-700/50 text-[11px] font-mono text-neutral-300">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                                                <span>Qwen 2.5 Coder</span>
-                                                <ChevronDown size={11} className="text-neutral-500" />
-                                            </div>
-
-                                            {/* Right: Agent Switch + Circular Send Button */}
-                                            <div className="flex items-center gap-3">
-                                                <div 
-                                                    onClick={() => setAiMentorState(prev => ({ ...prev, isAgentMode: !prev.isAgentMode }))}
-                                                    className="flex items-center gap-1.5 cursor-pointer select-none"
-                                                    title="Toggle Autonomous Agent Reasoning Mode"
-                                                >
-                                                    <span className="text-[11px] text-neutral-400 font-medium">Agent</span>
-                                                    <div 
-                                                        className={`w-8 h-4.5 rounded-full transition-colors relative flex items-center px-0.5 ${
-                                                            aiMentorState.isAgentMode ? "bg-blue-600" : "bg-neutral-700"
-                                                        }`}
-                                                    >
-                                                        <div className={`w-3.5 h-3.5 rounded-full bg-white transition-transform ${
-                                                            aiMentorState.isAgentMode ? "translate-x-3.5" : "translate-x-0"
-                                                        }`} />
-                                                    </div>
-                                                </div>
-
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        if (!aiMentorInput.trim() || aiMentorState.isLoading) return;
-                                                        const query = aiMentorInput.trim();
-                                                        setAiMentorInput("");
-                                                        handleAskAiMentor({ prompt: query });
-                                                    }}
-                                                    disabled={aiMentorState.isLoading || !aiMentorInput.trim()}
-                                                    className="w-7 h-7 rounded-full bg-blue-600 hover:bg-blue-500 disabled:bg-neutral-700 disabled:opacity-40 text-white flex items-center justify-center transition-all shrink-0 shadow-sm active:scale-95"
-                                                    title="Send question to Forge Copilot"
-                                                >
-                                                    <ArrowUp size={14} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* TAB 5: ARCHITECTURE PRD */}
+                            {/* TAB 4: ARCHITECTURE PRD */}
                             {specTab === "prd" && (
                                 <div className="space-y-4 animate-in fade-in duration-200">
-                                    <div className="p-4 rounded-2xl bg-[#0B0F1A] border border-white/10 space-y-2">
-                                        <div className="flex items-center gap-2 text-xs font-bold text-white uppercase tracking-wider">
-                                            <Layers size={14} className="text-blue-400" />
-                                            <span>Architecture & System Spec</span>
+                                    <div className="p-3.5 rounded-lg bg-[#1f1f1f] border border-[#333333] space-y-2">
+                                        <div className="flex items-center gap-2 text-xs font-semibold text-[#eff1f6] uppercase tracking-wider">
+                                            <Layers size={13} className="text-[#388bfd]" />
+                                            <span>System Specification</span>
                                         </div>
-                                        <h3 className="text-sm font-bold text-white">{project.title}</h3>
-                                        <p className="text-xs text-slate-300 leading-relaxed">
+                                        <h3 className="text-sm font-bold text-[#eff1f6]">{project.title}</h3>
+                                        <p className="text-xs text-[#cfd3dc] leading-relaxed">
                                             {project.description}
                                         </p>
                                     </div>
 
                                     {project.prerequisites && project.prerequisites.length > 0 && (
                                         <div className="space-y-2">
-                                            <span className="text-xs uppercase font-bold tracking-wider text-slate-400">
+                                            <span className="text-xs uppercase font-medium tracking-wider text-[#8c8c8c]">
                                                 Prerequisites & Knowledge Targets
                                             </span>
                                             <div className="space-y-1.5">
                                                 {project.prerequisites.map((p, i) => (
-                                                    <div key={i} className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center gap-2 text-xs text-slate-300">
-                                                        <CheckCircle2 size={13} className="text-blue-400 shrink-0" />
+                                                    <div key={i} className="p-2 rounded-lg bg-[#1f1f1f] border border-[#333333] flex items-center gap-2 text-xs text-[#cfd3dc]">
+                                                        <CheckCircle2 size={13} className="text-[#388bfd] shrink-0" />
                                                         <span>{p}</span>
                                                     </div>
                                                 ))}
@@ -1490,76 +1312,111 @@ export default function ProjectWorkspace() {
                     </aside>
                 )}
 
-                {/* ---------------------------------------------------- */}
-                {/* 3. RESIZABLE VERTICAL SPLIT DIVIDER                  */}
-                {/* ---------------------------------------------------- */}
+                {/* Resizable Vertical Divider 1 */}
                 {!isSpecsCollapsed && (
                     <div
                         onMouseDown={() => setIsDraggingPanel(true)}
-                        onDoubleClick={() => setPanelWidth(460)}
+                        onDoubleClick={() => setPanelWidth(390)}
                         className={`w-1.5 hover:w-2 ${
-                            isDraggingPanel ? "w-2 bg-blue-500 shadow-[0_0_10px_#2563eb]" : "bg-[#05070B] hover:bg-blue-500/40 active:bg-blue-500"
+                            isDraggingPanel ? "w-2 bg-[#388bfd]" : "bg-transparent hover:bg-[#388bfd]/50"
                         } transition-colors cursor-col-resize flex items-center justify-center shrink-0 select-none group z-20`}
-                        title="Drag to resize pane (Double-click to reset)"
+                        title="Drag to resize pane"
                     >
-                        <div className={`h-8 w-0.5 rounded-full ${isDraggingPanel ? "bg-white" : "bg-white/20 group-hover:bg-blue-400"} transition-colors`} />
+                        <div className={`h-8 w-0.5 rounded-full ${isDraggingPanel ? "bg-white" : "bg-[#444444] group-hover:bg-[#388bfd]"} transition-colors`} />
                     </div>
                 )}
 
                 {/* ---------------------------------------------------- */}
-                {/* 4. RIGHT PANE: CODE EDITOR (TOP) & TEST DRAWER (BTM) */}
+                {/* ZONE 2: MIDDLE PANE (CODE EDITOR + TEST DRAWER)      */}
                 {/* ---------------------------------------------------- */}
-                <main className="flex-grow flex flex-col h-full overflow-hidden bg-[#070A11] relative min-w-0">
+                <main className="flex-1 min-w-0 flex flex-col gap-2 overflow-hidden h-full">
                     
-                    {/* Monaco Code Studio Editor Canvas */}
-                    <div className={`flex-grow flex flex-col overflow-hidden min-h-0 ${isDraggingPanel || isDraggingTerminal ? "pointer-events-none select-none" : ""}`}>
-                        <CodeStudioEditor
-                            files={files}
-                            activeFileName={activeFileName}
-                            onSelectFile={setActiveFileName}
-                            onChangeCode={handleCodeChange}
-                            onResetFile={handleResetFile}
-                            onCursorChange={setCursorPosition}
-                            onRunTests={handleRunTests}
-                            onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
-                            editorInstanceRef={editorInstanceRef}
-                        />
+                    {/* Top Editor Card */}
+                    <div className="bg-[#262626] border border-[#333333] rounded-lg flex flex-col flex-1 min-h-0 overflow-hidden shadow-sm">
+                        {/* Editor Header Bar */}
+                        <div className="h-9 bg-[#262626] border-b border-[#333333] px-3 flex items-center justify-between shrink-0">
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs font-mono font-semibold text-[#eff1f6] flex items-center gap-1.5">
+                                    <Code2 size={13} className="text-[#388bfd]" />
+                                    <span>&lt;/&gt; Code</span>
+                                </span>
+                                <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-[#1e1e1e] border border-[#383838] text-[#8c8c8c]">
+                                    {workspaceData.language || project.language || "Code"}
+                                </span>
+                            </div>
+
+                            <div className="flex items-center gap-2 text-[11px] font-mono text-[#8c8c8c]">
+                                <button
+                                    onClick={handleResetFile}
+                                    className="p-1 rounded text-[#8c8c8c] hover:text-[#eff1f6] hover:bg-white/5 transition-colors"
+                                    title="Reset to starter skeleton"
+                                >
+                                    <RotateCcw size={12} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Editor Canvas */}
+                        <div className={`flex-grow flex flex-col overflow-hidden min-h-0 ${isDraggingPanel || isDraggingTerminal || isDraggingCopilot ? "pointer-events-none select-none" : ""}`}>
+                            <CodeStudioEditor
+                                files={files}
+                                activeFileName={activeFileName}
+                                onSelectFile={setActiveFileName}
+                                onChangeCode={handleCodeChange}
+                                onResetFile={handleResetFile}
+                                onCursorChange={setCursorPosition}
+                                onRunTests={handleRunTests}
+                                onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+                                editorInstanceRef={editorInstanceRef}
+                            />
+                        </div>
+
+                        {/* Editor Footer */}
+                        <div className="h-6 bg-[#262626] border-t border-[#333333] px-3 flex items-center justify-between text-[11px] font-mono text-[#8c8c8c] shrink-0">
+                            <div className="flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#2cbb5d]" />
+                                <span>Saved</span>
+                            </div>
+                            <div>
+                                Ln {cursorPosition.line}, Col {cursorPosition.col}
+                            </div>
+                        </div>
                     </div>
 
-                    {/* Resizable Horizontal Test Drawer Divider */}
+                    {/* Resizable Horizontal Divider between Editor and Tests */}
                     <div
                         onMouseDown={() => setIsDraggingTerminal(true)}
                         className={`h-1.5 hover:h-2 ${
-                            isDraggingTerminal ? "h-2 bg-blue-500 shadow-[0_0_10px_#2563eb]" : "bg-[#0A0E17] hover:bg-blue-500/40 active:bg-blue-500"
-                        } transition-colors cursor-row-resize flex items-center justify-center border-t border-white/10 shrink-0 select-none group z-20`}
-                        title="Drag to resize test runner console"
+                            isDraggingTerminal ? "h-2 bg-[#388bfd]" : "bg-transparent hover:bg-[#388bfd]/50"
+                        } transition-colors cursor-row-resize flex items-center justify-center shrink-0 select-none group z-20`}
+                        title="Drag to resize test runner"
                     >
-                        <div className={`w-12 h-0.5 rounded-full ${isDraggingTerminal ? "bg-white" : "bg-white/20 group-hover:bg-blue-400"} transition-colors`} />
+                        <div className={`w-10 h-0.5 rounded-full ${isDraggingTerminal ? "bg-white" : "bg-[#444444] group-hover:bg-[#388bfd]"} transition-colors`} />
                     </div>
 
-                    {/* Integrated Test Runner & Console Drawer */}
+                    {/* Bottom Test Runner Card (LeetCode Testcase / Test Result style) */}
                     <div 
-                        className="bg-[#05070B] flex flex-col shrink-0 overflow-hidden will-change-[height]"
                         style={{ height: `${terminalHeight}px` }}
+                        className="bg-[#262626] border border-[#333333] rounded-lg flex flex-col overflow-hidden shadow-sm shrink-0"
                     >
                         {/* Drawer Header Tabs */}
-                        <div className="h-9 border-b border-white/10 bg-[#080C14] px-3 flex items-center justify-between shrink-0">
+                        <div className="h-9 border-b border-[#333333] bg-[#262626] px-3 flex items-center justify-between shrink-0">
                             <div className="flex items-center gap-1.5">
                                 <button
                                     onClick={() => setTerminalTab("tests")}
-                                    className={`px-3 py-1 text-xs font-bold font-mono rounded-lg flex items-center gap-1.5 transition-all ${
+                                    className={`px-2.5 py-1 text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors ${
                                         terminalTab === "tests"
-                                            ? "bg-blue-600/20 text-blue-400 border border-blue-500/30"
-                                            : "text-slate-400 hover:text-white"
+                                            ? "bg-[#333333] text-[#eff1f6] font-semibold"
+                                            : "text-[#8c8c8c] hover:text-[#eff1f6]"
                                     }`}
                                 >
-                                    <CheckCircle2 size={13} />
-                                    <span>Automated Tests</span>
+                                    <CheckCircle2 size={12} className={testResults?.status === "passed" ? "text-[#2cbb5d]" : "text-[#8c8c8c]"} />
+                                    <span>Testcase / Test Result</span>
                                     {testResults && (
-                                        <span className={`px-1.5 py-0.2 rounded text-[10px] font-mono font-bold ${
-                                            testResults.status === "passed" 
-                                                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" 
-                                                : "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                                        <span className={`px-1.5 py-0.2 rounded text-[10px] font-mono font-semibold ${
+                                            testResults.status === "passed"
+                                                ? "bg-[#2cbb5d]/20 text-[#2cbb5d]"
+                                                : "bg-[#ef4743]/20 text-[#ef4743]"
                                         }`}>
                                             {testResults.passed}/{testResults.total} Passed
                                         </span>
@@ -1568,67 +1425,72 @@ export default function ProjectWorkspace() {
 
                                 <button
                                     onClick={() => setTerminalTab("console")}
-                                    className={`px-3 py-1 text-xs font-bold font-mono rounded-lg flex items-center gap-1.5 transition-all ${
+                                    className={`px-2.5 py-1 text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors ${
                                         terminalTab === "console"
-                                            ? "bg-blue-600/20 text-blue-400 border border-blue-500/30"
-                                            : "text-slate-400 hover:text-white"
+                                            ? "bg-[#333333] text-[#eff1f6] font-semibold"
+                                            : "text-[#8c8c8c] hover:text-[#eff1f6]"
                                     }`}
                                 >
-                                    <Terminal size={13} />
-                                    <span>Terminal Logs</span>
+                                    <Terminal size={12} />
+                                    <span>Console Logs</span>
                                 </button>
                             </div>
 
-                            <div className="flex items-center gap-1.5">
-                                <button
-                                    onClick={() => setTerminalHeight(prev => prev > 100 ? 50 : 280)}
-                                    className="p-1 rounded text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
-                                    title={terminalHeight > 100 ? "Minimize Drawer" : "Expand Drawer"}
-                                >
-                                    {terminalHeight > 100 ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-                                </button>
-                            </div>
+                            <button
+                                onClick={() => setTerminalHeight(prev => prev > 100 ? 50 : 240)}
+                                className="p-1 rounded text-[#8c8c8c] hover:text-[#eff1f6] transition-colors"
+                                title={terminalHeight > 100 ? "Minimize" : "Expand"}
+                            >
+                                {terminalHeight > 100 ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+                            </button>
                         </div>
 
                         {/* Drawer Body */}
-                        <div className="flex-grow p-3.5 overflow-y-auto font-mono text-xs space-y-2 select-text scrollbar-thin">
+                        <div className="flex-grow p-3.5 overflow-y-auto font-mono text-xs select-text scrollbar-thin">
                             
                             {/* TESTS TAB */}
                             {terminalTab === "tests" && (
-                                <div className="space-y-3">
+                                <div className="space-y-2.5">
                                     {!testResults ? (
-                                        <div className="h-full flex flex-col items-center justify-center text-center py-6 text-slate-500 space-y-2">
-                                            <Play size={22} className="text-blue-500/40" />
-                                            <div>Click <strong>Run Tests</strong> or press <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-slate-300">Ctrl+Enter</kbd> to execute this milestone's test harness.</div>
+                                        /* LeetCode exact empty state: "You must run your code first" */
+                                        <div className="h-full flex flex-col items-center justify-center text-[#8c8c8c] py-8 space-y-2 select-none">
+                                            <span className="text-xs">You must run your code first</span>
+                                            <button
+                                                type="button"
+                                                onClick={handleRunTests}
+                                                className="px-3 py-1 rounded bg-[#333333] hover:bg-[#3d3d3d] text-[#eff1f6] text-xs font-sans transition-colors"
+                                            >
+                                                Run Tests
+                                            </button>
                                         </div>
                                     ) : (
                                         <div className="space-y-2.5">
                                             {/* Results Status Header */}
-                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-white/5 text-[11px] text-slate-400 gap-1.5">
+                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-[#333333] text-[11px] text-[#8c8c8c] gap-1.5">
                                                 <div className="flex items-center gap-2">
-                                                    <span className={`font-bold font-mono text-xs ${testResults.status === "passed" ? "text-emerald-400" : "text-rose-400"}`}>
-                                                        {testResults.status === "passed" ? "✓ VERIFICATION PASSED" : "✗ VERIFICATION FAILED"}
+                                                    <span className={`font-semibold font-mono text-xs ${testResults.status === "passed" ? "text-[#2cbb5d]" : "text-[#ef4743]"}`}>
+                                                        {testResults.status === "passed" ? "✓ Verification Passed" : "✗ Verification Failed"}
                                                     </span>
                                                     <span>• {testResults.passed}/{testResults.total} assertions met</span>
                                                     <span>• {testResults.duration || "12ms"}</span>
                                                 </div>
-                                                <span className="text-[10px] font-mono text-slate-500">
-                                                    Runner: {testResults.engineLabel || "Sandbox MicroVM"}
+                                                <span className="text-[10px] font-mono text-[#8c8c8c]">
+                                                    {testResults.engineLabel || "Sandbox MicroVM"}
                                                 </span>
                                             </div>
 
-                                            {/* All Passed Celebration Banner */}
+                                            {/* All Passed Banner */}
                                             {testResults.status === "passed" && (
-                                                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between flex-wrap gap-2 text-emerald-300">
-                                                    <div className="flex items-center gap-2 font-bold text-xs">
-                                                        <CheckCircle2 size={16} className="text-emerald-400" />
-                                                        <span>Stage {currentMilestoneIndex + 1} Complete! All test assertions verified successfully.</span>
+                                                <div className="p-3 rounded-lg bg-[#2cbb5d]/10 border border-[#2cbb5d]/30 flex items-center justify-between flex-wrap gap-2 text-[#2cbb5d]">
+                                                    <div className="flex items-center gap-2 font-medium text-xs">
+                                                        <CheckCircle2 size={15} />
+                                                        <span>Stage {currentMilestoneIndex + 1} Complete! All assertions verified successfully.</span>
                                                     </div>
                                                     {currentMilestoneIndex < totalMilestones - 1 && (
                                                         <button
                                                             type="button"
                                                             onClick={() => handleSelectMilestone(currentMilestoneIndex + 1)}
-                                                            className="px-3 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs transition-all shadow-md active:scale-95"
+                                                            className="px-3 py-1 rounded-md bg-[#2cbb5d] hover:bg-[#259b4c] text-black font-semibold text-xs transition-colors shadow-sm"
                                                         >
                                                             Advance to Stage {currentMilestoneIndex + 2} →
                                                         </button>
@@ -1642,31 +1504,31 @@ export default function ProjectWorkspace() {
                                                 return (
                                                     <div 
                                                         key={idx} 
-                                                        className={`flex items-start sm:items-center justify-between p-3 rounded-xl border transition-all gap-2.5 ${
+                                                        className={`flex items-start sm:items-center justify-between p-2.5 rounded-lg border transition-colors gap-2.5 ${
                                                             step.passed 
-                                                                ? "bg-emerald-500/[0.04] border-emerald-500/20 text-slate-200" 
-                                                                : "bg-rose-500/[0.06] border-rose-500/30 text-rose-200"
+                                                                ? "bg-[#1f1f1f] border-[#333333] text-[#cfd3dc]" 
+                                                                : "bg-[#1f1f1f] border-[#ef4743]/40 text-[#ef4743]"
                                                         }`}
                                                     >
                                                         <div className="flex items-start sm:items-center gap-2.5 flex-grow min-w-0">
                                                             <div className="shrink-0 mt-0.5 sm:mt-0">
                                                                 {step.passed ? (
-                                                                    <CheckCircle2 size={16} className="text-emerald-400" />
+                                                                    <CheckCircle2 size={15} className="text-[#2cbb5d]" />
                                                                 ) : (
-                                                                    <XCircle size={16} className="text-rose-400" />
+                                                                    <XCircle size={15} className="text-[#ef4743]" />
                                                                 )}
                                                             </div>
                                                             <div className="min-w-0 flex-grow space-y-0.5">
                                                                 <div className="flex items-center gap-2 flex-wrap">
-                                                                    <span className="font-bold text-sm text-slate-100">{step.name}</span>
+                                                                    <span className="font-semibold text-xs text-[#eff1f6]">{step.name}</span>
                                                                     {lineNum && (
                                                                         <button
                                                                             type="button"
                                                                             onClick={() => jumpToLine(lineNum)}
-                                                                            className="px-2 py-0.5 rounded bg-blue-500/20 hover:bg-blue-500/40 text-cyan-300 text-xs font-mono flex items-center gap-1 transition-colors font-semibold"
+                                                                            className="px-1.5 py-0.2 rounded bg-[#262626] hover:bg-[#333333] text-[#388bfd] text-[10px] font-mono flex items-center gap-1 transition-colors border border-[#383838]"
                                                                             title={`Jump to line ${lineNum} in editor`}
                                                                         >
-                                                                            <Target size={11} />
+                                                                            <Target size={10} />
                                                                             <span>Line {lineNum}</span>
                                                                         </button>
                                                                     )}
@@ -1679,22 +1541,22 @@ export default function ProjectWorkspace() {
                                                                                 line: lineNum,
                                                                                 requestedLevel: 1
                                                                             })}
-                                                                            className="px-2.5 py-0.5 rounded-md bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 border border-blue-500/30 text-xs font-mono flex items-center gap-1.5 transition-all shadow-sm active:scale-95 font-semibold"
-                                                                            title="Get AI diagnosis & graduated hints for this test"
+                                                                            className="px-2 py-0.5 rounded bg-[#388bfd]/15 hover:bg-[#388bfd]/25 text-[#388bfd] border border-[#388bfd]/30 text-[10px] font-mono flex items-center gap-1 transition-colors font-medium"
+                                                                            title="Get Copilot diagnosis & graduated hint"
                                                                         >
-                                                                            <Sparkles size={12} className="text-blue-300 animate-pulse" />
-                                                                            <span>Explain & Get Hint</span>
+                                                                            <Sparkles size={11} />
+                                                                            <span>Ask Copilot</span>
                                                                         </button>
                                                                     )}
                                                                 </div>
                                                                 {step.output && (
-                                                                    <div className={`text-xs sm:text-sm font-mono truncate max-w-2xl leading-relaxed ${step.passed ? "text-slate-400" : "text-rose-300 font-semibold"}`}>
+                                                                    <div className={`text-xs font-mono truncate max-w-2xl leading-relaxed ${step.passed ? "text-[#8c8c8c]" : "text-[#ef4743]"}`}>
                                                                         {step.output}
                                                                     </div>
                                                                 )}
                                                             </div>
                                                         </div>
-                                                        <span className={`text-xs font-mono shrink-0 font-medium ${step.passed ? "text-emerald-400" : "text-rose-400"}`}>
+                                                        <span className={`text-[11px] font-mono shrink-0 ${step.passed ? "text-[#2cbb5d]" : "text-[#ef4743]"}`}>
                                                             {step.duration}
                                                         </span>
                                                     </div>
@@ -1703,10 +1565,10 @@ export default function ProjectWorkspace() {
 
                                             {/* Results Footer Message if Failed */}
                                             {testResults.status === "failed" && (
-                                                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 flex items-center justify-between flex-wrap gap-2.5">
-                                                    <div className="flex items-center gap-2 font-bold text-xs text-rose-200">
-                                                        <XCircle size={16} className="text-rose-400 shrink-0" />
-                                                        <span>Tests Failed ({testResults.passed}/{testResults.total} passed). Fix errors to verify this milestone.</span>
+                                                <div className="p-2.5 rounded-lg bg-[#ef4743]/10 border border-[#ef4743]/30 text-[#ef4743] flex items-center justify-between flex-wrap gap-2">
+                                                    <div className="flex items-center gap-2 font-medium text-xs">
+                                                        <XCircle size={15} />
+                                                        <span>Tests failed ({testResults.passed}/{testResults.total} passed). Fix errors to advance.</span>
                                                     </div>
                                                     <button
                                                         type="button"
@@ -1715,10 +1577,10 @@ export default function ProjectWorkspace() {
                                                             error: testResults.steps?.find(s => !s.passed)?.output || "Tests failed",
                                                             requestedLevel: 1
                                                         })}
-                                                        className="px-3 py-1.5 rounded-lg bg-blue-600/30 hover:bg-blue-600/50 border border-blue-500/40 text-blue-200 text-xs font-mono font-bold transition-all flex items-center gap-2 shadow-sm active:scale-95"
+                                                        className="px-2.5 py-1 rounded-md bg-[#388bfd]/20 hover:bg-[#388bfd]/30 border border-[#388bfd]/40 text-[#388bfd] text-xs font-mono font-medium transition-colors flex items-center gap-1.5"
                                                     >
-                                                        <Bot size={14} className="text-blue-300 animate-pulse" />
-                                                        <span>Forge Copilot: Diagnose All Failures</span>
+                                                        <Bot size={13} />
+                                                        <span>Diagnose All Failures</span>
                                                     </button>
                                                 </div>
                                             )}
@@ -1736,12 +1598,12 @@ export default function ProjectWorkspace() {
                                                 key={i} 
                                                 className={`leading-relaxed whitespace-pre-wrap ${
                                                     log.startsWith("$") 
-                                                        ? "text-cyan-400 font-bold" 
+                                                        ? "text-[#388bfd] font-bold" 
                                                         : log.includes("[stderr]") || log.includes("[fatal]") || log.includes("error") 
-                                                        ? "text-rose-400" 
+                                                        ? "text-[#ef4743]" 
                                                         : log.includes("✓") || log.includes("Passed") 
-                                                        ? "text-emerald-400" 
-                                                        : "text-slate-300"
+                                                        ? "text-[#2cbb5d]" 
+                                                        : "text-[#8c8c8c]"
                                                 }`}
                                             >
                                                 {log}
@@ -1750,14 +1612,14 @@ export default function ProjectWorkspace() {
                                     </div>
 
                                     {/* Terminal Command Input */}
-                                    <form onSubmit={handleTerminalCommand} className="flex items-center gap-2 pt-2 border-t border-white/10 shrink-0">
-                                        <span className="text-blue-400 font-mono font-bold">$</span>
+                                    <form onSubmit={handleTerminalCommand} className="flex items-center gap-2 pt-2 border-t border-[#333333] shrink-0">
+                                        <span className="text-[#388bfd] font-mono font-bold">$</span>
                                         <input
                                             type="text"
                                             value={terminalInput}
                                             onChange={(e) => setTerminalInput(e.target.value)}
                                             placeholder="Type a command (test, clear, ls, help)..."
-                                            className="flex-grow bg-transparent border-0 outline-none text-xs font-mono text-white placeholder-slate-600"
+                                            className="flex-grow bg-transparent border-0 outline-none text-xs font-mono text-[#eff1f6] placeholder-[#595959]"
                                         />
                                     </form>
                                 </div>
@@ -1767,42 +1629,350 @@ export default function ProjectWorkspace() {
                     </div>
 
                 </main>
+
+                {/* Resizable Vertical Divider 2 (Between Middle Pane and Right Copilot) */}
+                {isCopilotOpen && (
+                    <div
+                        onMouseDown={() => setIsDraggingCopilot(true)}
+                        onDoubleClick={() => setCopilotWidth(380)}
+                        className={`w-1.5 hover:w-2 ${
+                            isDraggingCopilot ? "w-2 bg-[#388bfd]" : "bg-transparent hover:bg-[#388bfd]/50"
+                        } transition-colors cursor-col-resize flex items-center justify-center shrink-0 select-none group z-20`}
+                        title="Drag to resize Copilot"
+                    >
+                        <div className={`h-8 w-0.5 rounded-full ${isDraggingCopilot ? "bg-white" : "bg-[#444444] group-hover:bg-[#388bfd]"} transition-colors`} />
+                    </div>
+                )}
+
+                {/* ---------------------------------------------------- */}
+                {/* ZONE 3: RIGHT PANE (DEDICATED FORGE COPILOT)         */}
+                {/* ---------------------------------------------------- */}
+                {isCopilotOpen && (
+                    <aside 
+                        style={{ width: `${copilotWidth}px` }}
+                        className={`bg-[#262626] border border-[#333333] rounded-lg flex flex-col shrink-0 h-full overflow-hidden shadow-sm select-text will-change-[width] ${
+                            isDraggingCopilot ? "select-none" : ""
+                        }`}
+                    >
+                        {/* Header Bar */}
+                        <div className="h-9 bg-[#262626] border-b border-[#333333] px-3 flex items-center justify-between shrink-0">
+                            <div className="flex items-center gap-1.5">
+                                <Sparkles size={13} className="text-[#388bfd]" />
+                                <span className="text-xs font-semibold text-[#eff1f6]">Forge Copilot</span>
+                                <button
+                                    onClick={() => setIsCopilotOpen(false)}
+                                    className="p-1 rounded text-[#8c8c8c] hover:text-white transition-colors ml-0.5"
+                                    title="Close Copilot Panel"
+                                >
+                                    <X size={12} />
+                                </button>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setAiMentorState(prev => ({
+                                            ...prev,
+                                            diagnosis: null,
+                                            hint: null,
+                                            codePattern: "",
+                                            history: []
+                                        }));
+                                        toast.success("Started fresh conversation");
+                                    }}
+                                    className="p-1 rounded text-[#8c8c8c] hover:text-white hover:bg-white/5 transition-colors"
+                                    title="New Conversation"
+                                >
+                                    <Plus size={13} />
+                                </button>
+                                <span className="text-[10px] font-mono text-[#8c8c8c]">
+                                    {aiMentorState.modelUsed?.includes("Qwen") ? "Qwen 2.5 Coder" : "Ready"}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Copilot Body */}
+                        <div className="flex-1 overflow-y-auto p-3 space-y-3 select-text scrollbar-thin">
+                            
+                            {/* Active Failing Test Alert if present */}
+                            {aiMentorState.activeFailingTest && (
+                                <div className="p-2 rounded-lg bg-[#1f1f1f] border border-[#ef4743]/30 text-xs text-[#eff1f6] flex items-center justify-between gap-2 shadow-sm">
+                                    <div className="flex items-center gap-1.5 truncate">
+                                        <XCircle size={13} className="text-[#ef4743] shrink-0" />
+                                        <span className="font-mono text-[11px] font-medium truncate">{aiMentorState.activeFailingTest}</span>
+                                    </div>
+                                    {aiMentorState.targetLine && (
+                                        <button
+                                            type="button"
+                                            onClick={() => jumpToLine(aiMentorState.targetLine)}
+                                            className="px-1.5 py-0.2 rounded bg-[#262626] text-[10px] font-mono text-[#388bfd] hover:text-white flex items-center gap-1 font-semibold shrink-0 border border-[#383838]"
+                                        >
+                                            <Target size={10} /> Line {aiMentorState.targetLine}
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Guidance Level Selector */}
+                            <div className="space-y-1">
+                                <div className="flex items-center justify-between text-[11px] font-mono text-[#8c8c8c]">
+                                    <span>Guidance Level</span>
+                                    <span className="text-[10px]">Graduated Hinting</span>
+                                </div>
+                                <div className="grid grid-cols-3 gap-1 bg-[#1f1f1f] p-0.5 rounded-lg border border-[#333333] font-mono text-[11px]">
+                                    {[
+                                        { lvl: 1, label: "1. Nudge" },
+                                        { lvl: 2, label: "2. Pinpoint" },
+                                        { lvl: 3, label: "3. Structure" }
+                                    ].map(tab => (
+                                        <button
+                                            key={tab.lvl}
+                                            type="button"
+                                            onClick={() => handleAskAiMentor({ requestedLevel: tab.lvl })}
+                                            className={`py-1 px-1 rounded text-center transition-colors text-[11px] ${
+                                                aiMentorState.level === tab.lvl
+                                                    ? "bg-[#262626] text-[#eff1f6] font-semibold shadow-sm"
+                                                    : "text-[#8c8c8c] hover:text-[#eff1f6]"
+                                            }`}
+                                        >
+                                            {tab.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Diagnosis & Hint Box or LeetCode Empty State */}
+                            <div className="p-3 rounded-lg bg-[#1f1f1f] border border-[#333333] space-y-2.5">
+                                {aiMentorState.isLoading ? (
+                                    <div className="py-6 flex flex-col items-center justify-center gap-2 text-[#8c8c8c]">
+                                        <RefreshCw size={18} className="animate-spin text-[#388bfd]" />
+                                        <span className="text-xs font-mono">Analyzing code architecture...</span>
+                                    </div>
+                                ) : aiMentorState.hint || aiMentorState.diagnosis ? (
+                                    <div className="space-y-2.5">
+                                        {aiMentorState.diagnosis && (
+                                            <div className="space-y-1 border-b border-[#2e2e2e] pb-2">
+                                                <div className="text-[10px] font-mono uppercase text-[#388bfd] font-semibold flex items-center gap-1">
+                                                    <Sparkles size={11} />
+                                                    <span>Diagnosis</span>
+                                                </div>
+                                                <FormattedAiContent content={aiMentorState.diagnosis} />
+                                            </div>
+                                        )}
+
+                                        {aiMentorState.hint && (
+                                            <div className="space-y-1">
+                                                <div className="text-[10px] font-mono uppercase text-[#eff1f6] font-semibold flex items-center justify-between">
+                                                    <span className="flex items-center gap-1">
+                                                        <Lightbulb size={11} className="text-amber-400" />
+                                                        <span>Level {aiMentorState.level} Hint</span>
+                                                    </span>
+                                                    {aiMentorState.targetLine && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => jumpToLine(aiMentorState.targetLine)}
+                                                            className="text-xs text-[#388bfd] hover:underline flex items-center gap-1 font-mono font-medium"
+                                                        >
+                                                            <Target size={10} /> Line {aiMentorState.targetLine}
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <div className="p-2.5 rounded-md bg-[#262626] border border-[#333333] text-[#cfd3dc]">
+                                                    <FormattedAiContent content={aiMentorState.hint} />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {aiMentorState.codePattern && (
+                                            <div className="space-y-1 pt-1">
+                                                <div className="flex items-center justify-between text-[10px] font-mono text-[#8c8c8c]">
+                                                    <span>Suggested Code Pattern:</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            navigator.clipboard.writeText(aiMentorState.codePattern);
+                                                            toast.success("Copied to clipboard");
+                                                        }}
+                                                        className="hover:text-white flex items-center gap-1 px-1.5 py-0.2 rounded bg-[#262626] border border-[#383838] text-[9px]"
+                                                    >
+                                                        <Copy size={10} /> Copy
+                                                    </button>
+                                                </div>
+                                                <pre className="p-2.5 rounded-md bg-[#161616] border border-[#2e2e2e] text-[11px] font-mono text-[#cfd3dc] overflow-x-auto leading-relaxed">
+                                                    <code>{aiMentorState.codePattern}</code>
+                                                </pre>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    /* LeetCode exact empty state 😎 */
+                                    <div className="py-6 text-center space-y-2.5">
+                                        <div className="text-3xl select-none">
+                                            😎
+                                        </div>
+                                        <div className="space-y-1">
+                                            <h5 className="text-xs font-semibold text-[#eff1f6]">
+                                                Stuck? Copilot guides you through every line.
+                                            </h5>
+                                            <p className="text-[11px] text-[#8c8c8c] max-w-xs mx-auto leading-relaxed">
+                                                Senior engineering mentor for diagnosing failures, reviewing architecture, and unblocking milestones.
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleAskAiMentor({ prompt: "Review my code architecture for this milestone" })}
+                                            className="px-3 py-1.5 rounded-md bg-[#262626] hover:bg-[#333333] border border-[#383838] text-[#eff1f6] font-mono text-xs font-medium transition-colors inline-flex items-center gap-1.5 shadow-sm"
+                                        >
+                                            <Sparkles size={11} className="text-[#388bfd]" />
+                                            <span>Review Architecture</span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Chat Conversation History if available */}
+                            {aiMentorState.history && aiMentorState.history.length > 0 && (
+                                <div className="space-y-2 pt-1 border-t border-[#333333]">
+                                    <div className="text-[10px] font-mono text-[#8c8c8c] uppercase">Previous Inquiries</div>
+                                    <div className="space-y-2">
+                                        {aiMentorState.history.map((h, hIdx) => (
+                                            <div key={hIdx} className="space-y-1 text-xs">
+                                                <div className="p-2 rounded-md bg-[#262626] text-[#eff1f6] border border-[#383838]">
+                                                    <span className="text-[#8c8c8c] text-[10px] block mb-0.5">You asked:</span>
+                                                    {h.query}
+                                                </div>
+                                                <div className="p-2 rounded-md bg-[#1f1f1f] text-[#cfd3dc] border border-[#333333]">
+                                                    <FormattedAiContent content={h.reply} />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Quick Prompts */}
+                            <div className="space-y-1 pt-1">
+                                <div className="text-[10px] uppercase font-mono font-medium text-[#8c8c8c]">
+                                    Quick Prompts
+                                </div>
+                                <div className="flex flex-wrap gap-1">
+                                    {aiMentorState.quickPrompts.map((q, idx) => (
+                                        <button
+                                            key={idx}
+                                            type="button"
+                                            onClick={() => handleAskAiMentor({ prompt: q })}
+                                            className="px-2 py-0.5 rounded bg-[#1f1f1f] hover:bg-[#333333] border border-[#333333] text-[11px] text-[#cfd3dc] hover:text-white transition-colors text-left"
+                                        >
+                                            {q}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* LeetCode-Inspired Studio Composer */}
+                        <div className="m-2.5 p-2.5 rounded-lg border border-[#3e3e3e] bg-[#1f1f1f] focus-within:border-[#388bfd] transition-colors flex flex-col gap-2 shrink-0">
+                            <textarea
+                                value={aiMentorInput}
+                                onChange={(e) => setAiMentorInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter" && !e.shiftKey) {
+                                        e.preventDefault();
+                                        if (!aiMentorInput.trim() || aiMentorState.isLoading) return;
+                                        const query = aiMentorInput.trim();
+                                        setAiMentorInput("");
+                                        handleAskAiMentor({ prompt: query });
+                                    }
+                                }}
+                                placeholder="Shift + Enter to insert a line break."
+                                rows={2}
+                                className="w-full bg-transparent border-0 outline-none resize-none text-xs text-[#eff1f6] placeholder-[#8c8c8c] max-h-24 overflow-y-auto leading-relaxed"
+                            />
+
+                            {/* Bottom Toolbar inside Composer */}
+                            <div className="flex items-center justify-between pt-1 border-t border-[#2e2e2e]">
+                                {/* Left: Model Pill */}
+                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#262626] border border-[#383838] text-[10px] font-mono text-[#cfd3dc]">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[#2cbb5d]" />
+                                    <span>Qwen 2.5 Coder 32B</span>
+                                </div>
+
+                                {/* Right: Agent Switch + Circular Send Button */}
+                                <div className="flex items-center gap-2.5">
+                                    <div 
+                                        onClick={() => setAiMentorState(prev => ({ ...prev, isAgentMode: !prev.isAgentMode }))}
+                                        className="flex items-center gap-1.5 cursor-pointer select-none"
+                                        title="Toggle Autonomous Agent Reasoning Mode"
+                                    >
+                                        <span className="text-[10px] text-[#8c8c8c] font-medium">Agent</span>
+                                        <div 
+                                            className={`w-7 h-3.5 rounded-full transition-colors relative flex items-center px-0.5 ${
+                                                aiMentorState.isAgentMode ? "bg-[#388bfd]" : "bg-[#383838]"
+                                            }`}
+                                        >
+                                            <div className={`w-2.5 h-2.5 rounded-full bg-white transition-transform ${
+                                                aiMentorState.isAgentMode ? "translate-x-3" : "translate-x-0"
+                                            }`} />
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            if (!aiMentorInput.trim() || aiMentorState.isLoading) return;
+                                            const query = aiMentorInput.trim();
+                                            setAiMentorInput("");
+                                            handleAskAiMentor({ prompt: query });
+                                        }}
+                                        disabled={aiMentorState.isLoading || !aiMentorInput.trim()}
+                                        className="w-6 h-6 rounded-full bg-[#388bfd] hover:bg-blue-500 disabled:bg-[#333333] disabled:text-[#666666] text-white flex items-center justify-center transition-all shrink-0 shadow-sm active:scale-95"
+                                        title="Send question to Forge Copilot"
+                                    >
+                                        <ArrowUp size={13} />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+                )}
+
             </div>
 
             {/* ======================================================== */}
-            {/* 5. FOOTER STATUS STRIP                                   */}
+            {/* 3. FOOTER STATUS STRIP (LeetCode Style)                  */}
             {/* ======================================================== */}
-            <footer className="h-6 border-t border-white/10 bg-[#080C14] px-3 flex items-center justify-between text-[11px] font-mono text-slate-400 shrink-0 select-none z-30">
+            <footer className="h-6 border-t border-[#2e2e2e] bg-[#1a1a1a] px-3 flex items-center justify-between text-[11px] font-mono text-[#8c8c8c] shrink-0 select-none z-30">
                 <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1.5 text-slate-300">
-                        <GitBranch size={12} className="text-blue-400" />
+                    <div className="flex items-center gap-1.5 text-[#cfd3dc]">
+                        <GitBranch size={12} className="text-[#388bfd]" />
                         <span>main</span>
                     </div>
 
                     <button
                         type="button"
                         onClick={() => {
-                            if (terminalHeight < 100) setTerminalHeight(260);
+                            if (terminalHeight < 100) setTerminalHeight(240);
                             setTerminalTab("tests");
                         }}
                         className={`flex items-center gap-1.5 transition-colors ${
                             testResults?.status === "passed"
-                                ? "text-emerald-400 font-bold"
+                                ? "text-[#2cbb5d] font-semibold"
                                 : testResults?.status === "failed"
-                                ? "text-rose-400 font-bold"
-                                : "text-slate-400 hover:text-white"
+                                ? "text-[#ef4743] font-semibold"
+                                : "text-[#8c8c8c] hover:text-[#eff1f6]"
                         }`}
                     >
                         {testResults?.status === "passed" ? (
-                            <CheckCircle2 size={12} className="text-emerald-400" />
+                            <CheckCircle2 size={12} className="text-[#2cbb5d]" />
                         ) : testResults?.status === "failed" ? (
-                            <XCircle size={12} className="text-rose-400" />
+                            <XCircle size={12} className="text-[#ef4743]" />
                         ) : (
-                            <Terminal size={12} className="text-blue-400" />
+                            <Terminal size={12} />
                         )}
                         <span>
                             {testResults
-                                ? `${testResults.passed}/${testResults.total} Tests Passed (${testResults.duration || "0ms"})`
+                                ? `${testResults.passed}/${testResults.total} Passed (${testResults.duration || "0ms"})`
                                 : "Test Suite: Ready"}
                         </span>
                     </button>
@@ -1811,17 +1981,17 @@ export default function ProjectWorkspace() {
                 <div className="flex items-center gap-3">
                     <span>Ln {cursorPosition.line}, Col {cursorPosition.col}</span>
                     <span className="hidden sm:inline">UTF-8</span>
-                    <span className="font-bold text-blue-400 uppercase">
+                    <span className="font-semibold text-[#8c8c8c] uppercase">
                         {workspaceData.language || project.language || "code"}
                     </span>
-                    <span className="hidden md:inline text-slate-500">
+                    <span className="hidden md:inline text-[#595959]">
                         {isClientSideLanguage(workspaceData.language || project.language) ? "V8 Engine" : "MicroVM Sandbox"}
                     </span>
                 </div>
             </footer>
 
             {/* ======================================================== */}
-            {/* 6. MODALS: COMMAND PALETTE & CELEBRATION                 */}
+            {/* 4. MODALS: COMMAND PALETTE & CELEBRATION                 */}
             {/* ======================================================== */}
             <CommandPalette
                 isOpen={isCommandPaletteOpen}
@@ -1849,34 +2019,34 @@ export default function ProjectWorkspace() {
                             initial={{ scale: 0.9, y: 20 }}
                             animate={{ scale: 1, y: 0 }}
                             exit={{ scale: 0.9, y: 20 }}
-                            className="w-full max-w-md p-6 rounded-3xl bg-[#090D16] border border-blue-500/30 text-center space-y-4 shadow-2xl relative overflow-hidden"
+                            className="w-full max-w-md p-6 rounded-2xl bg-[#262626] border border-[#333333] text-center space-y-4 shadow-2xl relative overflow-hidden"
                         >
-                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-blue-400 mx-auto flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
-                                <Award size={32} />
+                            <div className="w-14 h-14 rounded-2xl bg-[#2cbb5d]/20 border border-[#2cbb5d]/40 mx-auto flex items-center justify-center text-[#2cbb5d]">
+                                <Award size={28} />
                             </div>
 
                             <div className="space-y-1">
-                                <h3 className="text-xl font-bold text-white">Project Complete!</h3>
-                                <p className="text-xs text-slate-400 leading-relaxed">
+                                <h3 className="text-lg font-bold text-[#eff1f6]">Project Complete!</h3>
+                                <p className="text-xs text-[#8c8c8c] leading-relaxed">
                                     You have completed all 5 architectural milestones for <strong>{project.title}</strong>.
                                 </p>
                             </div>
 
-                            <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-300 font-mono space-y-1">
-                                <div>Total Session Time: <span className="text-blue-400 font-bold">{formattedTime}</span></div>
-                                <div>Total Passed Assertions: <span className="text-emerald-400 font-bold">{project.milestones?.reduce((acc, m) => acc + (m.testCount || 4), 0)} Tests</span></div>
+                            <div className="p-3.5 rounded-lg bg-[#1f1f1f] border border-[#333333] text-xs text-[#cfd3dc] font-mono space-y-1">
+                                <div>Total Session Time: <span className="text-[#388bfd] font-bold">{formattedTime}</span></div>
+                                <div>Total Passed Assertions: <span className="text-[#2cbb5d] font-bold">{project.milestones?.reduce((acc, m) => acc + (m.testCount || 4), 0)} Tests</span></div>
                             </div>
 
                             <div className="flex items-center gap-3 pt-2">
                                 <button
                                     onClick={() => setShowCelebration(false)}
-                                    className="flex-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-bold text-white transition-colors"
+                                    className="flex-1 py-2 rounded-lg bg-[#333333] hover:bg-[#3d3d3d] text-xs font-semibold text-[#eff1f6] transition-colors"
                                 >
                                     Stay in Workspace
                                 </button>
                                 <button
                                     onClick={() => navigate("/projects")}
-                                    className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-xs font-bold text-white transition-all shadow-lg hover:from-blue-500 hover:to-blue-400"
+                                    className="flex-1 py-2 rounded-lg bg-[#2cbb5d] hover:bg-[#259b4c] text-xs font-semibold text-black transition-colors"
                                 >
                                     Forge Next Project
                                 </button>
