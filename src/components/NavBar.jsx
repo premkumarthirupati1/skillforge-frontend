@@ -197,7 +197,11 @@ function NavBar() {
                         title="Open Forge Copilot"
                         aria-label="Open Forge Copilot"
                     >
-                        <Sparkles size={14} className="text-brand-primary group-hover:scale-110 transition-transform" />
+                        <img 
+                            src="/images/forge-copilot-icon-transparent.png" 
+                            alt="Forge Copilot" 
+                            className="w-4 h-4 rounded object-contain group-hover:scale-110 transition-transform" 
+                        />
                         <span className="hidden xl:inline">Forge Copilot</span>
                     </button>
 

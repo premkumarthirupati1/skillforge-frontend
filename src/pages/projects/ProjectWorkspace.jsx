@@ -933,7 +933,11 @@ export default function ProjectWorkspace() {
                         }`}
                         title="Toggle Forge Copilot Senior AI Mentor"
                     >
-                        <Sparkles size={13} className={isCopilotOpen ? "text-[#388bfd]" : "text-[#8c8c8c]"} />
+                        <img 
+                            src="/images/forge-copilot-icon-transparent.png" 
+                            alt="Copilot" 
+                            className="w-4 h-4 rounded object-contain shrink-0" 
+                        />
                         <span className="hidden sm:inline">Copilot</span>
                     </button>
                 </div>
@@ -1641,7 +1645,11 @@ export default function ProjectWorkspace() {
                         {/* Header Bar */}
                         <div className="h-9 bg-[#262626] border-b border-[#333333] px-3 flex items-center justify-between shrink-0">
                             <div className="flex items-center gap-1.5">
-                                <Sparkles size={13} className="text-[#388bfd]" />
+                                <img 
+                                    src="/images/forge-copilot-icon-transparent.png" 
+                                    alt="Forge Copilot" 
+                                    className="w-4 h-4 rounded object-contain shrink-0 drop-shadow-[0_0_6px_rgba(56,139,253,0.5)]" 
+                                />
                                 <span className="text-xs font-semibold text-[#eff1f6]">Forge Copilot</span>
                                 <button
                                     onClick={() => setIsCopilotOpen(false)}
@@ -1793,10 +1801,14 @@ export default function ProjectWorkspace() {
                                             )}
                                         </div>
                                     ) : (
-                                        /* LeetCode exact empty state 😎 */
+                                        /* LeetCode exact empty state */
                                         <div className="py-6 text-center space-y-2.5">
-                                            <div className="text-3xl select-none">
-                                                😎
+                                            <div className="flex justify-center select-none mb-1">
+                                                <img 
+                                                    src="/images/forge-copilot-icon-transparent.png" 
+                                                    alt="Forge Copilot" 
+                                                    className="w-16 h-16 rounded-2xl drop-shadow-[0_0_24px_rgba(56,139,253,0.45)] object-contain" 
+                                                />
                                             </div>
                                             <div className="space-y-1">
                                                 <h5 className="text-xs font-semibold text-[#eff1f6]">
@@ -1848,8 +1860,12 @@ export default function ProjectWorkspace() {
                                                 <div className="p-2.5 rounded-md bg-[#1f1f1f] text-[#cfd3dc] border border-[#333333] space-y-2 break-words [overflow-wrap:anywhere] max-w-full overflow-hidden">
                                                     {h.diagnosis && (
                                                         <div className="text-[10px] font-mono text-[#388bfd] font-semibold flex items-center justify-between border-b border-[#2e2e2e] pb-1.5">
-                                                            <span className="flex items-center gap-1">
-                                                                <Sparkles size={11} />
+                                                            <span className="flex items-center gap-1.5">
+                                                                <img 
+                                                                    src="/images/forge-copilot-icon-transparent.png" 
+                                                                    alt="Forge Copilot" 
+                                                                    className="w-3.5 h-3.5 rounded object-contain shrink-0" 
+                                                                />
                                                                 <span>{h.diagnosis}</span>
                                                             </span>
                                                             {h.isAgent && (

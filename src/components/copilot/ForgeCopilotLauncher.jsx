@@ -27,7 +27,11 @@ export default function ForgeCopilotLauncher() {
                         transition={{ duration: 0.15 }}
                         className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#18181b] border border-neutral-700/80 text-white shadow-xl text-xs font-medium pointer-events-none"
                     >
-                        <Sparkles size={13} className="text-blue-400" />
+                        <img 
+                            src="/images/forge-copilot-icon-transparent.png" 
+                            alt="Forge Copilot" 
+                            className="w-4 h-4 object-contain" 
+                        />
                         <span>Ask Forge Copilot</span>
                         {activeMode === "learning" && (
                             <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
@@ -73,9 +77,13 @@ export default function ForgeCopilotLauncher() {
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.8, opacity: 0 }}
                             transition={{ duration: 0.15 }}
-                            className="relative"
+                            className="relative flex items-center justify-center"
                         >
-                            <Sparkles size={24} className="drop-shadow-sm" />
+                            <img 
+                                src="/images/forge-copilot-icon-transparent.png" 
+                                alt="Forge Copilot" 
+                                className="w-7 h-7 object-contain drop-shadow-[0_0_8px_rgba(56,139,253,0.5)] group-hover:scale-105 transition-transform" 
+                            />
                             {activeMode === "learning" && (
                                 <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-[#0B0F19]" />
                             )}

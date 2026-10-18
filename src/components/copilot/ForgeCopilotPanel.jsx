@@ -172,8 +172,12 @@ export default function ForgeCopilotPanel() {
                         {/* Header */}
                         <div className="relative px-4 py-3 bg-[#141416] border-b border-neutral-800 flex items-center justify-between shrink-0">
                             <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-lg bg-neutral-800/80 border border-neutral-700/60 flex items-center justify-center text-blue-400">
-                                    <Sparkles size={16} />
+                                <div className="w-8 h-8 rounded-lg bg-[#202024] border border-neutral-700/60 overflow-hidden flex items-center justify-center shrink-0 shadow-sm">
+                                    <img 
+                                        src="/images/forge-copilot-icon-transparent.png" 
+                                        alt="Forge Copilot" 
+                                        className="w-7 h-7 object-contain drop-shadow-[0_0_6px_rgba(56,139,253,0.4)]" 
+                                    />
                                 </div>
                                 <div>
                                     <div className="flex items-center gap-2">
@@ -225,8 +229,12 @@ export default function ForgeCopilotPanel() {
                             {/* If only welcome message exists, show clean LeetCode-inspired empty state */}
                             {messages.length <= 1 && (
                                 <div className="my-4 flex flex-col items-center justify-center text-center space-y-3.5 px-2">
-                                    <div className="text-3xl select-none">
-                                        😎
+                                    <div className="flex justify-center select-none">
+                                        <img 
+                                            src="/images/forge-copilot-icon-transparent.png" 
+                                            alt="Forge Copilot" 
+                                            className="w-16 h-16 rounded-2xl drop-shadow-[0_0_24px_rgba(56,139,253,0.45)] object-contain" 
+                                        />
                                     </div>
                                     <div className="space-y-1">
                                         <h4 className="text-sm font-semibold text-neutral-200">
@@ -275,7 +283,11 @@ export default function ForgeCopilotPanel() {
                                     >
                                         {msg.role === "assistant" && (
                                             <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-neutral-800 text-[11px] text-neutral-400">
-                                                <Sparkles size={12} className="text-blue-400" />
+                                                <img 
+                                                    src="/images/forge-copilot-icon-transparent.png" 
+                                                    alt="Forge Copilot" 
+                                                    className="w-4 h-4 rounded object-contain shrink-0" 
+                                                />
                                                 <span className="font-semibold text-neutral-200">Forge Copilot</span>
                                                 <span className="text-[10px] text-neutral-500">• {msg.timestamp}</span>
                                             </div>
