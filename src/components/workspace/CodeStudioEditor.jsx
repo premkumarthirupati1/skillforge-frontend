@@ -144,7 +144,7 @@ function CodeStudioEditor({
         <div className="flex flex-col h-full bg-[#1e1e1e] select-none overflow-hidden">
             
             {/* Top Editor Tab Bar */}
-            <div className="flex items-center justify-between border-b border-[#333333] bg-[#262626] px-2 h-9 shrink-0 overflow-x-auto">
+            <div className="flex items-center justify-between border-b border-[#27272a] bg-[#141416] px-2 h-9 shrink-0 overflow-x-auto">
                 {/* Tabs */}
                 <div className="flex items-center gap-1 overflow-x-auto">
                     {files.map(file => {
@@ -155,10 +155,10 @@ function CodeStudioEditor({
                                 key={file.name}
                                 type="button"
                                 onClick={() => onSelectFile(file.name)}
-                                className={`px-3 py-1.5 rounded-t-md text-xs font-mono font-medium flex items-center gap-2 border-t-2 transition-all shrink-0 ${
+                                className={`px-3 py-1.5 text-xs font-mono font-medium flex items-center gap-2 border-t-2 transition-all shrink-0 ${
                                     isActive
-                                        ? "bg-[#1e1e1e] text-[#eff1f6] border-[#388bfd] shadow-sm"
-                                        : "text-[#8c8c8c] hover:text-[#eff1f6] hover:bg-white/5 border-transparent"
+                                        ? "bg-[#1e1e1e] text-[#f4f4f5] border-[#388bfd]"
+                                        : "text-[#71717a] hover:text-[#f4f4f5] hover:bg-white/5 border-transparent"
                                 }`}
                             >
                                 <span className={`text-[10px] ${iconMeta.color}`}>{iconMeta.label}</span>
@@ -172,21 +172,21 @@ function CodeStudioEditor({
                 <div className="flex items-center gap-1 shrink-0 pl-2">
                     <button
                         onClick={() => setShowMinimap(prev => !prev)}
-                        className="p-1 rounded text-[#8c8c8c] hover:text-[#eff1f6] hover:bg-white/5 transition-colors text-xs flex items-center gap-1"
+                        className="p-1 rounded text-[#71717a] hover:text-[#f4f4f5] hover:bg-white/5 transition-colors text-xs flex items-center gap-1"
                         title={showMinimap ? "Hide Minimap" : "Show Minimap"}
                     >
                         {showMinimap ? <Eye size={13} className="text-[#388bfd]" /> : <EyeOff size={13} />}
                     </button>
                     <button
                         onClick={handleCopy}
-                        className="p-1 rounded text-[#8c8c8c] hover:text-[#eff1f6] hover:bg-white/5 transition-colors"
+                        className="p-1 rounded text-[#71717a] hover:text-[#f4f4f5] hover:bg-white/5 transition-colors"
                         title="Copy Code"
                     >
-                        {copied ? <Check size={13} className="text-[#2cbb5d]" /> : <Copy size={13} />}
+                        {copied ? <Check size={13} className="text-[#22c55e]" /> : <Copy size={13} />}
                     </button>
                     <button
                         onClick={onResetFile}
-                        className="p-1 rounded text-[#8c8c8c] hover:text-[#eff1f6] hover:bg-white/5 transition-colors"
+                        className="p-1 rounded text-[#71717a] hover:text-[#f4f4f5] hover:bg-white/5 transition-colors"
                         title="Reset File to Starter Code"
                     >
                         <RotateCcw size={13} />
@@ -195,11 +195,11 @@ function CodeStudioEditor({
             </div>
 
             {/* Breadcrumb Path Bar */}
-            <div className="flex items-center gap-1.5 px-3.5 py-1 border-b border-[#2e2e2e] bg-[#1e1e1e] text-[11px] font-mono text-[#8c8c8c] shrink-0">
+            <div className="flex items-center gap-1.5 px-3 py-1 border-b border-[#27272a] bg-[#18181b] text-[11px] font-mono text-[#71717a] shrink-0">
                 <Code2 size={12} className="text-[#388bfd]" />
-                <span className="text-[#595959]">workspace</span>
-                <ChevronRight size={10} className="text-[#595959]" />
-                <span className="text-[#cfd3dc]">{activeFile.path || activeFile.name}</span>
+                <span className="text-[#52525b]">workspace</span>
+                <ChevronRight size={10} className="text-[#52525b]" />
+                <span className="text-[#d4d4d8]">{activeFile.path || activeFile.name}</span>
             </div>
 
             {/* Monaco Editor Container */}
