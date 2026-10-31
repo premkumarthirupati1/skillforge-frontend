@@ -249,7 +249,7 @@ function LessonBuilder() {
                     <button
                         onClick={createLesson}
                         disabled={isSubmitting || extractingDuration}
-                        className="w-full bg-brand-primary hover:bg-brand-secondary text-white py-3.5 rounded-xl font-bold text-sm shadow-lg shadow-brand-primary/20 transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="w-full bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white py-3.5 rounded-xl font-bold text-sm shadow-lg shadow-indigo-500/25 transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                         {isSubmitting ? (
                             <>

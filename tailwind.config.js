@@ -25,6 +25,8 @@ export default {
           primary: withOpacity('--brand-primary'),
           secondary: withOpacity('--brand-secondary'),
           cyan: withOpacity('--brand-cyan'),
+          emerald: withOpacity('--brand-emerald'),
+          amber: withOpacity('--brand-amber'),
           text: withOpacity('--brand-text'),
           muted: withOpacity('--brand-muted'),
           subtle: withOpacity('--brand-subtle'),
@@ -55,6 +57,21 @@ export default {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
         },
+        pulseGlow: {
+          '0%, 100%': { opacity: '0.6', transform: 'scale(1)' },
+          '50%': { opacity: '1', transform: 'scale(1.05)' },
+        },
+        borderBeam: {
+          '100%': { 'offset-distance': '100%' }
+        },
+        spinSlow: {
+          '0%': { transform: 'rotate(0deg)' },
+          '100%': { transform: 'rotate(360deg)' }
+        },
+        aurora: {
+          '0%, 100%': { backgroundPosition: '50% 50%, 50% 50%' },
+          '50%': { backgroundPosition: '350% 50%, 350% 50%' }
+        }
       },
       animation: {
         ripple: 'ripple 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards',
@@ -63,17 +80,28 @@ export default {
         'float-subtle': 'floatSubtle 4s ease-in-out infinite',
         marquee: 'marquee 30s linear infinite',
         shimmer: 'shimmer 2.5s infinite linear',
+        'pulse-glow': 'pulseGlow 3s ease-in-out infinite',
+        'border-beam': 'borderBeam 6s linear infinite',
+        'spin-slow': 'spinSlow 20s linear infinite',
+        aurora: 'aurora 60s linear infinite',
       },
       fontFamily: {
-        sans: ['Geist', 'Inter', 'sans-serif'],
+        sans: ['Geist', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        mono: ['JetBrains Mono', 'Fira Code', 'Menlo', 'Consolas', 'monospace'],
       },
       transitionDuration: {
-        'micro': '200ms',     // Micro interactions: 180–250ms
-        'card': '400ms',      // Card hover: 300–450ms
-        'page': '600ms',      // Page transitions: 500–800ms
-        'hero': '1000ms',     // Hero reveal: 800–1200ms
-        'ambient': '12000ms', // Background ambience: 8–15s
+        'micro': '180ms',
+        'card': '300ms',
+        'page': '500ms',
+        'hero': '800ms',
+        'ambient': '12000ms',
       },
+      boxShadow: {
+        'glow-primary': '0 0 25px -5px rgba(99, 102, 241, 0.35)',
+        'glow-cyan': '0 0 25px -5px rgba(6, 182, 212, 0.35)',
+        'glow-emerald': '0 0 25px -5px rgba(16, 185, 129, 0.35)',
+        'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+      }
     },
   },
   plugins: [],

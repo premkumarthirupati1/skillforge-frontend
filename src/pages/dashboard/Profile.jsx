@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { 
@@ -20,14 +20,29 @@ import {
     AlertCircle,
     Loader2,
     Copy,
-    Check
+    Check,
+    Lock,
+    KeyRound,
+    Eye,
+    EyeOff,
+    Laptop,
+    Smartphone,
+    Globe,
+    LogOut,
+    Shield
 } from "lucide-react";
 import NavBar from "../../components/NavBar";
 import api from "../../api";
+import { useAuth } from "../../context/AuthContext";
 import { getImageUrl } from "../../utils/imageHelper";
 
 function Profile() {
     const navigate = useNavigate();
+    const { user: authUser, changePassword, logoutAll } = useAuth();
+
+    // Tab state: "general" | "security"
+    const [activeTab, setActiveTab] = useState("general");
+
     const [user, setUser] = useState(null);
     const [avatarFile, setAvatarFile] = useState(null);
     const [avatarPreview, setAvatarPreview] = useState(null);
@@ -50,11 +65,20 @@ function Profile() {
         socials: { github: "", twitter: "", linkedin: "" }
     });
 
-    useEffect(() => {
-        fetchProfile();
-    }, []);
+    // Security Tab State
+    const [currentPassword, setCurrentPassword] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [showCurrentPass, setShowCurrentPass] = useState(false);
+    const [showNewPass, setShowNewPass] = useState(false);
+    const [showConfirmPass, setShowConfirmPass] = useState(false);
+    const [changingPass, setChangingPass] = useState(false);
+    const [passError, setPassError] = useState("");
+    const [sessions, setSessions] = useState([]);
+    const [loadingSessions, setLoadingSessions] = useState(false);
+    const [loggingOutAll, setLoggingOutAll] = useState(false);
 
-    const fetchProfile = async () => {
+    const fetchProfile = useCallback(async () => {
         setLoading(true);
         try {
             const res = await api.get('/user/profile');
@@ -86,7 +110,31 @@ function Profile() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    const fetchSessions = useCallback(async () => {
+        setLoadingSessions(true);
+        try {
+            const res = await api.get('/auth/sessions');
+            if (res.data?.success) {
+                setSessions(res.data.sessions || []);
+            }
+        } catch (err) {
+            console.warn("Could not load active sessions", err);
+        } finally {
+            setLoadingSessions(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchProfile();
+    }, [fetchProfile]);
+
+    useEffect(() => {
+        if (activeTab === "security") {
+            fetchSessions();
+        }
+    }, [activeTab, fetchSessions]);
 
     // Debounced real-time username availability check
     useEffect(() => {
@@ -97,13 +145,11 @@ function Profile() {
             return;
         }
 
-        // If it equals their current saved handle
         if (clean === initialState.username?.toLowerCase()) {
             setUsernameStatus({ state: "idle", message: "Current active handle" });
             return;
         }
 
-        // Format validation
         const regex = /^[a-z0-9_-]{3,30}$/;
         if (!regex.test(clean)) {
             setUsernameStatus({ 
@@ -139,8 +185,13 @@ function Profile() {
                 toast.error("Avatar image must be under 5MB");
                 return;
             }
+            if (!file.type.startsWith("image/")) {
+                toast.error("Please upload an image file (PNG, JPG, WebP)");
+                return;
+            }
             setAvatarFile(file);
-            setAvatarPreview(URL.createObjectURL(file));
+            const previewUrl = URL.createObjectURL(file);
+            setAvatarPreview(previewUrl);
         }
     };
 
@@ -148,12 +199,8 @@ function Profile() {
         if (avatarPreview) {
             URL.revokeObjectURL(avatarPreview);
         }
-        setAvatarFile(null);
         setAvatarPreview(null);
-    };
-
-    const handleSocialChange = (key, value) => {
-        setSocials(prev => ({ ...prev, [key]: value }));
+        setAvatarFile(null);
     };
 
     const handleReset = () => {
@@ -162,49 +209,27 @@ function Profile() {
         setBio(initialState.bio);
         setSocials({ ...initialState.socials });
         handleClearAvatarPreview();
-        toast("Changes reverted to saved profile", { icon: "↩️" });
+        toast("Form reverted to last saved state", { icon: "↩️" });
     };
 
-    const handleSave = async (e) => {
-        if (e) e.preventDefault();
-        
-        if (!name.trim()) {
-            toast.error("Full name cannot be blank");
+    const handleSubmitProfile = async (e) => {
+        e.preventDefault();
+
+        if (username && usernameStatus.state === "taken") {
+            toast.error("Please choose an available username before saving");
             return;
         }
-
-        const cleanUsername = username.trim().toLowerCase();
-        if (cleanUsername) {
-            const usernameRegex = /^[a-z0-9_-]{3,30}$/;
-            if (!usernameRegex.test(cleanUsername)) {
-                toast.error("Username must be 3-30 letters, numbers, hyphens, or underscores.");
-                return;
-            }
-
-            if (usernameStatus.state === "taken") {
-                toast.error("This username is already taken. Please choose another.");
-                return;
-            }
-
-            if (usernameStatus.state === "invalid") {
-                toast.error("Invalid username format. Use 3-30 letters, numbers, hyphens, or underscores.");
-                return;
-            }
-
-            if (usernameStatus.state === "checking") {
-                toast.error("Checking username availability. Please wait a moment.");
-                return;
-            }
+        if (username && usernameStatus.state === "invalid") {
+            toast.error("Username format is invalid");
+            return;
         }
 
         setSaving(true);
         try {
             const formData = new FormData();
             formData.append("name", name.trim());
-            if (cleanUsername) {
-                formData.append("username", cleanUsername);
-            }
-            formData.append("bio", bio);
+            formData.append("username", username.trim().toLowerCase());
+            formData.append("bio", bio.trim());
             formData.append("socials", JSON.stringify(socials));
             if (avatarFile) {
                 formData.append("avatar", avatarFile);
@@ -214,24 +239,23 @@ function Profile() {
                 headers: { "Content-Type": "multipart/form-data" }
             });
 
-            const updatedData = res.data;
+            const updatedData = res.data?.data || res.data;
             setUser(updatedData);
+
             setInitialState({
                 name: updatedData.name || name,
-                username: updatedData.username || cleanUsername,
+                username: updatedData.username || username,
                 bio: updatedData.bio || bio,
                 socials: updatedData.socials || socials
             });
-            
-            // Sync local storage display name & username
-            if (name.trim()) {
-                localStorage.setItem("userName", name.trim());
+
+            if (updatedData.name) {
+                localStorage.setItem("userName", updatedData.name);
             }
             if (updatedData.username) {
                 localStorage.setItem("userHandle", updatedData.username);
             }
 
-            // Cleanup preview URL
             if (avatarPreview) {
                 URL.revokeObjectURL(avatarPreview);
                 setAvatarPreview(null);
@@ -248,9 +272,78 @@ function Profile() {
         }
     };
 
+    // Password criteria analysis (NIST / OWASP standard)
+    const hasMinLength = newPassword.length >= 8;
+    const hasLower = /[a-z]/.test(newPassword);
+    const hasUpper = /[A-Z]/.test(newPassword);
+    const hasNumber = /[0-9]/.test(newPassword);
+    const hasSpecial = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(newPassword);
+
+    const criteriaMet = [hasMinLength, hasLower, hasUpper, hasNumber, hasSpecial].filter(Boolean).length;
+
+    const getStrengthInfo = () => {
+        if (!newPassword) return { label: "", color: "bg-brand-border", width: "0%" };
+        if (criteriaMet <= 2) return { label: "Weak", color: "bg-red-500", width: "30%" };
+        if (criteriaMet <= 4) return { label: "Good", color: "bg-blue-500", width: "70%" };
+        return { label: "Strong", color: "bg-emerald-500", width: "100%" };
+    };
+
+    const strength = getStrengthInfo();
+    const passwordsMatch = confirmPassword.length > 0 && newPassword === confirmPassword;
+
+    const handlePasswordChangeSubmit = async (e) => {
+        e.preventDefault();
+        setPassError("");
+
+        if (!currentPassword) {
+            setPassError("Please enter your current password.");
+            return;
+        }
+
+        if (criteriaMet < 5) {
+            setPassError("New password must meet all 5 security requirements.");
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            setPassError("New password and confirmation do not match.");
+            return;
+        }
+
+        setChangingPass(true);
+        try {
+            await changePassword({ currentPassword, newPassword, confirmPassword });
+            toast.success("Password changed successfully! Active sessions refreshed.");
+            setCurrentPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
+            fetchSessions();
+        } catch (err) {
+            const msg = err.response?.data?.message || err.message || "Failed to update password.";
+            setPassError(msg);
+            toast.error(msg);
+        } finally {
+            setChangingPass(false);
+        }
+    };
+
+    const handleTerminateAllSessions = async () => {
+        if (!window.confirm("Are you sure you want to log out from all other devices?")) return;
+        setLoggingOutAll(true);
+        try {
+            await logoutAll();
+            toast.success("All other sessions terminated.");
+            navigate('/login');
+        } catch (err) {
+            toast.error("Failed to terminate sessions.");
+        } finally {
+            setLoggingOutAll(false);
+        }
+    };
+
     // Derived fields
-    const email = user?.userId?.email || localStorage.getItem("userEmail") || "account@skillforge.dev";
-    const role = (user?.userId?.role || localStorage.getItem("role") || "student").toUpperCase();
+    const email = user?.userId?.email || authUser?.email || localStorage.getItem("userEmail") || "account@skillforge.dev";
+    const role = (user?.userId?.role || authUser?.role || localStorage.getItem("role") || "student").toUpperCase();
     const memberSinceDate = user?.userId?.createdAt || user?.createdAt;
     const memberSince = memberSinceDate 
         ? new Date(memberSinceDate).toLocaleDateString("en-US", { month: "short", year: "numeric" })
@@ -299,7 +392,7 @@ function Profile() {
 
             <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
                 {/* Back Link & Header */}
-                <div className="mb-8">
+                <div className="mb-6">
                     <button 
                         onClick={() => navigate("/dashboard")}
                         className="inline-flex items-center gap-2 text-xs font-semibold text-brand-muted hover:text-brand-text transition-colors mb-3 group"
@@ -310,14 +403,14 @@ function Profile() {
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-brand-border pb-6">
                         <div>
                             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-brand-text">
-                                Profile Settings
+                                Account & Security
                             </h1>
                             <p className="text-sm text-brand-muted mt-1">
-                                Manage your personal information, developer bio, and linked profiles.
+                                Manage your developer identity, security credentials, and active device sessions.
                             </p>
                         </div>
                         <div className="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
-                            {hasUnsavedChanges && (
+                            {hasUnsavedChanges && activeTab === "general" && (
                                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-500 border border-amber-500/20 animate-pulse">
                                     Unsaved changes
                                 </span>
@@ -347,456 +440,571 @@ function Profile() {
                     </div>
                 </div>
 
-                {/* 2-Column Responsive Layout */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                    
-                    {/* LEFT / MAIN FORM COLUMN (7 cols) */}
-                    <div className="lg:col-span-7 space-y-6">
-                        
-                        {/* Section 1: Avatar / Photo Management */}
-                        <div className="bg-brand-surface border border-brand-border rounded-2xl p-6 shadow-sm">
-                            <h2 className="text-sm font-bold uppercase tracking-wider text-brand-muted mb-4">
-                                Profile Photo
-                            </h2>
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-5">
-                                <div className="relative group w-20 h-20 rounded-2xl overflow-hidden bg-brand-elevated border border-brand-border shrink-0 shadow-inner">
-                                    <img 
-                                        src={displayAvatarSrc} 
-                                        alt={name || "User Avatar"} 
-                                        className="w-full h-full object-cover"
-                                    />
-                                    <label 
-                                        htmlFor="avatar-upload"
-                                        className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer text-white"
-                                        title="Change photo"
-                                    >
-                                        <Camera size={18} />
-                                        <span className="text-[10px] font-bold mt-1">Change</span>
-                                    </label>
-                                </div>
-                                <div className="flex-1 space-y-2">
-                                    <div className="flex flex-wrap items-center gap-3">
+                {/* TAB SWITCHER */}
+                <div className="flex items-center gap-3 border-b border-brand-border mb-8">
+                    <button
+                        onClick={() => setActiveTab("general")}
+                        className={`flex items-center gap-2 py-3 px-4 text-sm font-semibold border-b-2 transition-all ${
+                            activeTab === "general"
+                                ? "border-indigo-500 text-indigo-400 bg-indigo-500/5 rounded-t-lg"
+                                : "border-transparent text-brand-muted hover:text-brand-text"
+                        }`}
+                    >
+                        <User size={16} />
+                        <span>General Profile</span>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("security")}
+                        className={`flex items-center gap-2 py-3 px-4 text-sm font-semibold border-b-2 transition-all ${
+                            activeTab === "security"
+                                ? "border-indigo-500 text-indigo-400 bg-indigo-500/5 rounded-t-lg"
+                                : "border-transparent text-brand-muted hover:text-brand-text"
+                        }`}
+                    >
+                        <ShieldCheck size={16} />
+                        <span>Security & Sessions</span>
+                    </button>
+                </div>
+
+                {/* TAB CONTENT */}
+                {activeTab === "general" ? (
+                    /* 2-Column Layout for General Profile */
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                        {/* LEFT FORM COLUMN */}
+                        <div className="lg:col-span-7 space-y-6">
+                            {/* Avatar Photo */}
+                            <div className="bg-brand-surface border border-brand-border rounded-2xl p-6 shadow-sm">
+                                <h2 className="text-sm font-bold uppercase tracking-wider text-brand-muted mb-4">
+                                    Profile Photo
+                                </h2>
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-5">
+                                    <div className="relative group w-20 h-20 rounded-2xl overflow-hidden bg-brand-elevated border border-brand-border shrink-0 shadow-inner">
+                                        <img 
+                                            src={displayAvatarSrc} 
+                                            alt={name || "User Avatar"} 
+                                            className="w-full h-full object-cover"
+                                        />
                                         <label 
                                             htmlFor="avatar-upload"
-                                            className="px-3.5 py-1.5 rounded-xl bg-brand-elevated hover:bg-brand-border/60 border border-brand-border text-xs font-semibold text-brand-text cursor-pointer transition-colors shadow-sm inline-flex items-center gap-1.5"
+                                            className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer text-white"
+                                            title="Change photo"
                                         >
-                                            <Camera size={14} className="text-brand-primary" />
-                                            Upload New Photo
+                                            <Camera size={18} />
+                                            <span className="text-[10px] font-bold mt-1">Change</span>
                                         </label>
-                                        <input 
-                                            id="avatar-upload"
-                                            type="file"
-                                            accept="image/png,image/jpeg,image/webp,image/gif"
-                                            className="hidden"
-                                            onChange={handleAvatarSelect}
-                                        />
-                                        {avatarFile && (
-                                            <button
-                                                type="button"
-                                                onClick={handleClearAvatarPreview}
-                                                className="px-3 py-1.5 rounded-xl text-xs font-semibold text-red-500 hover:bg-red-500/10 transition-colors"
+                                    </div>
+                                    <div className="flex-1 space-y-2">
+                                        <div className="flex flex-wrap items-center gap-3">
+                                            <label 
+                                                htmlFor="avatar-upload"
+                                                className="px-3.5 py-1.5 rounded-xl bg-brand-elevated hover:bg-brand-border/60 border border-brand-border text-xs font-semibold text-brand-text cursor-pointer transition-colors shadow-sm inline-flex items-center gap-1.5"
                                             >
-                                                Discard Staged
-                                            </button>
-                                        )}
-                                    </div>
-                                    <p className="text-xs text-brand-muted leading-relaxed">
-                                        Recommended format: JPG, PNG, or WebP. Square aspect ratio, max 5MB.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Section 2: Account Details (Read-only / Identity) */}
-                        <div className="bg-brand-surface border border-brand-border rounded-2xl p-6 shadow-sm space-y-4">
-                            <h2 className="text-sm font-bold uppercase tracking-wider text-brand-muted mb-4">
-                                Account Information
-                            </h2>
-
-                            {/* Email (Read-Only) */}
-                            <div>
-                                <label className="block text-xs font-semibold text-brand-muted mb-1.5">
-                                    Account Email
-                                </label>
-                                <div className="relative flex items-center">
-                                    <div className="absolute left-3.5 text-brand-muted pointer-events-none">
-                                        <Mail size={16} />
-                                    </div>
-                                    <input 
-                                        type="email" 
-                                        value={email} 
-                                        readOnly 
-                                        disabled
-                                        className="w-full bg-brand-elevated/70 border border-brand-border text-brand-text rounded-xl pl-10 pr-24 py-2.5 text-sm font-medium cursor-not-allowed select-all opacity-90"
-                                    />
-                                    <div className="absolute right-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[11px] font-semibold">
-                                        <ShieldCheck size={12} />
-                                        Verified
+                                                <Camera size={14} className="text-brand-primary" />
+                                                Upload New Photo
+                                            </label>
+                                            <input 
+                                                id="avatar-upload"
+                                                type="file"
+                                                accept="image/png,image/jpeg,image/webp,image/gif"
+                                                className="hidden"
+                                                onChange={handleAvatarSelect}
+                                            />
+                                            {avatarFile && (
+                                                <button
+                                                    type="button"
+                                                    onClick={handleClearAvatarPreview}
+                                                    className="px-3 py-1.5 rounded-xl text-xs font-semibold text-red-500 hover:bg-red-500/10 transition-colors"
+                                                >
+                                                    Discard Staged
+                                                </button>
+                                            )}
+                                        </div>
+                                        <p className="text-xs text-brand-muted leading-relaxed">
+                                            Recommended format: JPG, PNG, or WebP. Square aspect ratio, max 5MB.
+                                        </p>
                                     </div>
                                 </div>
-                                <p className="text-[11px] text-brand-muted mt-1.5">
-                                    Your email address is managed through your primary SkillForge account.
-                                </p>
                             </div>
 
-                            {/* Role (Read-Only) */}
-                            <div>
-                                <label className="block text-xs font-semibold text-brand-muted mb-1.5">
-                                    Platform Role
-                                </label>
-                                <div className="flex items-center gap-2">
-                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-brand-primary/10 border border-brand-primary/25 text-brand-primary text-xs font-mono font-bold tracking-wider uppercase">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-brand-primary animate-pulse"></span>
-                                        {role}
-                                    </span>
-                                    <span className="text-xs text-brand-muted">
-                                        {role === "INSTRUCTOR" ? "Authorized course creator & curriculum mentor" : "Active platform learner and developer"}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
+                            {/* Account Info */}
+                            <div className="bg-brand-surface border border-brand-border rounded-2xl p-6 shadow-sm space-y-4">
+                                <h2 className="text-sm font-bold uppercase tracking-wider text-brand-muted mb-4">
+                                    Account Information
+                                </h2>
 
-                        {/* Section 3: Personal Information & Username (Editable) */}
-                        <div className="bg-brand-surface border border-brand-border rounded-2xl p-6 shadow-sm space-y-4">
-                            <h2 className="text-sm font-bold uppercase tracking-wider text-brand-muted mb-4">
-                                Personal Details
-                            </h2>
-
-                            {/* Username / Handle with Real-Time Availability Check */}
-                            <div>
-                                <div className="flex items-center justify-between mb-1.5">
-                                    <label className="text-xs font-semibold text-brand-muted">
-                                        Username / Public Handle <span className="text-brand-primary">*</span>
+                                <div>
+                                    <label className="block text-xs font-semibold text-brand-muted mb-1.5">
+                                        Account Email
                                     </label>
-                                    {usernameStatus.message && (
-                                        <span className={`text-[11px] font-medium flex items-center gap-1 transition-all ${
-                                            usernameStatus.state === "available" ? "text-emerald-500 font-semibold" :
-                                            usernameStatus.state === "taken" ? "text-red-500 font-semibold" :
-                                            usernameStatus.state === "invalid" ? "text-amber-500" :
-                                            usernameStatus.state === "checking" ? "text-brand-primary animate-pulse" :
-                                            "text-brand-muted"
-                                        }`}>
-                                            {usernameStatus.state === "available" && <CheckCircle2 size={12} />}
-                                            {usernameStatus.state === "taken" && <XCircle size={12} />}
-                                            {usernameStatus.state === "invalid" && <AlertCircle size={12} />}
-                                            {usernameStatus.state === "checking" && <Loader2 size={12} className="animate-spin" />}
-                                            {usernameStatus.message}
+                                    <div className="relative">
+                                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-subtle" size={15} />
+                                        <input 
+                                            type="email" 
+                                            value={email} 
+                                            readOnly 
+                                            disabled
+                                            className="w-full bg-brand-elevated/50 text-brand-muted border border-brand-border rounded-xl py-2.5 pl-10 pr-4 text-sm font-mono cursor-not-allowed opacity-80"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-brand-muted mb-1.5">
+                                        Platform Role
+                                    </label>
+                                    <div className="flex items-center gap-2">
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-primary/10 border border-brand-primary/20 text-brand-primary text-xs font-mono font-bold uppercase">
+                                            <ShieldCheck size={14} />
+                                            {role}
                                         </span>
-                                    )}
-                                </div>
-                                <div className="relative flex items-center">
-                                    <div className="absolute left-3.5 text-brand-muted pointer-events-none">
-                                        <AtSign size={16} />
-                                    </div>
-                                    <input 
-                                        type="text" 
-                                        value={username} 
-                                        onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
-                                        placeholder="username"
-                                        maxLength={30}
-                                        className={`w-full bg-brand-bg border rounded-xl pl-10 pr-10 py-2.5 text-sm font-medium font-mono text-brand-text outline-none transition-all placeholder:text-brand-muted/60 ${
-                                            usernameStatus.state === "available" ? "border-emerald-500/70 focus:border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.12)]" :
-                                            usernameStatus.state === "taken" ? "border-red-500/70 focus:border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.12)]" :
-                                            usernameStatus.state === "invalid" ? "border-amber-500/70 focus:border-amber-500" :
-                                            "border-brand-border focus:border-brand-primary"
-                                        }`}
-                                    />
-                                    <div className="absolute right-3.5 pointer-events-none">
-                                        {usernameStatus.state === "checking" && (
-                                            <Loader2 size={16} className="text-brand-primary animate-spin" />
-                                        )}
-                                        {usernameStatus.state === "available" && (
-                                            <CheckCircle2 size={16} className="text-emerald-500" />
-                                        )}
-                                        {usernameStatus.state === "taken" && (
-                                            <XCircle size={16} className="text-red-500" />
-                                        )}
-                                        {usernameStatus.state === "invalid" && (
-                                            <AlertCircle size={16} className="text-amber-500" />
-                                        )}
                                     </div>
                                 </div>
-                                <p className="text-[11px] text-brand-muted mt-1.5 flex items-center gap-1">
-                                    <span>Public URL:</span>
-                                    <span className="font-mono text-brand-primary font-semibold">skillforge.dev/u/{username || 'yourname'}</span>
-                                </p>
                             </div>
 
-                            {/* Full Name */}
-                            <div>
-                                <label className="block text-xs font-semibold text-brand-muted mb-1.5">
-                                    Full Name <span className="text-brand-primary">*</span>
-                                </label>
-                                <div className="relative flex items-center">
-                                    <div className="absolute left-3.5 text-brand-muted pointer-events-none">
-                                        <User size={16} />
-                                    </div>
+                            {/* Public Info */}
+                            <div className="bg-brand-surface border border-brand-border rounded-2xl p-6 shadow-sm space-y-5">
+                                <h2 className="text-sm font-bold uppercase tracking-wider text-brand-muted mb-2">
+                                    Public Information
+                                </h2>
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-brand-muted mb-1.5">
+                                        Full Name
+                                    </label>
                                     <input 
                                         type="text" 
                                         value={name} 
                                         onChange={(e) => setName(e.target.value)}
-                                        placeholder="e.g. Jane Doe"
-                                        maxLength={80}
-                                        className="w-full bg-brand-bg border border-brand-border focus:border-brand-primary rounded-xl pl-10 pr-4 py-2.5 text-sm font-medium text-brand-text outline-none transition-all placeholder:text-brand-muted/60"
+                                        placeholder="e.g. Prem Kumar"
+                                        className="w-full bg-brand-elevated text-brand-text placeholder-brand-subtle border border-brand-border focus:border-brand-primary rounded-xl py-2.5 px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 transition-all"
                                     />
                                 </div>
-                            </div>
 
-                            {/* Bio */}
-                            <div>
-                                <div className="flex items-center justify-between mb-1.5">
-                                    <label className="text-xs font-semibold text-brand-muted">
+                                <div>
+                                    <label className="block text-xs font-semibold text-brand-muted mb-1.5">
+                                        Username Handle
+                                    </label>
+                                    <div className="relative">
+                                        <AtSign className="absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-subtle" size={15} />
+                                        <input 
+                                            type="text" 
+                                            value={username} 
+                                            onChange={(e) => setUsername(e.target.value)}
+                                            placeholder="username"
+                                            className="w-full bg-brand-elevated text-brand-text placeholder-brand-subtle border border-brand-border focus:border-brand-primary rounded-xl py-2.5 pl-10 pr-10 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-primary/20 transition-all"
+                                        />
+                                    </div>
+                                    {usernameStatus.message && (
+                                        <p className={`text-[11px] mt-1.5 font-medium flex items-center gap-1 ${
+                                            usernameStatus.state === 'available' ? 'text-emerald-500' :
+                                            usernameStatus.state === 'taken' || usernameStatus.state === 'invalid' ? 'text-red-500' :
+                                            'text-brand-subtle'
+                                        }`}>
+                                            {usernameStatus.message}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-brand-muted mb-1.5">
                                         Developer Bio
                                     </label>
-                                    <span className={`text-[11px] font-mono ${bio.length > 450 ? 'text-amber-500' : 'text-brand-muted'}`}>
-                                        {bio.length} / 500
-                                    </span>
+                                    <textarea 
+                                        value={bio} 
+                                        onChange={(e) => setBio(e.target.value)}
+                                        rows={3}
+                                        placeholder="Distributed systems engineer, Rust enthusiast, building production scale backends..."
+                                        className="w-full bg-brand-elevated text-brand-text placeholder-brand-subtle border border-brand-border focus:border-brand-primary rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 transition-all resize-none"
+                                    />
                                 </div>
-                                <textarea 
-                                    value={bio} 
-                                    onChange={(e) => setBio(e.target.value)}
-                                    placeholder="Tell other developers about your background, the tech stacks you enjoy working with, and what you're currently building..."
-                                    maxLength={500}
-                                    rows={4}
-                                    className="w-full bg-brand-bg border border-brand-border focus:border-brand-primary rounded-xl p-3.5 text-sm font-medium text-brand-text outline-none transition-all resize-none placeholder:text-brand-muted/60 leading-relaxed"
-                                />
+                            </div>
+
+                            {/* Socials */}
+                            <div className="bg-brand-surface border border-brand-border rounded-2xl p-6 shadow-sm space-y-4">
+                                <h2 className="text-sm font-bold uppercase tracking-wider text-brand-muted mb-2">
+                                    Connected Social Profiles
+                                </h2>
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-brand-muted mb-1.5">GitHub</label>
+                                    <div className="relative">
+                                        <Github className="absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-subtle" size={15} />
+                                        <input 
+                                            type="text" 
+                                            value={socials.github} 
+                                            onChange={(e) => setSocials({ ...socials, github: e.target.value })}
+                                            placeholder="https://github.com/yourhandle"
+                                            className="w-full bg-brand-elevated text-brand-text placeholder-brand-subtle border border-brand-border focus:border-brand-primary rounded-xl py-2.5 pl-10 pr-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 transition-all font-mono"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-brand-muted mb-1.5">LinkedIn</label>
+                                    <div className="relative">
+                                        <Linkedin className="absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-subtle" size={15} />
+                                        <input 
+                                            type="text" 
+                                            value={socials.linkedin} 
+                                            onChange={(e) => setSocials({ ...socials, linkedin: e.target.value })}
+                                            placeholder="https://linkedin.com/in/yourhandle"
+                                            className="w-full bg-brand-elevated text-brand-text placeholder-brand-subtle border border-brand-border focus:border-brand-primary rounded-xl py-2.5 pl-10 pr-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 transition-all font-mono"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex items-center justify-between gap-4 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={handleReset}
+                                    disabled={!hasUnsavedChanges || saving}
+                                    className="px-4 py-2.5 rounded-xl border border-brand-border hover:bg-brand-elevated text-xs font-semibold text-brand-muted hover:text-brand-text transition-colors disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2"
+                                >
+                                    <RotateCcw size={14} />
+                                    <span>Revert Changes</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleSubmitProfile}
+                                    disabled={saving || !hasUnsavedChanges}
+                                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-bold transition-all shadow-md shadow-indigo-500/25 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
+                                >
+                                    {saving ? (
+                                        <>
+                                            <Loader2 size={14} className="animate-spin" />
+                                            <span>Saving...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Save size={14} />
+                                            <span>Save Profile</span>
+                                        </>
+                                    )}
+                                </button>
                             </div>
                         </div>
 
-                        {/* Section 4: Social Links (Editable) */}
-                        <div className="bg-brand-surface border border-brand-border rounded-2xl p-6 shadow-sm space-y-4">
-                            <h2 className="text-sm font-bold uppercase tracking-wider text-brand-muted mb-4">
-                                Linked Profiles & Socials
-                            </h2>
-
-                            {/* GitHub */}
-                            <div>
-                                <label className="block text-xs font-semibold text-brand-muted mb-1.5">
-                                    GitHub Profile
-                                </label>
-                                <div className="relative flex items-center">
-                                    <div className="absolute left-3.5 text-brand-muted pointer-events-none">
-                                        <Github size={16} />
-                                    </div>
-                                    <input 
-                                        type="url" 
-                                        name="github"
-                                        value={socials.github} 
-                                        onChange={(e) => handleSocialChange("github", e.target.value)}
-                                        placeholder="https://github.com/username"
-                                        className="w-full bg-brand-bg border border-brand-border focus:border-brand-primary rounded-xl pl-10 pr-4 py-2.5 text-sm font-medium text-brand-text outline-none transition-all placeholder:text-brand-muted/60"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* LinkedIn */}
-                            <div>
-                                <label className="block text-xs font-semibold text-brand-muted mb-1.5">
-                                    LinkedIn Profile
-                                </label>
-                                <div className="relative flex items-center">
-                                    <div className="absolute left-3.5 text-brand-muted pointer-events-none">
-                                        <Linkedin size={16} />
-                                    </div>
-                                    <input 
-                                        type="url" 
-                                        name="linkedin"
-                                        value={socials.linkedin} 
-                                        onChange={(e) => handleSocialChange("linkedin", e.target.value)}
-                                        placeholder="https://linkedin.com/in/username"
-                                        className="w-full bg-brand-bg border border-brand-border focus:border-brand-primary rounded-xl pl-10 pr-4 py-2.5 text-sm font-medium text-brand-text outline-none transition-all placeholder:text-brand-muted/60"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Twitter / X */}
-                            <div>
-                                <label className="block text-xs font-semibold text-brand-muted mb-1.5">
-                                    Twitter / X
-                                </label>
-                                <div className="relative flex items-center">
-                                    <div className="absolute left-3.5 text-brand-muted pointer-events-none">
-                                        <Twitter size={16} />
-                                    </div>
-                                    <input 
-                                        type="url" 
-                                        name="twitter"
-                                        value={socials.twitter} 
-                                        onChange={(e) => handleSocialChange("twitter", e.target.value)}
-                                        placeholder="https://twitter.com/username"
-                                        className="w-full bg-brand-bg border border-brand-border focus:border-brand-primary rounded-xl pl-10 pr-4 py-2.5 text-sm font-medium text-brand-text outline-none transition-all placeholder:text-brand-muted/60"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="bg-brand-surface border border-brand-border rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3 shadow-sm">
-                            <button
-                                type="button"
-                                onClick={handleReset}
-                                disabled={!hasUnsavedChanges || saving}
-                                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-brand-muted hover:text-brand-text hover:bg-brand-elevated disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                            >
-                                <RotateCcw size={14} />
-                                Reset Changes
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={handleSave}
-                                disabled={saving || usernameStatus.state === "taken" || usernameStatus.state === "invalid"}
-                                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-brand-primary hover:bg-brand-primary/90 text-white text-xs font-bold tracking-wide transition-all shadow-[0_4px_14px_rgba(37,99,235,0.3)] disabled:opacity-60 disabled:cursor-not-allowed"
-                            >
-                                {saving ? (
-                                    <>
-                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                        <span>Saving Profile...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Save size={15} />
-                                        <span>Save Profile</span>
-                                    </>
-                                )}
-                            </button>
-                        </div>
-
-                    </div>
-
-                    {/* RIGHT COLUMN: LIVE PROFILE PREVIEW CARD (5 cols) */}
-                    <div className="lg:col-span-5 lg:sticky lg:top-24 space-y-4">
-                        
-                        <div className="bg-brand-surface border border-brand-border rounded-2xl overflow-hidden shadow-md">
-                            {/* Card Banner */}
-                            <div className="h-28 bg-gradient-to-r from-blue-600/25 via-indigo-600/20 to-blue-500/10 relative border-b border-brand-border/60">
-                                <div className="absolute top-3 right-3">
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-brand-surface/90 backdrop-blur-sm border border-brand-border text-[10px] font-mono font-semibold text-brand-muted">
-                                        Live Preview
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Card Body */}
-                            <div className="px-6 pb-6 relative text-center">
-                                {/* Centered Avatar */}
-                                <div className="w-24 h-24 mx-auto rounded-2xl bg-brand-surface p-1.5 -mt-12 relative z-10 shadow-lg border border-brand-border">
-                                    <img 
-                                        src={displayAvatarSrc} 
-                                        alt={name || "Preview"} 
-                                        className="w-full h-full rounded-xl object-cover bg-brand-elevated"
-                                    />
-                                    <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-brand-surface flex items-center justify-center text-white" title="Active">
-                                        <CheckCircle2 size={12} />
+                        {/* RIGHT LIVE PREVIEW COLUMN */}
+                        <div className="lg:col-span-5 lg:sticky lg:top-24 space-y-4">
+                            <div className="bg-brand-surface border border-brand-border rounded-2xl overflow-hidden shadow-xl backdrop-blur-xl">
+                                <div className="h-28 bg-gradient-to-r from-indigo-600/30 via-purple-600/20 to-cyan-500/20 relative border-b border-brand-border/60">
+                                    <div className="absolute top-3 right-3">
+                                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-brand-surface/90 backdrop-blur-sm border border-brand-border text-[10px] font-mono font-semibold text-brand-muted">
+                                            Live Preview
+                                        </span>
                                     </div>
                                 </div>
-
-                                {/* Identity */}
-                                <h3 className="text-lg font-bold text-brand-text mt-3 tracking-tight">
-                                    {name || "Your Name"}
-                                </h3>
-                                {username && (
-                                    <p className="text-xs font-mono font-bold text-brand-primary mt-0.5">
-                                        @{username}
+                                <div className="px-6 pb-6 relative text-center">
+                                    <div className="w-24 h-24 mx-auto rounded-2xl bg-brand-surface p-1.5 -mt-12 relative z-10 shadow-lg border border-brand-border">
+                                        <img 
+                                            src={displayAvatarSrc} 
+                                            alt={name || "Preview"} 
+                                            className="w-full h-full rounded-xl object-cover bg-brand-elevated"
+                                        />
+                                        <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-brand-surface flex items-center justify-center text-white">
+                                            <CheckCircle2 size={12} />
+                                        </div>
+                                    </div>
+                                    <h3 className="text-lg font-bold text-brand-text mt-3 tracking-tight">
+                                        {name || "Your Name"}
+                                    </h3>
+                                    {username && (
+                                        <p className="text-xs font-mono font-bold text-indigo-400 mt-0.5">
+                                            @{username}
+                                        </p>
+                                    )}
+                                    <p className="text-xs text-brand-muted flex items-center justify-center gap-1.5 mt-1">
+                                        <Mail size={12} />
+                                        {email}
                                     </p>
-                                )}
-                                <p className="text-xs text-brand-muted flex items-center justify-center gap-1.5 mt-1">
-                                    <Mail size={12} />
-                                    {email}
+                                    <div className="mt-3 flex justify-center">
+                                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-400 text-[10px] font-mono font-bold tracking-wider uppercase border border-indigo-500/20">
+                                            {role}
+                                        </span>
+                                    </div>
+                                    <div className="mt-3 text-[11px] text-brand-muted flex items-center justify-center gap-1.5">
+                                        <Calendar size={12} className="text-brand-subtle" />
+                                        <span>Member since {memberSince}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    /* SECURITY & SESSIONS TAB */
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                        
+                        {/* LEFT COLUMN: Change Password Form */}
+                        <div className="lg:col-span-7 space-y-6">
+                            
+                            {/* Password Change Card */}
+                            <div className="bg-brand-surface border border-brand-border rounded-2xl p-6 shadow-sm">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <KeyRound size={18} className="text-brand-primary" />
+                                    <h2 className="text-base font-bold text-brand-text tracking-tight">
+                                        Change Password
+                                    </h2>
+                                </div>
+                                <p className="text-xs text-brand-muted mb-6">
+                                    Enforce defense-in-depth by keeping a unique, cryptographically strong password.
                                 </p>
 
-                                {/* Role Badge */}
-                                <div className="mt-3 flex justify-center">
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-brand-primary/10 text-brand-primary text-[10px] font-mono font-bold tracking-wider uppercase border border-brand-primary/20">
-                                        {role}
-                                    </span>
-                                </div>
+                                {passError && (
+                                    <div className="mb-5 flex items-start gap-2.5 bg-red-500/10 border border-red-500/20 text-red-400 p-3.5 rounded-xl text-xs font-medium">
+                                        <AlertCircle size={16} className="mt-0.5 shrink-0 text-red-400" />
+                                        <span>{passError}</span>
+                                    </div>
+                                )}
 
-                                {/* Member Since */}
-                                <div className="mt-3 text-[11px] text-brand-muted flex items-center justify-center gap-1.5">
-                                    <Calendar size={12} className="text-brand-subtle" />
-                                    <span>Member since {memberSince}</span>
-                                </div>
+                                <form onSubmit={handlePasswordChangeSubmit} className="space-y-4" noValidate>
+                                    {/* Current Password */}
+                                    <div className="space-y-1.5">
+                                        <label className="text-[11px] font-bold text-brand-muted uppercase tracking-wider">
+                                            Current Password
+                                        </label>
+                                        <div className="relative">
+                                            <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-subtle" />
+                                            <input
+                                                type={showCurrentPass ? "text" : "password"}
+                                                value={currentPassword}
+                                                onChange={(e) => setCurrentPassword(e.target.value)}
+                                                placeholder="••••••••"
+                                                className="w-full bg-brand-elevated text-brand-text placeholder-brand-subtle border border-brand-border focus:border-brand-primary rounded-xl py-2.5 pl-10 pr-10 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-primary/20 transition-all"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowCurrentPass(!showCurrentPass)}
+                                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-brand-subtle hover:text-brand-text p-1"
+                                                tabIndex={-1}
+                                            >
+                                                {showCurrentPass ? <EyeOff size={15} /> : <Eye size={15} />}
+                                            </button>
+                                        </div>
+                                    </div>
 
-                                {/* Bio Preview */}
-                                <div className="mt-4 pt-4 border-t border-brand-border/70 text-left">
-                                    <p className="text-xs text-brand-muted leading-relaxed font-normal italic">
-                                        {bio.trim() ? (
-                                            `“${bio.trim()}”`
+                                    {/* New Password */}
+                                    <div className="space-y-1.5">
+                                        <label className="text-[11px] font-bold text-brand-muted uppercase tracking-wider">
+                                            New Password
+                                        </label>
+                                        <div className="relative">
+                                            <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-subtle" />
+                                            <input
+                                                type={showNewPass ? "text" : "password"}
+                                                value={newPassword}
+                                                onChange={(e) => setNewPassword(e.target.value)}
+                                                placeholder="••••••••"
+                                                className="w-full bg-brand-elevated text-brand-text placeholder-brand-subtle border border-brand-border focus:border-brand-primary rounded-xl py-2.5 pl-10 pr-10 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-primary/20 transition-all"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowNewPass(!showNewPass)}
+                                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-brand-subtle hover:text-brand-text p-1"
+                                                tabIndex={-1}
+                                            >
+                                                {showNewPass ? <EyeOff size={15} /> : <Eye size={15} />}
+                                            </button>
+                                        </div>
+
+                                        {/* Strength Bar */}
+                                        {newPassword && (
+                                            <div className="pt-2 space-y-1.5">
+                                                <div className="flex justify-between items-center text-xs">
+                                                    <span className="text-brand-muted text-[11px]">Password Strength:</span>
+                                                    <span className={`font-bold text-[11px] ${
+                                                        strength.label === 'Strong' ? 'text-emerald-400' :
+                                                        strength.label === 'Good' ? 'text-blue-400' : 'text-red-400'
+                                                    }`}>
+                                                        {strength.label}
+                                                    </span>
+                                                </div>
+                                                <div className="w-full h-1.5 bg-brand-elevated rounded-full overflow-hidden">
+                                                    <div className={`h-full rounded-full transition-all duration-300 ${strength.color}`} style={{ width: strength.width }} />
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-1.5 text-[11px] pt-1">
+                                                    <span className={`flex items-center gap-1 ${hasMinLength ? 'text-emerald-400' : 'text-brand-subtle'}`}>
+                                                        {hasMinLength ? <Check size={12} /> : <span className="w-1.5 h-1.5 rounded-full bg-brand-subtle" />} 8+ characters
+                                                    </span>
+                                                    <span className={`flex items-center gap-1 ${hasUpper ? 'text-emerald-400' : 'text-brand-subtle'}`}>
+                                                        {hasUpper ? <Check size={12} /> : <span className="w-1.5 h-1.5 rounded-full bg-brand-subtle" />} Uppercase letter
+                                                    </span>
+                                                    <span className={`flex items-center gap-1 ${hasLower ? 'text-emerald-400' : 'text-brand-subtle'}`}>
+                                                        {hasLower ? <Check size={12} /> : <span className="w-1.5 h-1.5 rounded-full bg-brand-subtle" />} Lowercase letter
+                                                    </span>
+                                                    <span className={`flex items-center gap-1 ${hasNumber ? 'text-emerald-400' : 'text-brand-subtle'}`}>
+                                                        {hasNumber ? <Check size={12} /> : <span className="w-1.5 h-1.5 rounded-full bg-brand-subtle" />} Number (0-9)
+                                                    </span>
+                                                    <span className={`flex items-center gap-1 ${hasSpecial ? 'text-emerald-400' : 'text-brand-subtle'}`}>
+                                                        {hasSpecial ? <Check size={12} /> : <span className="w-1.5 h-1.5 rounded-full bg-brand-subtle" />} Special character
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Confirm New Password */}
+                                    <div className="space-y-1.5">
+                                        <div className="flex justify-between items-center">
+                                            <label className="text-[11px] font-bold text-brand-muted uppercase tracking-wider">
+                                                Confirm New Password
+                                            </label>
+                                            {passwordsMatch && (
+                                                <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1">
+                                                    <Check size={12} /> Matches
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="relative">
+                                            <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-subtle" />
+                                            <input
+                                                type={showConfirmPass ? "text" : "password"}
+                                                value={confirmPassword}
+                                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                                placeholder="••••••••"
+                                                className="w-full bg-brand-elevated text-brand-text placeholder-brand-subtle border border-brand-border focus:border-brand-primary rounded-xl py-2.5 pl-10 pr-10 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-primary/20 transition-all"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowConfirmPass(!showConfirmPass)}
+                                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-brand-subtle hover:text-brand-text p-1"
+                                                tabIndex={-1}
+                                            >
+                                                {showConfirmPass ? <EyeOff size={15} /> : <Eye size={15} />}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        disabled={changingPass || criteriaMet < 5 || !currentPassword || !passwordsMatch}
+                                        className="w-full mt-3 bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3 rounded-xl transition-all shadow-md shadow-indigo-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-xs"
+                                    >
+                                        {changingPass ? (
+                                            <>
+                                                <Loader2 size={15} className="animate-spin" />
+                                                <span>Updating Credentials...</span>
+                                            </>
                                         ) : (
-                                            <span className="not-italic text-brand-subtle text-[11px]">
-                                                No biography written yet. Add a short bio to introduce yourself on SkillForge.
+                                            <>
+                                                <KeyRound size={15} />
+                                                <span>Update Password</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </form>
+                            </div>
+
+                            {/* Active Devices & Session Management */}
+                            <div className="bg-brand-surface border border-brand-border rounded-2xl p-6 shadow-sm">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div>
+                                        <h2 className="text-base font-bold text-brand-text tracking-tight">
+                                            Active Sessions
+                                        </h2>
+                                        <p className="text-xs text-brand-muted">
+                                            Devices and browsers with active refresh token sessions.
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={handleTerminateAllSessions}
+                                        disabled={loggingOutAll}
+                                        className="px-3 py-1.5 rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs font-semibold transition-colors inline-flex items-center gap-1.5"
+                                        title="Revoke all refresh tokens"
+                                    >
+                                        <LogOut size={13} />
+                                        <span>Sign Out Everywhere</span>
+                                    </button>
+                                </div>
+
+                                {loadingSessions ? (
+                                    <div className="py-6 text-center text-xs text-brand-muted flex items-center justify-center gap-2">
+                                        <Loader2 size={14} className="animate-spin text-brand-primary" />
+                                        <span>Loading session audit list...</span>
+                                    </div>
+                                ) : sessions.length === 0 ? (
+                                    <div className="p-4 rounded-xl bg-brand-elevated text-xs text-brand-muted">
+                                        Current session active. No other devices detected.
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {sessions.map((sess) => (
+                                            <div key={sess.id} className="p-3.5 rounded-xl bg-brand-elevated border border-brand-border flex items-center justify-between gap-3 text-xs">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-lg bg-brand-primary/10 border border-brand-primary/20 text-brand-primary flex items-center justify-center shrink-0">
+                                                        {sess.userAgent.includes("Mobile") ? <Smartphone size={16} /> : <Laptop size={16} />}
+                                                    </div>
+                                                    <div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="font-semibold text-brand-text truncate max-w-[200px]">
+                                                                {sess.userAgent.split(" ")[0] || "Browser Session"}
+                                                            </span>
+                                                            {sess.isCurrent && (
+                                                                <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-[10px] font-mono font-bold text-emerald-400">
+                                                                    This Device
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <span className="text-[11px] text-brand-muted block mt-0.5 font-mono">
+                                                            IP: {sess.ip} &bull; Started {new Date(sess.createdAt).toLocaleDateString()}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* RIGHT COLUMN: Security Audit Status */}
+                        <div className="lg:col-span-5 space-y-4">
+                            <div className="bg-brand-surface border border-brand-border rounded-2xl p-6 shadow-sm space-y-4">
+                                <div className="flex items-center gap-2">
+                                    <Shield size={18} className="text-emerald-400" />
+                                    <h3 className="text-sm font-bold uppercase tracking-wider text-brand-muted">
+                                        Security Checklist
+                                    </h3>
+                                </div>
+
+                                <div className="space-y-3 pt-2">
+                                    <div className="flex items-start gap-3 p-3 rounded-xl bg-brand-elevated border border-brand-border">
+                                        <CheckCircle2 size={16} className="text-emerald-400 mt-0.5 shrink-0" />
+                                        <div>
+                                            <span className="text-xs font-bold text-brand-text block">Email Verified</span>
+                                            <span className="text-[11px] text-brand-muted">
+                                                Two-way cryptographic OTP verified for {email}.
                                             </span>
-                                        )}
-                                    </p>
-                                </div>
+                                        </div>
+                                    </div>
 
-                                {/* Social Links Preview */}
-                                <div className="mt-5 pt-4 border-t border-brand-border/70">
-                                    <span className="text-[10px] uppercase tracking-wider font-bold text-brand-subtle block mb-3">
-                                        Connected Links
-                                    </span>
-                                    <div className="flex items-center justify-center gap-3">
-                                        {socials.github ? (
-                                            <a 
-                                                href={socials.github.startsWith("http") ? socials.github : `https://${socials.github}`} 
-                                                target="_blank" 
-                                                rel="noopener noreferrer"
-                                                className="w-9 h-9 rounded-xl bg-brand-elevated hover:bg-brand-primary hover:text-white border border-brand-border flex items-center justify-center text-brand-text transition-all shadow-sm"
-                                                title="GitHub Profile"
-                                            >
-                                                <Github size={16} />
-                                            </a>
-                                        ) : (
-                                            <div className="w-9 h-9 rounded-xl bg-brand-elevated/40 border border-brand-border/50 flex items-center justify-center text-brand-subtle/50" title="GitHub not connected">
-                                                <Github size={16} />
-                                            </div>
-                                        )}
+                                    <div className="flex items-start gap-3 p-3 rounded-xl bg-brand-elevated border border-brand-border">
+                                        <CheckCircle2 size={16} className="text-emerald-400 mt-0.5 shrink-0" />
+                                        <div>
+                                            <span className="text-xs font-bold text-brand-text block">Refresh Token Rotation (RTR)</span>
+                                            <span className="text-[11px] text-brand-muted">
+                                                One-time token rotation with automatic replay attack mitigation.
+                                            </span>
+                                        </div>
+                                    </div>
 
-                                        {socials.linkedin ? (
-                                            <a 
-                                                href={socials.linkedin.startsWith("http") ? socials.linkedin : `https://${socials.linkedin}`} 
-                                                target="_blank" 
-                                                rel="noopener noreferrer"
-                                                className="w-9 h-9 rounded-xl bg-[#0077B5]/15 hover:bg-[#0077B5] hover:text-white border border-[#0077B5]/30 flex items-center justify-center text-[#0077B5] transition-all shadow-sm"
-                                                title="LinkedIn Profile"
-                                            >
-                                                <Linkedin size={16} />
-                                            </a>
-                                        ) : (
-                                            <div className="w-9 h-9 rounded-xl bg-brand-elevated/40 border border-brand-border/50 flex items-center justify-center text-brand-subtle/50" title="LinkedIn not connected">
-                                                <Linkedin size={16} />
-                                            </div>
-                                        )}
-
-                                        {socials.twitter ? (
-                                            <a 
-                                                href={socials.twitter.startsWith("http") ? socials.twitter : `https://${socials.twitter}`} 
-                                                target="_blank" 
-                                                rel="noopener noreferrer"
-                                                className="w-9 h-9 rounded-xl bg-[#1DA1F2]/15 hover:bg-[#1DA1F2] hover:text-white border border-[#1DA1F2]/30 flex items-center justify-center text-[#1DA1F2] transition-all shadow-sm"
-                                                title="Twitter / X Profile"
-                                            >
-                                                <Twitter size={16} />
-                                            </a>
-                                        ) : (
-                                            <div className="w-9 h-9 rounded-xl bg-brand-elevated/40 border border-brand-border/50 flex items-center justify-center text-brand-subtle/50" title="Twitter / X not connected">
-                                                <Twitter size={16} />
-                                            </div>
-                                        )}
+                                    <div className="flex items-start gap-3 p-3 rounded-xl bg-brand-elevated border border-brand-border">
+                                        <CheckCircle2 size={16} className="text-emerald-400 mt-0.5 shrink-0" />
+                                        <div>
+                                            <span className="text-xs font-bold text-brand-text block">Account Lockout Defense</span>
+                                            <span className="text-[11px] text-brand-muted">
+                                                Automatic 15-minute freeze on 5 consecutive failed login attempts.
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Subtle helper card */}
-                        <div className="p-4 rounded-xl bg-brand-elevated/50 border border-brand-border text-[11px] text-brand-muted leading-relaxed">
-                            <span className="font-semibold text-brand-text">Note:</span> Your profile is visible across courses, discussions, and workspaces. No private progress data or dashboard stats are published here.
-                        </div>
-
                     </div>
-
-                </div>
+                )}
             </main>
         </div>
     );

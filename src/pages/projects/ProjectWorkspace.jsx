@@ -64,6 +64,7 @@ import { fetchAiMentorAdvice } from "../../services/aiMentorService";
 import CodeStudioEditor from "../../components/workspace/CodeStudioEditor";
 import CommandPalette from "../../components/workspace/CommandPalette";
 import FileExplorerTree, { getFileIcon } from "../../components/workspace/FileExplorerTree";
+import CodeReviewPanel from "../../components/workspace/CodeReviewPanel";
 import toast from "react-hot-toast";
 import api from "../../api";
 import ForgeCopilotMarkdown from "../../components/copilot/ForgeCopilotMarkdown";
@@ -266,6 +267,18 @@ export default function ProjectWorkspace() {
     const [testResults, setTestResults] = useState(null);
     const [selectedFailedTestIdx, setSelectedFailedTestIdx] = useState(0);
 
+    // AI Automated Code Review state
+    const [codeReview, setCodeReview] = useState(() => {
+        try {
+            const saved = localStorage.getItem(`skillforge_review_${project?.id}_${currentMilestoneIndex}`);
+            return saved ? JSON.parse(saved) : null;
+        } catch (e) {
+            return null;
+        }
+    });
+    const [isLoadingReview, setIsLoadingReview] = useState(false);
+    const [reviewHistory, setReviewHistory] = useState([]);
+
     // Copilot sub-tabs: 'chat' | 'code' | 'explain' | 'debug' | 'architect'
     const [copilotSubTab, setCopilotSubTab] = useState("chat");
 
@@ -394,6 +407,17 @@ export default function ProjectWorkspace() {
             .catch((err) => {
                 console.debug("Remote progress fetch:", err.message);
             });
+
+        api.get(`/copilot/reviews/${project.id}`)
+            .then((res) => {
+                if (!isMounted) return;
+                if (Array.isArray(res.data?.reviews)) {
+                    setReviewHistory(res.data.reviews);
+                    const currentReview = res.data.reviews.find(r => r.milestoneIndex === currentMilestoneIndex);
+                    if (currentReview) setCodeReview(currentReview);
+                }
+            })
+            .catch(() => {});
 
         return () => {
             isMounted = false;
@@ -562,6 +586,68 @@ export default function ProjectWorkspace() {
         if (!fixCode) return;
         handleCodeChange(fixCode);
         toast.success(`Applied suggested fix to ${activeFileName}!`);
+    };
+
+    // Trigger AI Automated Code Review
+    const handleTriggerCodeReview = async () => {
+        if (isLoadingReview) return;
+        setIsLoadingReview(true);
+        setTerminalTab("review");
+        setIsTerminalCollapsed(false);
+
+        const activeFileObj = files.find(f => f.name === activeFileName) || files[0];
+        const lang = workspaceData.language || project.language || activeFileObj?.language || "javascript";
+
+        try {
+            const res = await api.post("/copilot/code-review", {
+                projectId: project.id,
+                projectTitle: project.title,
+                language: lang,
+                milestoneIndex: currentMilestoneIndex,
+                milestoneTitle: milestoneGuide.title,
+                milestoneRules: milestoneGuide.specRules || [],
+                files: files.map(f => ({ name: f.name, content: f.content, language: f.language })),
+                testResults
+            });
+
+            if (res.data?.success && res.data?.review) {
+                const newReview = res.data.review;
+                setCodeReview(newReview);
+                try {
+                    localStorage.setItem(`skillforge_review_${project.id}_${currentMilestoneIndex}`, JSON.stringify(newReview));
+                } catch (e) {}
+                setReviewHistory(prev => [newReview, ...prev.filter(r => r.milestoneIndex !== currentMilestoneIndex)]);
+                toast.success(`AI Code Review Ready: Grade ${newReview.grade} (${newReview.score}/100)`, { icon: "🏆" });
+            } else {
+                toast.error("Failed to generate code review.");
+            }
+        } catch (err) {
+            console.error("AI Code Review error:", err);
+            toast.error("AI Code Review unavailable. Please verify API configuration or try again.");
+        } finally {
+            setIsLoadingReview(false);
+        }
+    };
+
+    // Apply Review Suggestion directly to active or specified file
+    const handleApplyReviewFix = (suggestedCode, currentCode, targetFileName = null) => {
+        if (!suggestedCode) return;
+        const fileToUpdateName = targetFileName || activeFileName;
+        const fileObj = files.find(f => f.name === fileToUpdateName) || files[0];
+        if (!fileObj) return;
+
+        let newContent = fileObj.content || "";
+        const cleanCurrent = currentCode ? currentCode.trim() : null;
+
+        if (cleanCurrent && newContent.includes(cleanCurrent)) {
+            newContent = newContent.replace(cleanCurrent, suggestedCode.trim());
+            handleCodeChange(newContent);
+            toast.success(`Applied refactor to ${fileObj.name}!`, { icon: "✨" });
+        } else {
+            newContent = `${newContent}\n\n// AI Suggested Refactor:\n${suggestedCode}`;
+            handleCodeChange(newContent);
+            toast.success(`Inserted refactor snippet into ${fileObj.name}`, { icon: "✨" });
+        }
     };
 
     // Trigger Forge Copilot
@@ -760,6 +846,9 @@ export default function ProjectWorkspace() {
 
                 toast.success(`Stage ${currentMilestoneIndex + 1} passed! Requirements verified.`);
 
+                // Automatically trigger AI Automated Code Review in background
+                handleTriggerCodeReview();
+
                 if (currentMilestoneIndex + 1 === (project.milestones?.length || 5)) {
                     setShowCelebration(true);
                 }
@@ -868,18 +957,18 @@ export default function ProjectWorkspace() {
     const activeFailingStep = testResults?.steps?.[selectedFailedTestIdx] || testResults?.steps?.find(s => !s.passed) || milestoneGuide.testCases[2];
 
     return (
-        <div className="h-screen w-screen bg-[#0d1017] text-[#cbd5e1] flex flex-col overflow-hidden font-sans select-none antialiased">
+        <div className="h-screen w-screen bg-[#080B12] text-[#cbd5e1] flex flex-col overflow-hidden font-sans select-none antialiased">
             
             {/* ======================================================== */}
-            {/* TOP BAR: Relaxed, Calm, Professional Developer Palette   */}
+            {/* TOP BAR: Sleek Obsidian & Cobalt Header Palette           */}
             {/* ======================================================== */}
-            <header className="h-12 border-b border-[#1c2230] bg-[#11141c] px-3 flex items-center justify-between shrink-0 z-30 select-none">
+            <header className="h-12 border-b border-[#1B2232] bg-[#070A10] px-3 flex items-center justify-between shrink-0 z-30 select-none">
                 
                 {/* 1. Brand & Navigation + 2. Stage Progress */}
                 <div className="flex items-center gap-2.5 min-w-0">
                     <button
                         onClick={() => navigate("/projects")}
-                        className="p-1.5 rounded text-[#717d96] hover:text-[#f1f5f9] hover:bg-[#1a202c] transition-colors"
+                        className="p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
                         title="Back to Projects"
                     >
                         <ChevronLeft size={16} />
@@ -887,7 +976,7 @@ export default function ProjectWorkspace() {
 
                     <button
                         onClick={() => navigate("/dashboard")}
-                        className="flex items-center gap-1.5 hover:opacity-85 transition-opacity shrink-0"
+                        className="flex items-center gap-1.5 hover:opacity-90 transition-opacity shrink-0"
                         title="SkillForge Dashboard"
                     >
                         <img 
@@ -895,34 +984,34 @@ export default function ProjectWorkspace() {
                             alt="SkillForge" 
                             className="h-5 w-auto object-contain" 
                         />
-                        <span className="font-semibold text-sm tracking-tight text-[#f1f5f9] hidden sm:inline">
+                        <span className="font-semibold text-sm tracking-tight text-white hidden sm:inline">
                             SkillForge
                         </span>
                     </button>
 
                     {/* Course Path & Breadcrumb */}
-                    <div className="hidden xl:flex items-center gap-1.5 text-xs text-[#525f7a] ml-1">
-                        <span className="text-[#38bdf8] font-medium">{project.track || "Web Development"}</span>
-                        <span>&gt;</span>
-                        <span className="truncate max-w-[160px] text-[#94a3b8]">{project.title}</span>
-                        <span>&gt;</span>
-                        <span className="truncate max-w-[200px] text-[#e2e8f0] font-medium">
+                    <div className="hidden xl:flex items-center gap-1.5 text-xs text-slate-500 ml-1 font-mono">
+                        <span className="text-sky-400 font-medium">{project.track || "Systems"}</span>
+                        <span>›</span>
+                        <span className="truncate max-w-[160px] text-slate-400">{project.title}</span>
+                        <span>›</span>
+                        <span className="truncate max-w-[200px] text-slate-200 font-medium">
                             Stage {currentMilestoneIndex + 1}: {milestoneGuide.title}
                         </span>
                     </div>
 
-                    {/* 2. Stage Progress Pill + Bar (Relaxed green & slate) */}
-                    <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#151924] border border-[#22293a] text-xs shrink-0 ml-1">
-                        <span className="font-semibold text-[#34d399] text-[11px] font-mono">
+                    {/* 2. Stage Progress Pill + Bar */}
+                    <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#0D121F] border border-[#1B2232] text-xs shrink-0 ml-1">
+                        <span className="font-semibold text-emerald-400 text-[11px] font-mono">
                             Stage {currentMilestoneIndex + 1}/{totalMilestones}
                         </span>
-                        <div className="w-16 h-1.5 rounded-full bg-[#202738] overflow-hidden">
+                        <div className="w-16 h-1.5 rounded-full bg-slate-800 overflow-hidden">
                             <div 
-                                className="h-full bg-emerald-500/80 rounded-full transition-all duration-300" 
+                                className="h-full bg-emerald-500 rounded-full transition-all duration-300" 
                                 style={{ width: `${progressPercent}%` }}
                             />
                         </div>
-                        <span className="text-[10px] text-[#717d96] font-mono">{progressPercent}%</span>
+                        <span className="text-[10px] text-slate-400 font-mono">{progressPercent}%</span>
                     </div>
                 </div>
 
@@ -930,29 +1019,33 @@ export default function ProjectWorkspace() {
                 <div className="flex items-center gap-2 shrink-0">
                     
                     {/* 3. Language Dropdown Selector */}
-                    <div className="hidden md:flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#151924] border border-[#22293a] text-xs font-mono text-[#cbd5e1]">
+                    <div 
+                        onClick={() => navigate("/settings")}
+                        className="hidden md:flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#0D121F] border border-[#1B2232] text-xs font-mono text-slate-300 hover:border-sky-500/40 cursor-pointer transition-colors"
+                        title="Configure Editor Settings"
+                    >
                         <span className="capitalize">{workspaceData.language || project.language || "Rust"}</span>
-                        <ChevronDown size={13} className="text-[#64748b]" />
-                        <Settings size={12} className="text-[#64748b] ml-1 hover:text-white cursor-pointer" />
+                        <ChevronDown size={13} className="text-slate-400" />
+                        <Settings size={12} className="text-slate-400 ml-1 hover:text-sky-400 transition-colors" />
                     </div>
 
-                    {/* 4. Action Buttons (Calm, relaxed tones) */}
-                    {/* Run Button: Soft neutral slate with blue accent */}
+                    {/* 4. Action Buttons */}
+                    {/* Run Button */}
                     <button
                         onClick={handleRunTests}
                         disabled={isRunningTests}
-                        className="px-3.5 py-1.5 rounded-md bg-[#181d2a] hover:bg-[#202738] active:bg-[#141822] text-[#93c5fd] border border-[#2b354a] text-xs font-medium transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+                        className="px-3.5 py-1.5 rounded-md bg-[#162032] hover:bg-[#1E293B] active:bg-[#0F172A] text-sky-400 border border-sky-500/30 text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
                         title="Run Tests (Ctrl+Enter)"
                     >
-                        <Play size={12} fill="currentColor" className={isRunningTests ? "animate-spin text-[#93c5fd]" : "text-[#93c5fd]"} />
+                        <Play size={12} fill="currentColor" className={isRunningTests ? "animate-spin text-sky-400" : "text-sky-400"} />
                         <span>Run</span>
                     </button>
 
-                    {/* Submit Button: Relaxed emerald tint, not neon green */}
+                    {/* Submit Button */}
                     <button
                         onClick={handleRunTests}
                         disabled={isRunningTests}
-                        className="px-3.5 py-1.5 rounded-md bg-[#064e3b]/40 hover:bg-[#064e3b]/60 active:bg-[#064e3b]/80 text-[#6ee7b7] border border-[#059669]/40 text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+                        className="px-3.5 py-1.5 rounded-md bg-emerald-500/15 hover:bg-emerald-500/25 active:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
                         title="Submit Stage Verification (Cloud Sync)"
                     >
                         <Cloud size={13} />
@@ -960,38 +1053,58 @@ export default function ProjectWorkspace() {
                         <span className="text-[10px] font-mono opacity-70">↵</span>
                     </button>
 
-                    {/* Forge Copilot Button: Relaxed sky tint */}
+                    {/* AI Code Review Button */}
+                    <button
+                        type="button"
+                        onClick={handleTriggerCodeReview}
+                        disabled={isLoadingReview || isRunningTests}
+                        className={`px-3 py-1.5 rounded-md border text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm ${
+                            codeReview
+                                ? "bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border-indigo-500/30"
+                                : "bg-[#141B2D] hover:bg-[#1A233A] text-slate-300 border-[#222E46]"
+                        }`}
+                        title="Request Automated AI Staff Code Review"
+                    >
+                        {isLoadingReview ? (
+                            <RefreshCw size={12} className="animate-spin text-sky-400" />
+                        ) : (
+                            <Award size={13} className={codeReview ? "text-indigo-400" : "text-slate-400"} />
+                        )}
+                        <span>{isLoadingReview ? "Reviewing..." : codeReview ? `Review (${codeReview.grade})` : "AI Review"}</span>
+                    </button>
+
+                    {/* Forge Copilot Button */}
                     <button
                         onClick={() => setIsCopilotOpen(prev => !prev)}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-medium transition-all shadow-sm ${
                             isCopilotOpen
-                                ? "bg-[#0c4a6e]/40 hover:bg-[#0c4a6e]/60 text-[#7dd3fc] border-[#0284c7]/40 shadow-sm"
-                                : "bg-[#151924] hover:bg-[#1c2232] text-[#94a3b8] border-[#22293a]"
+                                ? "bg-sky-500/20 text-sky-300 border-sky-400/50 shadow-[0_0_12px_rgba(56,189,248,0.2)] font-semibold"
+                                : "bg-[#0D121F] hover:bg-[#162032] text-slate-300 border-[#1B2232]"
                         }`}
                         title="Toggle Forge Copilot Assistant"
                     >
-                        <Zap size={13} className="text-[#38bdf8]" />
+                        <Zap size={13} className="text-sky-400" />
                         <span>Forge Copilot</span>
                     </button>
                 </div>
 
-                {/* 5. Utility Icons (Search ⌘K, Theme, Fullscreen, Profile) */}
+                {/* 5. Utility Icons (Search ⌘K, Settings, Fullscreen, Profile) */}
                 <div className="flex items-center gap-1.5 shrink-0">
                     <button
                         onClick={() => setIsCommandPaletteOpen(true)}
-                        className="hidden lg:flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-[#717d96] hover:text-[#f1f5f9] hover:bg-[#1a202c] transition-colors"
+                        className="hidden lg:flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-slate-400 hover:text-white hover:bg-white/10 transition-colors font-mono"
                         title="Command Palette (Ctrl+K or Ctrl+P)"
                     >
                         <Search size={13} />
-                        <kbd className="px-1 py-0.2 bg-[#151924] border border-[#22293a] rounded text-[9px] font-mono">⌘K</kbd>
+                        <kbd className="px-1 py-0.2 bg-[#0D121F] border border-[#1B2232] rounded text-[9px]">⌘K</kbd>
                     </button>
 
                     <button
-                        onClick={() => toast("Refined relaxed dark theme active")}
-                        className="p-1.5 rounded text-[#717d96] hover:text-white hover:bg-[#1a202c] transition-colors"
-                        title="Theme Settings"
+                        onClick={() => navigate("/settings")}
+                        className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                        title="Preferences & Editor Settings"
                     >
-                        <Sun size={14} />
+                        <Sliders size={14} />
                     </button>
 
                     <button
@@ -1023,7 +1136,7 @@ export default function ProjectWorkspace() {
                 {/* ---------------------------------------------------- */}
                 {/* 6. SIDEBAR NAVIGATION RAIL (Far Left: 56px wide)     */}
                 {/* ---------------------------------------------------- */}
-                <aside className="w-14 bg-[#0a0c12] border-r border-[#1c2230] flex flex-col items-center justify-between py-3 shrink-0 z-20 select-none">
+                <aside className="w-14 bg-[#070A10] border-r border-[#1B2232] flex flex-col items-center justify-between py-3 shrink-0 z-20 select-none">
                     <div className="flex flex-col items-center gap-3">
                         {[
                             { id: "learn", icon: BookOpen, label: "Learn" },
@@ -1045,17 +1158,16 @@ export default function ProjectWorkspace() {
                                             setActivityTab(item.id);
                                             setIsSpecsCollapsed(false);
                                             if (item.id === "learn") setSpecTab("description");
-                                            if (item.id === "files") setSpecTab("files");
                                             if (item.id === "tests") {
                                                 setIsTerminalCollapsed(false);
                                                 setTerminalTab("results");
                                             }
                                         }
                                     }}
-                                    className={`w-11 py-1.5 rounded-md flex flex-col items-center justify-center gap-1 transition-all ${
+                                    className={`w-11 py-2 rounded-lg flex flex-col items-center justify-center gap-1 transition-all ${
                                         isActive
-                                            ? "bg-[#181d2a] text-[#7dd3fc] font-medium border border-[#29354a] shadow-sm"
-                                            : "text-[#64748b] hover:text-[#cbd5e1] hover:bg-[#121620]"
+                                            ? "bg-sky-500/15 text-sky-400 font-semibold border border-sky-500/30 shadow-sm"
+                                            : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]"
                                     }`}
                                 >
                                     <Icon size={16} />
@@ -1068,7 +1180,7 @@ export default function ProjectWorkspace() {
                     <button
                         type="button"
                         onClick={() => setIsSpecsCollapsed(prev => !prev)}
-                        className="w-10 h-10 rounded-md flex items-center justify-center text-[#64748b] hover:text-white hover:bg-[#121620] transition-colors"
+                        className="w-10 h-10 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/[0.04] transition-colors"
                         title={isSpecsCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
                     >
                         {isSpecsCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
@@ -1076,57 +1188,202 @@ export default function ProjectWorkspace() {
                 </aside>
 
                 {/* ---------------------------------------------------- */}
-                {/* 7. LEARNING PANEL (Left Drawer: 25-27%)              */}
+                {/* 7. ADAPTIVE LEFT DRAWER (Explorer or Instructions)   */}
                 {/* ---------------------------------------------------- */}
-                {!isSpecsCollapsed && (
+                {!isSpecsCollapsed && (() => {
+                    const currentSpecTab = ["description", "roadmap", "submissions"].includes(specTab) ? specTab : "description";
+                    const currentSubSpecTab = ["task", "requirements", "examples", "hints"].includes(subSpecTab) ? subSpecTab : "task";
+
+                    return (
                     <div 
                         style={{ width: `${panelWidth}px` }}
-                        className={`bg-[#10141d] border-r border-[#1c2230] flex flex-col shrink-0 h-full overflow-hidden select-text will-change-[width] ${
+                        className={`bg-[#080B12] border-r border-[#1B2232] flex flex-col shrink-0 h-full overflow-hidden select-text will-change-[width] ${
                             isDraggingPanel ? "select-none" : ""
                         }`}
                     >
-                        {/* Drawer Header Tabs (Description, Roadmap, Submissions, ✕) */}
-                        <div className="h-10 bg-[#0d1017] border-b border-[#1c2230] px-3 flex items-center justify-between shrink-0 select-none">
-                            <div className="flex items-center gap-1">
-                                {[
-                                    { id: "description", label: "Description", icon: BookOpen },
-                                    { id: "roadmap", label: "Roadmap", icon: Milestone },
-                                    { id: "submissions", label: "Submissions", icon: UploadCloud }
-                                ].map(tab => {
-                                    const Icon = tab.icon;
-                                    const isActive = specTab === tab.id;
-                                    return (
-                                        <button
-                                            key={tab.id}
-                                            type="button"
-                                            onClick={() => setSpecTab(tab.id)}
-                                            className={`px-2.5 py-1 text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors ${
-                                                isActive
-                                                    ? "bg-[#181d2a] text-[#f1f5f9] font-medium border border-[#2b354a]"
-                                                    : "text-[#828ea6] hover:text-[#f1f5f9] hover:bg-[#131722]"
-                                            }`}
-                                        >
-                                            <Icon size={12} className={isActive ? "text-[#38bdf8]" : "text-[#5a6782]"} />
-                                            <span>{tab.label}</span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
+                        {activityTab === "files" ? (
+                            <FileExplorerTree
+                                files={files}
+                                activeFileName={activeFileName}
+                                onSelectFile={setActiveFileName}
+                                onResetFile={handleResetFile}
+                                onCreateFile={handleCreateFile}
+                                repoName={project.title || "skillforge/workspace"}
+                            />
+                        ) : activityTab === "discuss" ? (
+                            <div className="flex flex-col h-full bg-[#080B12]">
+                                <div className="h-10 bg-[#070A10] border-b border-[#1B2232] px-3 flex items-center justify-between shrink-0 select-none">
+                                    <div className="flex items-center gap-2">
+                                        <MessageSquare size={14} className="text-sky-400" />
+                                        <span className="text-xs font-semibold text-slate-200">Discussions</span>
+                                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-400 border border-sky-500/20">Stage {currentMilestoneIndex + 1}</span>
+                                    </div>
+                                    <button
+                                        onClick={() => setIsSpecsCollapsed(true)}
+                                        className="p-1 rounded text-slate-400 hover:text-white transition-colors"
+                                        title="Close Panel"
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                                <div className="flex-grow overflow-y-auto p-3 space-y-3 text-xs scrollbar-thin">
+                                    <div className="p-2.5 rounded-lg bg-[#0F1422] border border-[#1E2738] space-y-2">
+                                        <div className="flex items-center justify-between text-[11px] text-slate-400">
+                                            <span className="font-medium text-slate-200 flex items-center gap-1.5">
+                                                <span className="w-4 h-4 rounded-full bg-indigo-500/30 text-indigo-300 flex items-center justify-center text-[9px] font-bold">A</span>
+                                                alex_dev
+                                            </span>
+                                            <span className="text-[10px] text-slate-500">2h ago</span>
+                                        </div>
+                                        <p className="text-slate-300 text-xs leading-relaxed">
+                                            How do you handle viewport coordinate scaling when rendering at high DPR (retina displays)?
+                                        </p>
+                                        <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-400">
+                                            <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-mono text-[10px]">3 replies</span>
+                                            <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono text-[10px]">Answered</span>
+                                        </div>
+                                    </div>
 
-                            <button
-                                onClick={() => setIsSpecsCollapsed(true)}
-                                className="p-1 rounded text-[#64748b] hover:text-white transition-colors"
-                                title="Close Panel"
-                            >
-                                <X size={14} />
-                            </button>
-                        </div>
+                                    <div className="p-2.5 rounded-lg bg-[#0F1422] border border-[#1E2738] space-y-2">
+                                        <div className="flex items-center justify-between text-[11px] text-slate-400">
+                                            <span className="font-medium text-slate-200 flex items-center gap-1.5">
+                                                <span className="w-4 h-4 rounded-full bg-cyan-500/30 text-cyan-300 flex items-center justify-center text-[9px] font-bold">M</span>
+                                                marcus_k
+                                            </span>
+                                            <span className="text-[10px] text-slate-500">5h ago</span>
+                                        </div>
+                                        <p className="text-slate-300 text-xs leading-relaxed">
+                                            Make sure to clamp the zoom scale between 0.1x and 10x before calculating matrix transforms!
+                                        </p>
+                                        <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-400">
+                                            <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-mono text-[10px]">7 upvotes</span>
+                                            <span className="px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-400 font-mono text-[10px]">Tip</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-2.5 rounded-lg bg-[#0F1422] border border-[#1E2738] space-y-2">
+                                        <div className="flex items-center justify-between text-[11px] text-slate-400">
+                                            <span className="font-medium text-slate-200 flex items-center gap-1.5">
+                                                <span className="w-4 h-4 rounded-full bg-purple-500/30 text-purple-300 flex items-center justify-center text-[9px] font-bold">S</span>
+                                                sarah_t
+                                            </span>
+                                            <span className="text-[10px] text-slate-500">1d ago</span>
+                                        </div>
+                                        <p className="text-slate-300 text-xs leading-relaxed">
+                                            Remember that clientX/clientY needs to subtract canvas.getBoundingClientRect() before passing to world coords.
+                                        </p>
+                                        <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-400">
+                                            <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-mono text-[10px]">12 upvotes</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="p-2.5 border-t border-[#1B2232] bg-[#070A10]">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setIsCopilotOpen(true);
+                                            setChatInput(`I have a question about Stage ${currentMilestoneIndex + 1}: `);
+                                        }}
+                                        className="w-full py-2 px-3 rounded-md bg-sky-500/15 hover:bg-sky-500/25 text-sky-400 border border-sky-500/30 font-medium text-xs flex items-center justify-center gap-1.5 transition-colors"
+                                    >
+                                        <Sparkles size={13} />
+                                        <span>Ask Copilot or Community</span>
+                                    </button>
+                                </div>
+                            </div>
+                        ) : activityTab === "bookmarks" ? (
+                            <div className="flex flex-col h-full bg-[#080B12]">
+                                <div className="h-10 bg-[#070A10] border-b border-[#1B2232] px-3 flex items-center justify-between shrink-0 select-none">
+                                    <div className="flex items-center gap-2">
+                                        <Bookmark size={14} className="text-amber-400" />
+                                        <span className="text-xs font-semibold text-slate-200">Resources & Specs</span>
+                                    </div>
+                                    <button
+                                        onClick={() => setIsSpecsCollapsed(true)}
+                                        className="p-1 rounded text-slate-400 hover:text-white transition-colors"
+                                        title="Close Panel"
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                                <div className="flex-grow overflow-y-auto p-3 space-y-3 text-xs scrollbar-thin">
+                                    <div className="space-y-1.5">
+                                        <span className="text-[10px] uppercase font-mono tracking-wider text-slate-500">Stage References</span>
+                                        <div className="p-2.5 rounded-lg bg-[#0F1422] border border-[#1E2738] space-y-1.5">
+                                            <div className="font-medium text-slate-200 text-xs flex items-center justify-between">
+                                                <span>MDN CanvasRenderingContext2D</span>
+                                                <BookOpen size={12} className="text-sky-400" />
+                                            </div>
+                                            <p className="text-[11px] text-slate-400 leading-relaxed">
+                                                Complete reference for transform matrices, scale, translate, and path rendering.
+                                            </p>
+                                        </div>
+                                        <div className="p-2.5 rounded-lg bg-[#0F1422] border border-[#1E2738] space-y-1.5">
+                                            <div className="font-medium text-slate-200 text-xs flex items-center justify-between">
+                                                <span>W3C Pointer Events Level 3</span>
+                                                <BookOpen size={12} className="text-sky-400" />
+                                            </div>
+                                            <p className="text-[11px] text-slate-400 leading-relaxed">
+                                                Specs for normalized pointer down, pointer move, and pressure detection.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <span className="text-[10px] uppercase font-mono tracking-wider text-slate-500">Milestone Guide Summary</span>
+                                        <div className="p-2.5 rounded-lg bg-[#0F1422] border border-[#1E2738] space-y-1">
+                                            <span className="text-sky-400 font-mono text-[10px]">Stage {currentMilestoneIndex + 1} Goal</span>
+                                            <p className="text-[11px] text-slate-300">
+                                                {milestoneGuide.title}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                {/* Drawer Header Tabs (Description, Roadmap, Submissions, ✕) */}
+                                <div className="h-10 bg-[#070A10] border-b border-[#1B2232] px-3 flex items-center justify-between shrink-0 select-none">
+                                    <div className="flex items-center gap-1">
+                                        {[
+                                            { id: "description", label: "Description", icon: BookOpen },
+                                            { id: "roadmap", label: "Roadmap", icon: Milestone },
+                                            { id: "submissions", label: "Submissions", icon: UploadCloud }
+                                        ].map(tab => {
+                                            const Icon = tab.icon;
+                                            const isActive = currentSpecTab === tab.id;
+                                            return (
+                                                <button
+                                                    key={tab.id}
+                                                    type="button"
+                                                    onClick={() => setSpecTab(tab.id)}
+                                                    className={`px-2.5 py-1 text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors ${
+                                                        isActive
+                                                            ? "bg-[#162032] text-white font-medium border border-sky-500/30 shadow-sm"
+                                                            : "text-slate-400 hover:text-white hover:bg-white/[0.04]"
+                                                    }`}
+                                                >
+                                                    <Icon size={12} className={isActive ? "text-sky-400" : "text-slate-500"} />
+                                                    <span>{tab.label}</span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+
+                                    <button
+                                        onClick={() => setIsSpecsCollapsed(true)}
+                                        className="p-1 rounded text-slate-400 hover:text-white transition-colors"
+                                        title="Close Panel"
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </div>
 
                         {/* Panel Body */}
                         <div className="flex-grow overflow-y-auto p-4 space-y-4 text-xs scrollbar-thin select-text">
                             
                             {/* TAB: DESCRIPTION */}
-                            {specTab === "description" && (
+                            {currentSpecTab === "description" && (
                                 <div className="space-y-4 animate-in fade-in duration-150">
                                     {/* Stage Title & In Progress badge */}
                                     <div className="space-y-1.5">
@@ -1166,7 +1423,7 @@ export default function ProjectWorkspace() {
                                                 type="button"
                                                 onClick={() => setSubSpecTab(sub.id)}
                                                 className={`flex-1 py-1 text-center rounded text-xs font-medium transition-all ${
-                                                    subSpecTab === sub.id
+                                                    currentSubSpecTab === sub.id
                                                         ? "bg-[#181d2a] text-[#f1f5f9] font-medium border border-[#2b354a] shadow-sm"
                                                         : "text-[#64748b] hover:text-[#cbd5e1]"
                                                 }`}
@@ -1177,7 +1434,7 @@ export default function ProjectWorkspace() {
                                     </div>
 
                                     {/* Sub-tab 1: Task Checklist (Numbered 1, 2, 3, 4) */}
-                                    {subSpecTab === "task" && (
+                                    {currentSubSpecTab === "task" && (
                                         <div className="space-y-2.5">
                                             {milestoneGuide.specRules.map((rule, idx) => (
                                                 <div 
@@ -1196,7 +1453,7 @@ export default function ProjectWorkspace() {
                                     )}
 
                                     {/* Sub-tab 2: Requirements */}
-                                    {subSpecTab === "requirements" && (
+                                    {currentSubSpecTab === "requirements" && (
                                         <div className="space-y-2 p-3 rounded-md bg-[#131722] border border-[#1c2230] text-[#cbd5e1] leading-relaxed">
                                             <div className="font-medium text-[#f1f5f9] mb-1">Architecture Invariants</div>
                                             <ul className="list-disc list-inside space-y-1.5 text-xs text-[#828ea6]">
@@ -1208,7 +1465,7 @@ export default function ProjectWorkspace() {
                                     )}
 
                                     {/* Sub-tab 3: Examples */}
-                                    {subSpecTab === "examples" && (
+                                    {currentSubSpecTab === "examples" && (
                                         <div className="space-y-2">
                                             {(milestoneGuide.examples || []).map((ex, i) => (
                                                 <div key={i} className="p-3 rounded-md bg-[#131722] border border-[#1c2230] font-mono text-xs text-[#7dd3fc]">
@@ -1219,7 +1476,7 @@ export default function ProjectWorkspace() {
                                     )}
 
                                     {/* Sub-tab 4: Hints */}
-                                    {subSpecTab === "hints" && (
+                                    {currentSubSpecTab === "hints" && (
                                         <div className="space-y-2">
                                             {milestoneGuide.hints.map((hint, hIdx) => (
                                                 <div key={hIdx} className="p-3 rounded-md bg-[#131722] border border-[#1c2230] space-y-1">
@@ -1310,7 +1567,7 @@ export default function ProjectWorkspace() {
                             )}
 
                             {/* TAB: ROADMAP */}
-                            {specTab === "roadmap" && (
+                            {currentSpecTab === "roadmap" && (
                                 <div className="space-y-3 animate-in fade-in duration-150">
                                     <div className="text-xs uppercase font-medium tracking-wider text-[#64748b] flex items-center justify-between">
                                         <span>Milestone Roadmap</span>
@@ -1375,26 +1632,130 @@ export default function ProjectWorkspace() {
                             )}
 
                             {/* TAB: SUBMISSIONS */}
-                            {specTab === "submissions" && (
-                                <div className="space-y-3 animate-in fade-in duration-150">
-                                    <div className="text-xs uppercase font-medium tracking-wider text-[#64748b]">
-                                        Evaluation History
+                            {currentSpecTab === "submissions" && (
+                                <div className="space-y-4 animate-in fade-in duration-150">
+                                    <div className="flex items-center justify-between text-xs uppercase font-medium tracking-wider text-[#64748b]">
+                                        <span>Evaluation & Reviews</span>
+                                        <span className="text-sky-400 font-mono">Stage {currentMilestoneIndex + 1}</span>
                                     </div>
-                                    <div className="p-3 rounded-md bg-[#131722] border border-[#1c2230] space-y-2 text-xs">
+
+                                    {/* Latest Status Banner */}
+                                    <div className="p-3.5 rounded-xl bg-[#0E1422] border border-[#1C2538] space-y-2.5 text-xs">
                                         <div className="flex items-center justify-between font-mono">
-                                            <span className="text-emerald-400 font-medium">Latest Run</span>
-                                            <span className="text-[#64748b]">Just now</span>
+                                            <span className="font-semibold text-slate-200 flex items-center gap-1.5">
+                                                <CheckCircle2 size={13} className={isCurrentMilestoneVerified ? "text-emerald-400" : "text-amber-400"} />
+                                                <span>{isCurrentMilestoneVerified ? "Stage Verified" : "In Progress"}</span>
+                                            </span>
+                                            <span className="text-[11px] text-slate-500 font-sans">Latest Check</span>
                                         </div>
-                                        <div className="text-[#828ea6]">
-                                            Status: {isCurrentMilestoneVerified ? "Verified passed" : "In evaluation"}
-                                        </div>
+
+                                        <p className="text-[11px] text-slate-400 leading-relaxed">
+                                            {isCurrentMilestoneVerified
+                                                ? "All verification test assertions passed for this milestone."
+                                                : "Run tests or submit milestone code to trigger full verification and AI review."}
+                                        </p>
                                     </div>
+
+                                    {/* AI Code Review Summary Card */}
+                                    {codeReview ? (
+                                        <div className="p-3.5 rounded-xl bg-[#0E1526] border border-indigo-500/30 space-y-3 text-xs shadow-sm">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2 font-mono">
+                                                    <span className="px-2 py-0.5 rounded font-bold text-xs bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
+                                                        Grade {codeReview.grade}
+                                                    </span>
+                                                    <span className="text-slate-300 font-semibold">{codeReview.score}/100</span>
+                                                </div>
+                                                <span className="text-[10px] text-slate-500 font-mono">
+                                                    {codeReview.complexity?.time} Time
+                                                </span>
+                                            </div>
+
+                                            <p className="text-[11px] text-slate-300 line-clamp-2 leading-relaxed">
+                                                {codeReview.summary}
+                                            </p>
+
+                                            <div className="flex items-center justify-between pt-1 border-t border-[#1D273C]">
+                                                <span className="text-[10px] text-slate-400 font-mono">
+                                                    {codeReview.suggestions?.length || 0} Suggestions
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setTerminalTab("review");
+                                                        setIsTerminalCollapsed(false);
+                                                    }}
+                                                    className="text-[11px] font-semibold text-sky-400 hover:text-sky-300 flex items-center gap-1"
+                                                >
+                                                    <span>Open Full Review</span>
+                                                    <ChevronRight size={12} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="p-3.5 rounded-xl bg-[#0E1322] border border-[#1C2538] text-center space-y-2 text-xs">
+                                            <Award size={20} className="mx-auto text-slate-500" />
+                                            <p className="text-[11px] text-slate-400">
+                                                No AI Code Review generated yet for this stage.
+                                            </p>
+                                            <button
+                                                type="button"
+                                                onClick={handleTriggerCodeReview}
+                                                disabled={isLoadingReview}
+                                                className="w-full py-1.5 px-3 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 text-sky-400 border border-sky-500/30 font-medium text-xs flex items-center justify-center gap-1.5 transition-colors"
+                                            >
+                                                {isLoadingReview ? (
+                                                    <RefreshCw size={12} className="animate-spin" />
+                                                ) : (
+                                                    <Sparkles size={12} />
+                                                )}
+                                                <span>{isLoadingReview ? "Analyzing Code..." : "Request Staff Review"}</span>
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* Past Review History */}
+                                    {reviewHistory.length > 0 && (
+                                        <div className="space-y-2 pt-2 border-t border-[#1C2538]">
+                                            <div className="text-[10px] uppercase font-mono tracking-wider text-slate-500">
+                                                Past Submissions ({reviewHistory.length})
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                {reviewHistory.map((rev, rIdx) => (
+                                                    <div 
+                                                        key={rIdx}
+                                                        onClick={() => {
+                                                            setCodeReview(rev);
+                                                            setTerminalTab("review");
+                                                            setIsTerminalCollapsed(false);
+                                                        }}
+                                                        className="p-2.5 rounded-lg bg-[#0A0E18] hover:bg-[#121828] border border-[#192234] hover:border-sky-500/40 cursor-pointer transition-all flex items-center justify-between text-xs"
+                                                    >
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="font-mono font-bold text-[11px] text-indigo-300">
+                                                                {rev.grade} ({rev.score})
+                                                            </span>
+                                                            <span className="text-[11px] text-slate-300 truncate max-w-[150px]">
+                                                                Stage {(rev.milestoneIndex ?? 0) + 1}
+                                                            </span>
+                                                        </div>
+                                                        <span className="text-[10px] font-mono text-slate-500">
+                                                            {rev.submittedAt ? new Date(rev.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Saved'}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
                         </div>
+                            </>
+                        )}
                     </div>
-                )}
+                    );
+                })()}
 
                 {/* Hairline Divider 1 */}
                 {!isSpecsCollapsed && (
@@ -1402,54 +1763,16 @@ export default function ProjectWorkspace() {
                         onMouseDown={() => setIsDraggingPanel(true)}
                         onDoubleClick={() => setPanelWidth(350)}
                         className={`w-1 hover:w-1.5 ${
-                            isDraggingPanel ? "bg-[#38bdf8]" : "bg-[#1c2230] hover:bg-[#38bdf8]/60"
+                            isDraggingPanel ? "bg-sky-400" : "bg-[#1B2232] hover:bg-sky-400/60"
                         } transition-colors cursor-col-resize shrink-0 select-none z-20`}
                         title="Drag to resize panel"
                     />
                 )}
 
                 {/* ---------------------------------------------------- */}
-                {/* 8. FILE EXPLORER (Narrow Collapsible Tree if open)   */}
-                {/* ---------------------------------------------------- */}
-                {activityTab === "files" && !isSpecsCollapsed && (
-                    <div className="w-56 bg-[#0f121a] border-r border-[#1c2230] flex flex-col shrink-0 select-none">
-                        <div className="h-9 px-3 border-b border-[#1c2230] flex items-center justify-between text-xs font-medium text-[#cbd5e1]">
-                            <span>Files</span>
-                            <div className="flex items-center gap-1">
-                                <button
-                                    onClick={() => {
-                                        const name = prompt("New file name:");
-                                        if (name) handleCreateFile(name);
-                                    }}
-                                    className="p-1 hover:text-white text-[#64748b]"
-                                    title="New File"
-                                >
-                                    <Plus size={13} />
-                                </button>
-                                <button
-                                    onClick={() => handleResetFile()}
-                                    className="p-1 hover:text-white text-[#64748b]"
-                                    title="Reset Files"
-                                >
-                                    <RotateCcw size={13} />
-                                </button>
-                            </div>
-                        </div>
-                        <div className="p-2 overflow-y-auto">
-                            <FileExplorerTree
-                                files={files}
-                                activeFileName={activeFileName}
-                                onSelectFile={setActiveFileName}
-                                onCreateFile={handleCreateFile}
-                            />
-                        </div>
-                    </div>
-                )}
-
-                {/* ---------------------------------------------------- */}
                 {/* 9 & 10. CENTER WORKSPACE: CODE EDITOR & TABS         */}
                 {/* ---------------------------------------------------- */}
-                <main className="flex-1 min-w-0 flex flex-col overflow-hidden h-full bg-[#0d1017]">
+                <main className="flex-1 min-w-0 flex flex-col overflow-hidden h-full bg-[#0B0F19]">
                     
                     {/* Monaco Editor Container */}
                     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
@@ -1473,7 +1796,7 @@ export default function ProjectWorkspace() {
                         <div
                             onMouseDown={() => setIsDraggingTerminal(true)}
                             className={`h-1 hover:h-1.5 ${
-                                isDraggingTerminal ? "bg-[#38bdf8]" : "bg-[#1c2230] hover:bg-[#38bdf8]/60"
+                                isDraggingTerminal ? "bg-sky-400" : "bg-[#1B2232] hover:bg-sky-400/60"
                             } transition-colors cursor-row-resize shrink-0 select-none z-20`}
                             title="Drag to resize execution drawer"
                         />
@@ -1484,13 +1807,20 @@ export default function ProjectWorkspace() {
                     {/* ---------------------------------------------------- */}
                     <div 
                         style={{ height: isTerminalCollapsed ? "32px" : `${terminalHeight}px` }}
-                        className="bg-[#10141d] border-t border-[#1c2230] flex flex-col overflow-hidden shrink-0 transition-all duration-150"
+                        className="bg-[#080B12] border-t border-[#1B2232] flex flex-col overflow-hidden shrink-0 transition-all duration-150"
                     >
                         {/* 12. Bottom Panel Tabs Bar */}
-                        <div className="h-8 border-b border-[#1c2230] bg-[#0c0e15] px-3 flex items-center justify-between shrink-0 select-none">
+                        <div className="h-8 border-b border-[#1B2232] bg-[#070A10] px-3 flex items-center justify-between shrink-0 select-none">
                             <div className="flex items-center gap-1">
                                 {[
                                     { id: "results", label: `Test Results (${testResults ? `${testResults.passed}/${testResults.total}` : "2/4"})`, icon: CheckCircle2 },
+                                    { 
+                                        id: "review", 
+                                        label: codeReview ? `AI Review (${codeReview.grade})` : "AI Review", 
+                                        icon: Award, 
+                                        badge: isLoadingReview ? "Analyzing" : codeReview ? `${codeReview.score}` : null,
+                                        color: codeReview ? "text-indigo-400" : "text-slate-400"
+                                    },
                                     { id: "console", label: "Console", icon: Terminal },
                                     { id: "terminal", label: "Terminal", icon: Terminal },
                                     { id: "problems", label: "Problems (1)", icon: AlertCircle, color: "text-rose-400" },
@@ -1505,14 +1835,23 @@ export default function ProjectWorkspace() {
                                                 setIsTerminalCollapsed(false);
                                                 setTerminalTab(tab.id);
                                             }}
-                                            className={`px-2.5 py-1 text-xs font-medium rounded flex items-center gap-1.5 transition-colors ${
+                                            className={`px-2.5 py-1 text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors ${
                                                 isActive
-                                                    ? "bg-[#181d2a] text-[#f1f5f9] font-medium border border-[#2b354a]"
-                                                    : "text-[#828ea6] hover:text-white"
+                                                    ? "bg-[#162032] text-white font-medium border border-sky-500/30 shadow-sm"
+                                                    : "text-slate-400 hover:text-white hover:bg-white/[0.04]"
                                             }`}
                                         >
-                                            <Icon size={12} className={tab.color || (isActive ? "text-[#38bdf8]" : "text-[#5a6782]")} />
+                                            <Icon size={12} className={tab.color || (isActive ? "text-sky-400" : "text-slate-500")} />
                                             <span>{tab.label}</span>
+                                            {tab.badge && (
+                                                <span className={`text-[9px] font-mono px-1 py-0.2 rounded-full font-bold leading-none ${
+                                                    isLoadingReview 
+                                                        ? "bg-sky-500/20 text-sky-300 animate-pulse" 
+                                                        : "bg-indigo-500/25 text-indigo-300 border border-indigo-500/30"
+                                                }`}>
+                                                    {tab.badge}
+                                                </span>
+                                            )}
                                         </button>
                                     );
                                 })}
@@ -1521,14 +1860,14 @@ export default function ProjectWorkspace() {
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={() => setTerminalHeight(prev => prev > 120 ? 60 : 260)}
-                                    className="p-1 rounded text-[#64748b] hover:text-white transition-colors"
+                                    className="p-1 rounded text-slate-400 hover:text-white transition-colors"
                                     title="Toggle Height"
                                 >
                                     <Maximize2 size={13} />
                                 </button>
                                 <button
                                     onClick={() => setIsTerminalCollapsed(true)}
-                                    className="p-1 rounded text-[#64748b] hover:text-white transition-colors"
+                                    className="p-1 rounded text-slate-400 hover:text-white transition-colors"
                                     title="Close Bottom Panel"
                                 >
                                     <X size={13} />
@@ -1538,7 +1877,7 @@ export default function ProjectWorkspace() {
 
                         {/* 13. Test Results Panel Body */}
                         {!isTerminalCollapsed && (
-                            <div className="flex-grow p-3.5 overflow-y-auto font-mono text-xs select-text scrollbar-thin">
+                            <div className={`flex-grow overflow-y-auto select-text scrollbar-thin ${terminalTab === "review" ? "p-0 flex flex-col" : "p-3.5 font-mono text-xs"}`}>
                                 
                                 {/* RESULTS TAB: Side-by-Side Diff Expected vs Actual */}
                                 {terminalTab === "results" && (
@@ -1589,6 +1928,18 @@ export default function ProjectWorkspace() {
                                             </div>
                                         </div>
                                     </div>
+                                )}
+
+                                {/* AI CODE REVIEW TAB */}
+                                {terminalTab === "review" && (
+                                    <CodeReviewPanel
+                                        review={codeReview}
+                                        isLoading={isLoadingReview}
+                                        onApplyFix={handleApplyReviewFix}
+                                        onJumpToLine={jumpToLine}
+                                        onRefreshReview={handleTriggerCodeReview}
+                                        activeFileName={activeFileName}
+                                    />
                                 )}
 
                                 {/* CONSOLE / TERMINAL TAB */}
@@ -1648,7 +1999,7 @@ export default function ProjectWorkspace() {
                         onMouseDown={() => setIsDraggingCopilot(true)}
                         onDoubleClick={() => setCopilotWidth(380)}
                         className={`w-1 hover:w-1.5 ${
-                            isDraggingCopilot ? "bg-[#38bdf8]" : "bg-[#1c2230] hover:bg-[#38bdf8]/60"
+                            isDraggingCopilot ? "bg-sky-400" : "bg-[#1B2232] hover:bg-sky-400/60"
                         } transition-colors cursor-col-resize shrink-0 select-none z-20`}
                         title="Drag to resize Copilot"
                     />
@@ -1660,19 +2011,19 @@ export default function ProjectWorkspace() {
                 {isCopilotOpen && (
                     <aside 
                         style={{ width: `${copilotWidth}px` }}
-                        className={`bg-[#10141d] border-l border-[#1c2230] flex flex-col shrink-0 h-full overflow-hidden select-text will-change-[width] ${
+                        className={`bg-[#080B12] border-l border-[#1B2232] flex flex-col shrink-0 h-full overflow-hidden select-text will-change-[width] ${
                             isDraggingCopilot ? "select-none" : ""
                         }`}
                     >
                         {/* Header Bar */}
-                        <div className="h-10 bg-[#0d1017] border-b border-[#1c2230] px-3 flex items-center justify-between shrink-0 select-none">
+                        <div className="h-10 bg-[#070A10] border-b border-[#1B2232] px-3 flex items-center justify-between shrink-0 select-none">
                             <div className="flex items-center gap-2">
                                 <img 
                                     src="/images/forge-copilot-icon-transparent.png" 
                                     alt="Forge Copilot" 
                                     className="w-4 h-4 rounded object-contain shrink-0" 
                                 />
-                                <span className="text-xs font-semibold text-[#f1f5f9] tracking-tight">Forge Copilot</span>
+                                <span className="text-xs font-semibold text-white tracking-tight">Forge Copilot</span>
                             </div>
 
                             <div className="flex items-center gap-2">
@@ -1972,7 +2323,30 @@ export default function ProjectWorkspace() {
                 onResetFile={handleResetFile}
                 onSelectTab={(tab) => {
                     setIsSpecsCollapsed(false);
-                    setSpecTab(tab);
+                    if (tab === "files") {
+                        setActivityTab("files");
+                    } else if (tab === "roadmap") {
+                        setActivityTab("learn");
+                        setSpecTab("roadmap");
+                    } else if (tab === "spec") {
+                        setActivityTab("learn");
+                        setSpecTab("description");
+                        setSubSpecTab("task");
+                    } else if (tab === "prereq") {
+                        setActivityTab("learn");
+                        setSpecTab("description");
+                        setSubSpecTab("requirements");
+                    } else if (tab === "hints") {
+                        setActivityTab("learn");
+                        setSpecTab("description");
+                        setSubSpecTab("hints");
+                    } else if (tab === "submissions") {
+                        setActivityTab("learn");
+                        setSpecTab("submissions");
+                    } else {
+                        setActivityTab("learn");
+                        setSpecTab("description");
+                    }
                 }}
             />
 

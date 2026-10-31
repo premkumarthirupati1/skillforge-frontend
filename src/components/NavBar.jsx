@@ -1,44 +1,40 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
     Sun,
     Moon,
-    ShoppingCart,
-    Heart,
     User,
     LogOut,
     ChevronDown,
-    Search,
     GraduationCap,
-    Sparkles
+    Sliders,
+    Sparkles,
+    LayoutDashboard,
+    Compass,
+    Layers,
+    Menu,
+    X,
+    Terminal
 } from "lucide-react";
 import SearchBar from "./SearchBar";
 import SkillForgeLogo from "./SkillForgeLogo";
-import api from "../api";
+import { useAuth } from "../context/AuthContext";
 import { useForgeCopilot } from "../context/ForgeCopilotContext";
 
 function NavBar() {
     const navigate = useNavigate();
     const location = useLocation();
     const [menuOpen, setMenuOpen] = useState(false);
+    const [mobileOpen, setMobileOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const { toggleCopilot } = useForgeCopilot();
-
-    const token = localStorage.getItem("token");
+    const { user, token, logout, isAuthenticated } = useAuth();
 
     const handleLogout = async () => {
-        try {
-            await api.post('/auth/logout');
-        } catch (err) {
-            console.error("Logout request failed", err);
-        }
-        localStorage.removeItem("token");
-        localStorage.removeItem("refreshToken");
-        localStorage.removeItem("userId");
-        localStorage.removeItem("role");
-        localStorage.removeItem("userName");
-        localStorage.removeItem("userEmail");
+        setMenuOpen(false);
+        setMobileOpen(false);
+        await logout();
         navigate('/');
     };
 
@@ -56,222 +52,253 @@ function NavBar() {
     }, [theme]);
 
     const toggleTheme = () => {
-        setTheme(prev => prev === "dark" ? "light" : "dark");
+        setTheme(prev => (prev === "dark" ? "light" : "dark"));
     };
 
-    // Scroll listener for Vercel-like glassy effect
+    // Scroll effect
     useEffect(() => {
         const handleScroll = () => {
-            setScrolled(window.scrollY > 20);
+            if (window.scrollY > 15) {
+                setScrolled(true);
+            } else {
+                setScrolled(false);
+            }
         };
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
+
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
-    const isProjectMode = location.pathname.startsWith('/project');
+    // Active link check
+    const isActive = (path) => location.pathname === path;
+    const isProjectMode = location.pathname.startsWith("/projects");
+
+    const navLinks = [
+        { name: "Courses", path: "/courses", badge: null },
+        { name: "Projects", path: "/projects", badge: "Forge", isForge: true },
+        { name: "Challenges", path: "/challenges", badge: null },
+        { name: "Community", path: "/community", badge: null },
+    ];
 
     return (
-        <nav className={`sticky top-0 w-full z-50 transition-all duration-500 border-b ${
-            scrolled 
-            ? 'bg-brand-bg/85 backdrop-blur-md border-brand-border shadow-sm' 
-            : 'bg-brand-bg border-transparent'
-        }`}>
-            <div className="w-full px-4 sm:px-8 md:px-12 h-16 flex justify-between items-center gap-4">
+        <nav
+            className={`sticky top-0 z-50 transition-all duration-300 h-16 sm:h-18 flex items-center ${
+                scrolled
+                    ? "bg-[#04060A]/90 backdrop-blur-2xl border-b border-white/10 shadow-xl shadow-black/40"
+                    : "bg-[#04060A]/70 backdrop-blur-xl border-b border-white/5"
+            }`}
+        >
+            <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3 sm:gap-6">
+                
+                {/* 1. BRAND & PRIMARY DESKTOP NAV */}
+                <div className="flex items-center gap-4 lg:gap-8 shrink-0">
+                    <Link to="/" className="shrink-0 flex items-center">
+                        <SkillForgeLogo size="sm" className="h-7 w-auto" />
+                    </Link>
 
-                {/* LOGO SECTION */}
-                <div className="flex items-center gap-8">
-                    <motion.div
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="cursor-pointer shrink-0 flex items-center"
-                        onClick={() => navigate(isProjectMode ? "/projects" : "/dashboard")}
-                    >
-                        {isProjectMode ? (
-                            <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-2xl bg-blue-500/10 border border-blue-500/30 shadow-[0_0_15px_rgba(37,99,235,0.15)]">
-                                {/* Dark Mode Anvil (White Anvil) */}
-                                <img 
-                                    src="/images/code-anvil-logo.png" 
-                                    alt="SkillForge Projects - The Code Anvil" 
-                                    className="h-6 w-auto object-contain hidden dark:block drop-shadow-[0_0_8px_rgba(56,189,248,0.6)]"
-                                />
-                                {/* Light Mode Anvil (Slate Anvil) */}
-                                <img 
-                                    src="/images/code-anvil-logo-light.png" 
-                                    alt="SkillForge Projects - The Code Anvil" 
-                                    className="h-6 w-auto object-contain block dark:hidden drop-shadow-[0_0_6px_rgba(37,99,235,0.3)]"
-                                />
-                                <div className="flex items-center gap-1.5 border-l border-slate-300 dark:border-white/15 pl-2.5">
-                                    <span className="text-sm font-bold text-slate-900 dark:text-white tracking-tight hidden sm:inline">
-                                        SkillForge
-                                    </span>
-                                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-500/15 dark:bg-blue-500/20 px-2 py-0.5 rounded-md">
-                                        Projects
-                                    </span>
-                                </div>
-                            </div>
-                        ) : (
-                            <SkillForgeLogo size="md" />
-                        )}
-                    </motion.div>
+                    {/* Central Frosted Pill Nav */}
+                    <div className="hidden md:flex items-center gap-1 p-1 rounded-full bg-white/[0.04] border border-white/10 backdrop-blur-md">
+                        {navLinks.map((link) => {
+                            const active = link.isForge ? isProjectMode : isActive(link.path);
+                            return (
+                                <Link
+                                    key={link.name}
+                                    to={link.path}
+                                    className={`relative px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap ${
+                                        active
+                                            ? "text-white bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 shadow-md shadow-indigo-500/25 border border-indigo-400/30 font-bold"
+                                            : "text-slate-400 hover:text-white hover:bg-white/[0.06]"
+                                    }`}
+                                >
+                                    <span>{link.name}</span>
+                                    {link.badge && (
+                                        <span className={`text-[9px] font-mono uppercase px-1.5 py-0.5 rounded-md font-bold tracking-wider ${
+                                            active
+                                                ? "bg-white/20 text-white"
+                                                : "bg-cyan-500/15 text-cyan-300 border border-cyan-500/30"
+                                        }`}>
+                                            {link.badge}
+                                        </span>
+                                    )}
+                                </Link>
+                            );
+                        })}
+                    </div>
                 </div>
 
-                {/* MIDDLE NAVIGATION */}
-                <div className="hidden md:flex items-center gap-6">
-                    {isProjectMode ? (
-                        [
-                            { name: 'Specs & PRDs', tab: 'specs' },
-                            { name: 'Active Builds', tab: 'builds' },
-                            { name: 'Sandbox IDE', tab: 'sandbox' },
-                            { name: 'Showcase', tab: 'showcase' },
-                        ].map((item) => (
-                            <Link 
-                                key={item.tab}
-                                to={`/projects?tab=${item.tab}`}
-                                className="text-sm font-medium text-brand-muted hover:text-brand-text transition-colors duration-200"
-                            >
-                                {item.name}
-                            </Link>
-                        ))
-                    ) : (
-                        [
-                            { name: 'Courses', path: '/courses' },
-                            { name: 'Tracks', path: '/tracks' },
-                            { name: 'Challenges', path: '/challenges' },
-                            { name: 'Community', path: '/community' },
-                        ].map((item) => (
-                            <Link 
-                                key={item.name}
-                                to={item.path}
-                                className="text-sm font-medium text-brand-muted hover:text-brand-text transition-colors duration-200"
-                            >
-                                {item.name}
-                            </Link>
-                        ))
-                    )}
-                </div>
-
-                {/* ACTION SECTION */}
-                <div className="flex items-center gap-2 sm:gap-4 transition-all duration-300">
+                {/* 2. RIGHT ACTION SUITE */}
+                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                     
-                    {/* DEDICATED MODE SWITCHER BUTTON */}
-                    {isProjectMode ? (
-                        /* Return to Curriculum Button */
-                        <motion.button
-                            whileHover={{ scale: 1.03 }}
-                            whileTap={{ scale: 0.97 }}
-                            onClick={() => navigate("/courses")}
-                            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-300 dark:border-white/10 text-slate-800 dark:text-slate-200 text-xs font-bold transition-all shadow-sm group shrink-0"
-                            title="Return to Course Curriculum"
-                        >
-                            <GraduationCap size={15} className="text-blue-500 group-hover:scale-110 transition-transform" />
-                            <span className="hidden sm:inline">Back to Courses</span>
-                            <span className="sm:hidden">Courses</span>
-                        </motion.button>
-                    ) : (
-                        /* Enter The Projects Forge Button */
-                        <motion.button
-                            whileHover={{ scale: 1.03 }}
-                            whileTap={{ scale: 0.97 }}
-                            onClick={() => navigate("/projects")}
-                            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600/10 via-indigo-500/10 to-blue-600/10 hover:from-blue-600/20 hover:to-indigo-600/20 border border-blue-500/30 text-blue-600 dark:text-blue-400 text-xs font-bold transition-all shadow-[0_0_15px_rgba(37,99,235,0.12)] group shrink-0"
-                            title="Launch Projects Forge Workspace"
-                        >
-                            <div className="w-5 h-4 rounded bg-[#070A11] border border-blue-400/40 flex items-center justify-center shrink-0 shadow-sm group-hover:border-cyan-400 transition-colors">
-                                <img src="/images/code-anvil-logo.png" alt="Anvil" className="h-2.5 w-auto object-contain" />
-                            </div>
-                            <span className="hidden sm:inline font-mono tracking-tight">Projects Forge</span>
-                            <span className="text-[9px] font-mono uppercase bg-blue-500/20 text-blue-600 dark:text-blue-300 px-1.5 py-0.5 rounded font-bold tracking-wider">
-                                Enter
-                            </span>
-                        </motion.button>
-                    )}
-
-                    <div className="hidden lg:flex relative group w-44 xl:w-56">
-                        <SearchBar placeholder="Search..." />
+                    {/* Compact Search Bar (Desktop) */}
+                    <div className="hidden xl:flex relative w-44 2xl:w-52">
+                        <SearchBar placeholder="Search tracks..." />
                     </div>
 
-                    {/* Forge Copilot Assistant Trigger */}
+                    {/* Workspace Direct Link (For Logged In Users) */}
+                    {(token || isAuthenticated) && (
+                        <Link
+                            to="/dashboard"
+                            className={`hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                                isActive("/dashboard")
+                                    ? "bg-indigo-500/15 border-indigo-500/40 text-indigo-300"
+                                    : "border-white/10 text-slate-300 hover:text-white hover:bg-white/5"
+                            }`}
+                        >
+                            <LayoutDashboard size={13} className="text-indigo-400" />
+                            <span>Workspace</span>
+                        </Link>
+                    )}
+
+                    {/* Forge Copilot Trigger Pill */}
                     <button
                         onClick={toggleCopilot}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-surface border border-brand-border hover:border-brand-primary/50 text-brand-text hover:text-brand-primary transition-all duration-300 shrink-0 text-xs font-semibold shadow-sm group"
-                        title="Open Forge Copilot"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-indigo-500/30 hover:border-indigo-400 text-slate-200 hover:text-white transition-all shrink-0 text-xs font-semibold shadow-sm group"
+                        title="Open Forge Copilot AI Assistant"
                         aria-label="Open Forge Copilot"
                     >
                         <img 
                             src="/images/forge-copilot-icon-transparent.png" 
-                            alt="Forge Copilot" 
+                            alt="Copilot" 
                             className="w-4 h-4 rounded object-contain group-hover:scale-110 transition-transform" 
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
                         />
-                        <span className="hidden xl:inline">Forge Copilot</span>
+                        <span className="hidden sm:inline font-mono text-[11px] font-bold text-cyan-300">Copilot</span>
                     </button>
 
+                    {/* Theme Toggle Button */}
                     <button
                         onClick={toggleTheme}
-                        className="p-2 rounded-full bg-brand-surface border border-brand-border hover:border-brand-primary/50 text-brand-muted hover:text-brand-primary transition-all duration-300 shrink-0"
+                        className="p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 text-slate-400 hover:text-white transition-all shrink-0"
                         aria-label="Toggle Theme"
                     >
-                        {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+                        {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
                     </button>
 
-                    {token ? (
-                        <>
-                            <div className="relative">
-                                <button
-                                    onClick={() => setMenuOpen(!menuOpen)}
-                                    className="flex items-center gap-2 p-1 pl-2.5 rounded-full bg-brand-surface border border-brand-border hover:border-brand-primary/50 transition-all duration-300"
-                                >
-                                    <div className="w-6 h-6 bg-brand-primary/20 rounded-full flex items-center justify-center text-brand-primary shadow-[0_0_10px_rgba(37,99,235,0.2)]">
-                                        <User size={12} />
-                                    </div>
-                                    <ChevronDown size={14} className={`text-brand-muted transition-transform duration-300 mr-1.5 ${menuOpen ? 'rotate-180' : ''}`} />
-                                </button>
+                    {/* User Profile / Auth Action */}
+                    {(token || isAuthenticated) ? (
+                        <div className="relative">
+                            <button
+                                onClick={() => setMenuOpen(!menuOpen)}
+                                className="flex items-center gap-2 p-1.5 pl-2 rounded-xl bg-white/[0.04] border border-white/10 hover:border-indigo-500/40 transition-all shrink-0"
+                            >
+                                <div className="w-6 h-6 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center text-white text-[11px] font-bold shadow-sm">
+                                    {(user?.name || user?.username || "U")[0].toUpperCase()}
+                                </div>
+                                <span className="hidden md:inline text-xs font-medium text-slate-200 max-w-[100px] truncate">
+                                    {user?.name || user?.username || "Account"}
+                                </span>
+                                <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 mr-1 ${menuOpen ? 'rotate-180' : ''}`} />
+                            </button>
 
-                                {menuOpen && (
-                                    <div className="absolute right-0 mt-3 w-48 bg-brand-elevated shadow-2xl shadow-black/50 rounded-xl border border-brand-border p-1.5 animate-in fade-in zoom-in-95 duration-200">
-                                        <button onClick={() => {navigate("/profile"); setMenuOpen(false);}} className="flex items-center gap-3 w-full text-left px-3 py-2 text-sm font-medium text-brand-text hover:bg-brand-surface rounded-lg transition-colors">
-                                            <User size={14} className="text-brand-primary" />
-                                            Profile
-                                        </button>
-                                        
-                                        {localStorage.getItem("role") === "instructor" && (
-                                            <button onClick={() => {navigate("/studio"); setMenuOpen(false);}} className="flex items-center gap-3 w-full text-left px-3 py-2 text-sm font-medium text-brand-primary hover:bg-brand-primary/10 rounded-lg transition-colors mt-1">
-                                                <div className="w-3.5 h-3.5 border-2 border-current rounded-sm flex items-center justify-center shrink-0">
-                                                    <div className="w-1 h-1 bg-current rounded-full" />
-                                                </div>
-                                                Creator Studio
-                                            </button>
-                                        )}
-
-                                        <button onClick={handleLogout} className="flex items-center gap-3 w-full text-left px-3 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 rounded-lg transition-colors mt-1">
-                                            <LogOut size={14} />
-                                            Sign Out
-                                        </button>
+                            {menuOpen && (
+                                <div className="absolute right-0 mt-3 w-56 rounded-2xl bg-[#0D111A] border border-white/10 shadow-2xl p-1.5 animate-in fade-in zoom-in-95 duration-150 z-50 backdrop-blur-2xl">
+                                    <div className="px-3 py-2.5 border-b border-white/10 mb-1">
+                                        <p className="text-xs font-bold text-white truncate">{user?.name || "Developer"}</p>
+                                        <p className="text-[11px] text-slate-400 truncate">{user?.email}</p>
                                     </div>
-                                )}
-                            </div>
-                        </>
+
+                                    <button onClick={() => {navigate("/dashboard"); setMenuOpen(false);}} className="flex items-center gap-2.5 w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-white/5 rounded-xl transition-colors">
+                                        <LayoutDashboard size={14} className="text-indigo-400" />
+                                        Student Dashboard
+                                    </button>
+
+                                    <button onClick={() => {navigate("/profile"); setMenuOpen(false);}} className="flex items-center gap-2.5 w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-white/5 rounded-xl transition-colors mt-0.5">
+                                        <User size={14} className="text-indigo-400" />
+                                        Profile & Security
+                                    </button>
+
+                                    <button onClick={() => {navigate("/settings"); setMenuOpen(false);}} className="flex items-center gap-2.5 w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-white/5 rounded-xl transition-colors mt-0.5">
+                                        <Sliders size={14} className="text-cyan-400" />
+                                        Preferences & Settings
+                                    </button>
+                                    
+                                    {(user?.role === "instructor" || localStorage.getItem("role") === "instructor") && (
+                                        <button onClick={() => {navigate("/studio"); setMenuOpen(false);}} className="flex items-center gap-2.5 w-full text-left px-3 py-2 text-xs font-medium text-indigo-400 hover:bg-indigo-500/10 rounded-xl transition-colors mt-0.5">
+                                            <GraduationCap size={14} />
+                                            Creator Studio
+                                        </button>
+                                    )}
+
+                                    <button onClick={handleLogout} className="flex items-center gap-2.5 w-full text-left px-3 py-2 text-xs font-medium text-red-400 hover:bg-red-500/10 rounded-xl transition-colors mt-1 border-t border-white/10 pt-2">
+                                        <LogOut size={14} />
+                                        Sign Out
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     ) : (
-                        <div className="flex items-center gap-2 sm:gap-3">
-                            <motion.button 
-                                whileHover={{ scale: 1.03 }}
-                                whileTap={{ scale: 0.97 }}
+                        <div className="flex items-center gap-2 sm:gap-2.5">
+                            <button 
                                 onClick={() => navigate("/login")} 
-                                className="text-sm font-semibold text-brand-muted hover:text-brand-text px-2.5 py-1.5 transition-colors hidden sm:block"
+                                className="text-xs font-semibold text-slate-300 hover:text-white px-3 py-2 transition-colors hidden sm:block"
                             >
                                 Sign In
-                            </motion.button>
+                            </button>
                             <motion.button 
-                                whileHover={{ scale: 1.03 }}
-                                whileTap={{ scale: 0.97 }}
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
                                 onClick={() => navigate("/signup")} 
-                                className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-[0_0_15px_rgba(37,99,235,0.3)] shrink-0"
+                                className="bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-500/25 shrink-0 border border-indigo-400/30"
                             >
-                                Get started
+                                Get Started
                             </motion.button>
                         </div>
                     )}
+
+                    {/* Mobile Menu Hamburger */}
+                    <button
+                        onClick={() => setMobileOpen(!mobileOpen)}
+                        className="md:hidden p-2 rounded-xl bg-white/[0.04] border border-white/10 text-slate-300 hover:text-white shrink-0"
+                    >
+                        {mobileOpen ? <X size={18} /> : <Menu size={18} />}
+                    </button>
+
                 </div>
+
             </div>
+
+            {/* Mobile Menu Drawer */}
+            <AnimatePresence>
+                {mobileOpen && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="md:hidden border-b border-white/10 bg-[#04060A]/95 backdrop-blur-2xl px-4 py-4 space-y-2 absolute top-full left-0 right-0 shadow-2xl"
+                    >
+                        {navLinks.map((link) => (
+                            <Link
+                                key={link.name}
+                                to={link.path}
+                                onClick={() => setMobileOpen(false)}
+                                className={`flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium ${
+                                    isActive(link.path)
+                                        ? "bg-indigo-500/15 text-indigo-400 font-bold"
+                                        : "text-slate-300 hover:text-white hover:bg-white/5"
+                                }`}
+                            >
+                                <span>{link.name}</span>
+                                {link.badge && (
+                                    <span className="text-[10px] font-mono uppercase bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded font-bold">
+                                        {link.badge}
+                                    </span>
+                                )}
+                            </Link>
+                        ))}
+
+                        <div className="pt-2 border-t border-white/10">
+                            <Link
+                                to="/projects"
+                                onClick={() => setMobileOpen(false)}
+                                className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-cyan-300 bg-cyan-500/10 border border-cyan-500/20"
+                            >
+                                <Terminal size={14} />
+                                <span>Launch Projects Forge</span>
+                            </Link>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </nav>
     );
 }

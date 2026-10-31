@@ -333,7 +333,7 @@ function CreateCourse() {
                                 whileTap={{ scale: 0.99 }}
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="px-6 py-3 rounded-xl bg-brand-primary hover:bg-brand-secondary text-white text-sm font-bold flex items-center gap-2 shadow-lg shadow-brand-primary/20 transition-all cursor-pointer disabled:opacity-50"
+                                className="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-sm font-bold flex items-center gap-2 shadow-lg shadow-indigo-500/25 transition-all cursor-pointer disabled:opacity-50"
                             >
                                 {isSubmitting ? (
                                     <>

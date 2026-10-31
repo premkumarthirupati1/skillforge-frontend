@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
     Sparkles, 
@@ -297,6 +298,24 @@ export default function ForgeCopilotPanel() {
                                             content={msg.content} 
                                             onLinkClick={() => setIsOpen(false)}
                                         />
+
+                                        {/* Navigation Action Card */}
+                                        {msg.action === "navigate" && msg.path && (
+                                            <div className="mt-3 pt-2.5 border-t border-neutral-800/80 flex items-center justify-between gap-2">
+                                                <div className="flex items-center gap-1.5 text-xs text-blue-400">
+                                                    <Compass size={14} className="shrink-0 animate-spin-slow" />
+                                                    <span className="font-medium">Navigating to destination</span>
+                                                </div>
+                                                <Link
+                                                    to={msg.path}
+                                                    onClick={() => setIsOpen(false)}
+                                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-600/20 border border-blue-500/40 text-blue-300 hover:bg-blue-600/30 text-[11px] font-mono transition-colors shrink-0"
+                                                >
+                                                    <span>{msg.path}</span>
+                                                    <ArrowUpRight size={12} />
+                                                </Link>
+                                            </div>
+                                        )}
 
                                         {/* Render Course Cards if present */}
                                         {msg.recommendedCourses && msg.recommendedCourses.length > 0 && (

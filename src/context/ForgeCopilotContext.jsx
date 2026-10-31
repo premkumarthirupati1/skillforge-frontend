@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import api from "../api";
 
 const ForgeCopilotContext = createContext(null);
 
 export function ForgeCopilotProvider({ children }) {
     const location = useLocation();
+    const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [lessonContext, setLessonContext] = useState(null);
@@ -116,12 +117,24 @@ export function ForgeCopilotProvider({ children }) {
                 id: `assistant-${Date.now()}`,
                 role: "assistant",
                 content: data.reply || "I've processed your request. Let me know if you need more details!",
+                category: data.category || "general",
+                action: data.action || null,
+                target: data.target || null,
+                path: data.path || null,
                 suggestions: data.suggestions || [],
                 recommendedCourses: data.recommendedCourses || [],
+                citedLessons: data.citedLessons || [],
                 timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             };
 
             setMessages(prev => [...prev, assistantMsg]);
+
+            // Execute navigation if structured action was returned
+            if (data.action === "navigate" && data.path) {
+                if (location.pathname !== data.path) {
+                    navigate(data.path);
+                }
+            }
         } catch (err) {
             console.error("Forge Copilot communication error:", err);
             const errorMsg = {

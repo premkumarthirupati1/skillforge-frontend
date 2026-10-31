@@ -43,7 +43,7 @@ function Dashboard() {
                 const userRes = await api.get('/user/profile');
                 setUser(Array.isArray(userRes.data) ? userRes.data[0] : userRes.data);
 
-                // Fetch Enrollments (fast cached endpoint with populated courses)
+                // Fetch Enrollments
                 const enrollmentsRes = await api.get('/enrollments');
                 const rawEnrollments = Array.isArray(enrollmentsRes.data) ? enrollmentsRes.data : [];
 
@@ -81,7 +81,6 @@ function Dashboard() {
             ? Math.round(courses.reduce((acc, c) => acc + c.progress, 0) / total) 
             : 0;
         
-        // Spotlight course: prefer most recently updated in-progress course, or first course
         const spotlight = inProgress[0] || courses[0] || null;
 
         return {
@@ -116,8 +115,8 @@ function Dashboard() {
             <div className="min-h-screen bg-brand-bg text-brand-text flex flex-col font-sans">
                 <NavBar />
                 <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-4">
-                    <div className="w-12 h-12 rounded-full border-3 border-brand-border border-t-brand-primary animate-spin" />
-                    <p className="text-sm font-semibold text-brand-muted animate-pulse">
+                    <div className="w-10 h-10 rounded-full border-2 border-brand-border border-t-brand-primary animate-spin" />
+                    <p className="text-xs font-semibold text-brand-muted animate-pulse">
                         Loading your workspace...
                     </p>
                 </div>
@@ -128,35 +127,33 @@ function Dashboard() {
     const userName = user?.name ? user.name.split(' ')[0] : (localStorage.getItem("userName")?.split(' ')[0] || "Developer");
 
     return (
-        <div className="min-h-screen bg-brand-bg text-brand-text transition-colors duration-300 flex flex-col font-sans relative selection:bg-brand-primary/30">
+        <div className="min-h-screen bg-brand-bg text-brand-text flex flex-col font-sans relative selection:bg-brand-primary/30 selection:text-white">
             <NavBar />
 
             {/* Ambient Background Grid & Subtle Glow */}
-            <div className="absolute inset-0 bg-grid-pattern opacity-30 pointer-events-none z-0" />
-            <div className="absolute top-20 right-1/4 w-[500px] h-[500px] bg-brand-primary/5 blur-[120px] rounded-full pointer-events-none z-0" />
+            <div className="absolute inset-0 bg-grid-pattern opacity-40 pointer-events-none z-0" />
+            <div className="absolute top-20 right-1/4 w-[500px] h-[500px] bg-brand-primary/10 blur-[140px] rounded-full pointer-events-none z-0 animate-ambient-glow" />
 
-            <main className="flex-1 max-w-7xl w-full mx-auto px-6 sm:px-8 py-8 sm:py-12 relative z-10 space-y-8 sm:space-y-10">
+            <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-10 space-y-8 sm:space-y-10">
                 
-                {/* ================================================================= */}
                 {/* 1. GREETING & HEADER ACTION BAR */}
-                {/* ================================================================= */}
                 <motion.div 
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                    className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-brand-border/60"
+                    transition={{ duration: 0.4 }}
+                    className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-brand-border/60"
                 >
                     <div className="space-y-1">
-                        <div className="flex items-center gap-2.5">
-                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-xs font-bold uppercase tracking-wider text-brand-muted">
-                                {role === "instructor" ? "Instructor Workspace" : "Developer Dashboard"}
+                        <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-brand-emerald animate-pulse" />
+                            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-brand-muted">
+                                {role === "instructor" ? "Instructor Studio" : "Developer Dashboard"}
                             </span>
                         </div>
                         <h1 className="text-3xl sm:text-4xl font-black text-brand-text tracking-tight">
                             Welcome back, {userName}!
                         </h1>
-                        <p className="text-sm text-brand-muted font-medium">
+                        <p className="text-xs sm:text-sm text-brand-muted font-medium">
                             {stats.total > 0 
                                 ? `You have ${stats.inProgressCount} active course${stats.inProgressCount === 1 ? '' : 's'} in progress.`
                                 : "Ready to master new engineering skills today?"}
@@ -169,9 +166,9 @@ function Dashboard() {
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                                 onClick={() => navigate("/studio")}
-                                className="px-5 py-2.5 rounded-xl bg-brand-surface border border-brand-border text-brand-text hover:border-brand-primary/50 text-sm font-bold flex items-center gap-2 shadow-sm transition-all"
+                                className="px-4 py-2.5 rounded-xl glass-card hover:bg-brand-elevated border border-brand-border text-brand-text text-xs sm:text-sm font-semibold flex items-center gap-2 shadow-sm transition-all"
                             >
-                                <Presentation size={16} className="text-brand-primary" />
+                                <Presentation size={15} className="text-brand-primary" />
                                 Creator Studio
                             </motion.button>
                         )}
@@ -179,61 +176,59 @@ function Dashboard() {
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => navigate("/course-showcase")}
-                            className="px-5 py-2.5 rounded-xl bg-brand-primary hover:bg-brand-secondary text-white text-sm font-bold flex items-center gap-2 shadow-md shadow-brand-primary/20 transition-all"
+                            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-brand-primary via-indigo-600 to-brand-primary text-white text-xs sm:text-sm font-semibold flex items-center gap-2 shadow-glow-primary/40 border border-white/10 transition-all"
                         >
-                            <Compass size={16} />
+                            <Compass size={15} />
                             Browse Catalog
                         </motion.button>
                     </div>
                 </motion.div>
 
-                {/* ================================================================= */}
                 {/* 2. STATS OVERVIEW CARDS (4 METRICS) */}
-                {/* ================================================================= */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                     {[
                         { 
                             label: "Enrolled Tracks", 
                             value: stats.total, 
                             suffix: "Courses", 
-                            icon: <BookOpen className="text-brand-primary" size={22} />,
+                            icon: <BookOpen className="text-brand-primary" size={20} />,
                             desc: "Active curriculum"
                         },
                         { 
                             label: "In Progress", 
                             value: stats.inProgressCount, 
                             suffix: "Active", 
-                            icon: <Clock className="text-brand-cyan" size={22} />,
+                            icon: <Clock className="text-brand-cyan" size={20} />,
                             desc: "Ongoing modules"
                         },
                         { 
                             label: "Certificates", 
                             value: stats.completedCount, 
                             suffix: "Earned", 
-                            icon: <Award className="text-emerald-500" size={22} />,
+                            icon: <Award className="text-brand-emerald" size={20} />,
                             desc: "Verifiable credentials"
                         },
                         { 
                             label: "Average Mastery", 
                             value: `${stats.overallProgress}%`, 
                             suffix: "Completion", 
-                            icon: <TrendingUp className="text-brand-primary" size={22} />,
+                            icon: <TrendingUp className="text-brand-secondary" size={20} />,
                             desc: "Across all tracks"
                         },
                     ].map((card, idx) => (
                         <motion.div
                             key={idx}
-                            initial={{ opacity: 0, y: 20 }}
+                            initial={{ opacity: 0, y: 18 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.45, delay: idx * 0.08 }}
+                            transition={{ duration: 0.4, delay: idx * 0.06 }}
                             whileHover={{ y: -3 }}
-                            className="bg-brand-surface border border-brand-border rounded-2xl p-5 sm:p-6 shadow-sm hover:shadow-md hover:border-brand-primary/40 transition-all flex flex-col justify-between"
+                            className="glass-card-elevated rounded-2xl p-5 sm:p-6 shadow-sm hover:border-brand-primary/40 transition-all flex flex-col justify-between"
                         >
-                            <div className="flex items-center justify-between mb-4">
-                                <span className="text-xs font-bold text-brand-muted uppercase tracking-wider">
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="text-[11px] font-bold text-brand-muted uppercase tracking-wider">
                                     {card.label}
                                 </span>
-                                <div className="w-10 h-10 rounded-xl bg-brand-elevated border border-brand-border flex items-center justify-center shadow-sm">
+                                <div className="w-9 h-9 rounded-xl bg-brand-surface border border-brand-border flex items-center justify-center shadow-sm">
                                     {card.icon}
                                 </div>
                             </div>
@@ -254,23 +249,20 @@ function Dashboard() {
                     ))}
                 </div>
 
-                {/* ================================================================= */}
-                {/* 3. SPOTLIGHT HERO: CONTINUE LEARNING OR DISCOVER TRACKS */}
-                {/* ================================================================= */}
+                {/* 3. SPOTLIGHT HERO: CONTINUE LEARNING */}
                 {stats.spotlight ? (
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.2 }}
-                        className="bg-gradient-to-br from-brand-surface via-brand-surface to-brand-elevated border border-brand-border hover:border-brand-primary/40 rounded-2xl p-6 sm:p-8 shadow-sm relative overflow-hidden transition-all"
+                        transition={{ duration: 0.45, delay: 0.15 }}
+                        className="glass-card-elevated rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden border border-brand-border/80"
                     >
-                        {/* Decorative Background Glow */}
-                        <div className="absolute right-0 top-0 w-80 h-80 bg-brand-primary/5 rounded-full blur-3xl pointer-events-none" />
+                        <div className="absolute right-0 top-0 w-80 h-80 bg-brand-primary/10 rounded-full blur-3xl pointer-events-none" />
 
                         <div className="relative z-10 grid md:grid-cols-12 gap-6 items-center">
                             
-                            {/* Course Thumbnail or Visual Badge */}
-                            <div className="md:col-span-4 lg:col-span-3 aspect-video md:aspect-[4/3] rounded-xl overflow-hidden bg-brand-elevated border border-brand-border relative shadow-sm">
+                            {/* Course Thumbnail */}
+                            <div className="md:col-span-4 lg:col-span-3 aspect-video md:aspect-[4/3] rounded-2xl overflow-hidden bg-brand-surface border border-brand-border relative shadow-sm">
                                 {stats.spotlight.thumbnail ? (
                                     <img 
                                         src={getImageUrl(stats.spotlight.thumbnail)} 
@@ -284,7 +276,7 @@ function Dashboard() {
                                         <span className="text-xs font-bold mt-2">Interactive Course</span>
                                     </div>
                                 )}
-                                <div className="absolute top-2.5 left-2.5 bg-brand-bg/90 backdrop-blur-md border border-brand-border px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider text-brand-text">
+                                <div className="absolute top-2.5 left-2.5 glass-card border border-white/10 px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider text-brand-text">
                                     {stats.spotlight.difficulty || "All Levels"}
                                 </div>
                             </div>
@@ -293,7 +285,7 @@ function Dashboard() {
                             <div className="md:col-span-8 lg:col-span-9 flex flex-col justify-between space-y-4">
                                 <div className="space-y-2">
                                     <div className="flex items-center gap-2">
-                                        <span className="px-2.5 py-0.5 rounded-md bg-brand-primary/10 text-brand-primary text-xs font-bold">
+                                        <span className="px-2.5 py-0.5 rounded-md bg-brand-primary/15 text-brand-primary text-xs font-bold">
                                             {stats.spotlight.progress === 100 ? "Completed Track" : "Jump Back In"}
                                         </span>
                                         {stats.spotlight.author && (
@@ -307,23 +299,23 @@ function Dashboard() {
                                         {stats.spotlight.title}
                                     </h2>
 
-                                    <p className="text-sm text-brand-muted line-clamp-2 leading-relaxed">
+                                    <p className="text-xs sm:text-sm text-brand-muted line-clamp-2 leading-relaxed">
                                         {stats.spotlight.description || "Continue working through this structured curriculum and interactive sandbox exercises."}
                                     </p>
                                 </div>
 
                                 {/* Progress Bar */}
-                                <div className="space-y-2 pt-2">
+                                <div className="space-y-1.5 pt-1">
                                     <div className="flex items-center justify-between text-xs font-bold">
                                         <span className="text-brand-muted">Course Completion</span>
-                                        <span className="text-brand-primary">{stats.spotlight.progress}%</span>
+                                        <span className="text-brand-primary font-mono">{stats.spotlight.progress}%</span>
                                     </div>
-                                    <div className="w-full h-2.5 bg-brand-elevated rounded-full overflow-hidden border border-brand-border/60">
+                                    <div className="w-full h-2 bg-brand-surface rounded-full overflow-hidden border border-brand-border/60">
                                         <motion.div 
                                             initial={{ width: 0 }}
                                             animate={{ width: `${stats.spotlight.progress}%` }}
                                             transition={{ duration: 0.8, ease: "easeOut" }}
-                                            className="h-full bg-brand-primary rounded-full"
+                                            className="h-full bg-gradient-to-r from-brand-primary to-brand-cyan rounded-full"
                                         />
                                     </div>
                                 </div>
@@ -334,11 +326,11 @@ function Dashboard() {
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
                                         onClick={() => navigate(`/course/${stats.spotlight._id}`)}
-                                        className="px-6 py-3 rounded-xl bg-brand-text text-brand-bg font-bold text-sm flex items-center gap-2 shadow-lg hover:bg-brand-text/90 transition-colors"
+                                        className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-brand-primary via-indigo-600 to-brand-primary text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-glow-primary/40 border border-white/10"
                                     >
-                                        <Play size={16} fill="currentColor" />
+                                        <Play size={15} fill="currentColor" />
                                         <span>Resume Learning</span>
-                                        <ArrowRight size={16} />
+                                        <ArrowRight size={15} />
                                     </motion.button>
 
                                     {stats.spotlight.progress === 100 && (
@@ -346,9 +338,9 @@ function Dashboard() {
                                             whileHover={{ scale: 1.02 }}
                                             whileTap={{ scale: 0.98 }}
                                             onClick={() => navigate(`/certificate/${stats.spotlight._id}`)}
-                                            className="px-5 py-3 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold text-sm flex items-center gap-2 hover:bg-emerald-500/20 transition-colors"
+                                            className="px-5 py-2.5 rounded-xl bg-brand-emerald/10 text-brand-emerald border border-brand-emerald/25 font-bold text-xs sm:text-sm flex items-center gap-2 hover:bg-brand-emerald/20 transition-colors"
                                         >
-                                            <ShieldCheck size={16} />
+                                            <ShieldCheck size={15} />
                                             <span>View Certificate</span>
                                         </motion.button>
                                     )}
@@ -358,35 +350,33 @@ function Dashboard() {
                         </div>
                     </motion.div>
                 ) : (
-                    /* Empty State Hero if not enrolled in any course */
+                    /* Empty State Hero */
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="bg-brand-surface border border-brand-border rounded-2xl p-8 sm:p-10 text-center shadow-sm relative overflow-hidden"
+                        className="glass-card-elevated rounded-3xl p-8 sm:p-10 text-center shadow-sm relative overflow-hidden"
                     >
-                        <div className="w-16 h-16 rounded-2xl bg-brand-primary/10 text-brand-primary flex items-center justify-center mx-auto mb-4">
-                            <Sparkles size={32} />
+                        <div className="w-14 h-14 rounded-2xl bg-brand-primary/10 text-brand-primary flex items-center justify-center mx-auto mb-4">
+                            <Sparkles size={28} />
                         </div>
                         <h2 className="text-2xl sm:text-3xl font-black text-brand-text tracking-tight mb-2">
                             Ready to start your first track?
                         </h2>
-                        <p className="text-sm text-brand-muted max-w-lg mx-auto mb-6 leading-relaxed">
+                        <p className="text-xs sm:text-sm text-brand-muted max-w-lg mx-auto mb-6 leading-relaxed">
                             Enroll in production-grade courses in React, Node.js, AI Engineering, Kubernetes, and System Design to build verifiable skills.
                         </p>
                         <button
                             onClick={() => navigate("/course-showcase")}
-                            className="px-7 py-3.5 bg-brand-primary hover:bg-brand-secondary text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-brand-primary/25 inline-flex items-center gap-2"
+                            className="px-6 py-3 bg-gradient-to-r from-brand-primary via-indigo-600 to-brand-primary text-white font-bold rounded-xl text-xs sm:text-sm transition-all shadow-glow-primary/40 inline-flex items-center gap-2 border border-white/10"
                         >
-                            <Compass size={18} />
+                            <Compass size={16} />
                             <span>Explore Course Catalog</span>
-                            <ArrowRight size={16} />
+                            <ArrowRight size={15} />
                         </button>
                     </motion.div>
                 )}
 
-                {/* ================================================================= */}
                 {/* 4. ACTIVE ENROLLED COURSES SECTION */}
-                {/* ================================================================= */}
                 <div className="space-y-6">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
@@ -401,7 +391,7 @@ function Dashboard() {
                         {/* Search & Tabs Controls */}
                         <div className="flex flex-wrap items-center gap-3">
                             {/* Filter Tabs */}
-                            <div className="inline-flex p-1 bg-brand-elevated border border-brand-border rounded-xl text-xs font-bold">
+                            <div className="inline-flex p-1 bg-brand-surface border border-brand-border rounded-xl text-xs font-semibold">
                                 {[
                                     { id: "all", label: `All (${courses.length})` },
                                     { id: "in-progress", label: `In Progress (${stats.inProgressCount})` },
@@ -410,9 +400,9 @@ function Dashboard() {
                                     <button
                                         key={tab.id}
                                         onClick={() => setFilterTab(tab.id)}
-                                        className={`px-3 py-1.5 rounded-lg transition-colors ${
+                                        className={`px-3 py-1.5 rounded-lg transition-all ${
                                             filterTab === tab.id 
-                                                ? "bg-brand-surface text-brand-text shadow-sm" 
+                                                ? "bg-brand-primary text-white shadow-sm" 
                                                 : "text-brand-muted hover:text-brand-text"
                                         }`}
                                     >
@@ -428,8 +418,8 @@ function Dashboard() {
                                     type="text"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="Search your courses..."
-                                    className="bg-brand-elevated text-brand-text placeholder-brand-subtle border border-brand-border focus:border-brand-primary rounded-xl py-1.5 pl-8 pr-3 text-xs focus:outline-none focus:ring-1 focus:ring-brand-primary transition-all w-44 sm:w-56"
+                                    placeholder="Search courses..."
+                                    className="bg-brand-surface text-brand-text placeholder-brand-subtle border border-brand-border focus:border-brand-primary rounded-xl py-1.5 pl-8 pr-3 text-xs focus:outline-none focus:ring-1 focus:ring-brand-primary transition-all w-44 sm:w-56"
                                 />
                             </div>
                         </div>
@@ -437,7 +427,7 @@ function Dashboard() {
 
                     {/* Courses Grid */}
                     {filteredCourses.length === 0 ? (
-                        <div className="bg-brand-surface border border-brand-border rounded-2xl p-10 text-center shadow-sm">
+                        <div className="glass-card rounded-2xl p-10 text-center shadow-sm">
                             <BookOpen size={36} className="text-brand-subtle mx-auto mb-3 opacity-60" />
                             <h3 className="text-base font-bold text-brand-text mb-1">
                                 {courses.length === 0 ? "No enrolled courses yet" : "No matching courses found"}
@@ -469,11 +459,11 @@ function Dashboard() {
                                         transition={{ duration: 0.3, delay: idx * 0.05 }}
                                         whileHover={{ y: -4 }}
                                         onClick={() => navigate(`/course/${course._id}`)}
-                                        className="group bg-brand-surface border border-brand-border rounded-2xl overflow-hidden hover:border-brand-primary/50 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer flex flex-col justify-between"
+                                        className="group glass-card rounded-3xl overflow-hidden hover:border-brand-primary/50 shadow-sm hover:shadow-glow-primary/20 transition-all duration-300 cursor-pointer flex flex-col justify-between"
                                     >
                                         <div>
                                             {/* Thumbnail Cover */}
-                                            <div className="h-44 bg-brand-elevated relative overflow-hidden">
+                                            <div className="h-44 bg-brand-surface relative overflow-hidden">
                                                 {course.thumbnail ? (
                                                     <img 
                                                         src={getImageUrl(course.thumbnail)} 
@@ -487,13 +477,13 @@ function Dashboard() {
                                                     </div>
                                                 )}
 
-                                                <div className="absolute top-3 left-3 bg-brand-bg/90 backdrop-blur-md border border-brand-border px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider text-brand-text">
+                                                <div className="absolute top-3 left-3 glass-card border border-white/10 px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider text-brand-text">
                                                     {course.difficulty || "All Levels"}
                                                 </div>
 
                                                 <div className={`absolute top-3 right-3 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
                                                     course.progress === 100 
-                                                        ? "bg-emerald-500 text-white" 
+                                                        ? "bg-brand-emerald text-white" 
                                                         : "bg-brand-primary text-white"
                                                 }`}>
                                                     {course.progress === 100 ? "Completed" : `${course.progress}%`}
@@ -501,7 +491,7 @@ function Dashboard() {
                                             </div>
 
                                             {/* Content */}
-                                            <div className="p-5 space-y-3">
+                                            <div className="p-5 space-y-2.5">
                                                 <h3 className="font-bold text-base text-brand-text leading-snug line-clamp-2 group-hover:text-brand-primary transition-colors">
                                                     {course.title}
                                                 </h3>
@@ -518,12 +508,12 @@ function Dashboard() {
                                             <div className="space-y-1.5">
                                                 <div className="flex justify-between items-center text-[11px] font-semibold text-brand-muted">
                                                     <span>Progress</span>
-                                                    <span>{course.progress}%</span>
+                                                    <span className="font-mono">{course.progress}%</span>
                                                 </div>
-                                                <div className="w-full h-1.5 bg-brand-elevated rounded-full overflow-hidden">
+                                                <div className="w-full h-1.5 bg-brand-surface rounded-full overflow-hidden">
                                                     <div 
                                                         className={`h-full rounded-full transition-all ${
-                                                            course.progress === 100 ? "bg-emerald-500" : "bg-brand-primary"
+                                                            course.progress === 100 ? "bg-brand-emerald" : "bg-brand-primary"
                                                         }`}
                                                         style={{ width: `${course.progress}%` }}
                                                     />
@@ -543,7 +533,7 @@ function Dashboard() {
                                                             e.stopPropagation();
                                                             navigate(`/certificate/${course._id}`);
                                                         }}
-                                                        className="text-emerald-500 hover:text-emerald-600 flex items-center gap-1 text-[11px]"
+                                                        className="text-brand-emerald hover:underline flex items-center gap-1 text-[11px]"
                                                     >
                                                         <ShieldCheck size={13} />
                                                         Certificate
@@ -558,18 +548,16 @@ function Dashboard() {
                     )}
                 </div>
 
-                {/* ================================================================= */}
-                {/* 5. VERIFIABLE CERTIFICATIONS ACCELERATOR */}
-                {/* ================================================================= */}
+                {/* 5. VERIFIABLE CERTIFICATIONS */}
                 {stats.completedCourses.length > 0 && (
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        className="bg-brand-surface border border-brand-border rounded-2xl p-6 sm:p-8 shadow-sm space-y-4"
+                        className="glass-card-elevated rounded-3xl p-6 sm:p-8 shadow-sm space-y-4 border border-brand-border/80"
                     >
                         <div className="flex items-center gap-2">
-                            <ShieldCheck size={20} className="text-emerald-500" />
+                            <ShieldCheck size={20} className="text-brand-emerald" />
                             <h3 className="text-lg font-black text-brand-text">
                                 Verifiable Certifications ({stats.completedCourses.length})
                             </h3>
@@ -583,17 +571,17 @@ function Dashboard() {
                                 <div
                                     key={c._id}
                                     onClick={() => navigate(`/certificate/${c._id}`)}
-                                    className="p-4 rounded-xl bg-brand-elevated border border-brand-border hover:border-emerald-500/50 transition-all cursor-pointer flex items-center justify-between group shadow-sm"
+                                    className="p-4 rounded-2xl glass-card hover:border-brand-emerald/50 transition-all cursor-pointer flex items-center justify-between group shadow-sm"
                                 >
                                     <div className="space-y-1 pr-3">
-                                        <p className="text-xs font-bold text-brand-text line-clamp-1 group-hover:text-emerald-500 transition-colors">
+                                        <p className="text-xs font-bold text-brand-text line-clamp-1 group-hover:text-brand-emerald transition-colors">
                                             {c.title}
                                         </p>
-                                        <p className="text-[10px] text-brand-subtle uppercase tracking-wider font-semibold">
+                                        <p className="text-[10px] text-brand-subtle uppercase tracking-wider font-semibold font-mono">
                                             Verified Credential
                                         </p>
                                     </div>
-                                    <ExternalLink size={16} className="text-brand-muted group-hover:text-emerald-500 transition-colors shrink-0" />
+                                    <ExternalLink size={15} className="text-brand-muted group-hover:text-brand-emerald transition-colors shrink-0" />
                                 </div>
                             ))}
                         </div>

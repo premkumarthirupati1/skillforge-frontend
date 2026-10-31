@@ -37,12 +37,21 @@ api.interceptors.response.use(
     },
     async (error) => {
         const originalRequest = error.config;
+        if (!originalRequest) {
+            return Promise.reject(error);
+        }
+
+        const isAuthEndpoint = originalRequest.url?.includes("/auth/login") || 
+                               originalRequest.url?.includes("/auth/signup") || 
+                               originalRequest.url?.includes("/auth/refresh") ||
+                               originalRequest.url?.includes("/auth/forgot-password") ||
+                               originalRequest.url?.includes("/auth/reset-password");
         
-        // If it's a 401/403 and NOT a retry yet, attempt refresh
-        if (error.response && (error.response.status === 401 || error.response.status === 403) && !originalRequest._retry) {
+        // Only trigger token refresh on 401 Unauthorized for non-auth endpoints
+        if (error.response && error.response.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
             
             if (isRefreshing) {
-                // If another request is currently refreshing the token, pause this one
+                // If another request is currently refreshing the token, queue this one
                 return new Promise(function(resolve, reject) {
                     failedQueue.push({ resolve, reject });
                 }).then(token => {
@@ -57,7 +66,6 @@ api.interceptors.response.use(
             isRefreshing = true;
             
             try {
-                // Ping the backend refresh endpoint (reads HttpOnly cookie with fallback to body token)
                 const storedRefreshToken = localStorage.getItem("refreshToken");
                 const { data } = await axios.post(
                     `${API_BASE_URL}/auth/refresh`, 
@@ -79,12 +87,18 @@ api.interceptors.response.use(
             } catch (err) {
                 processQueue(err, null);
                 
-                // If refresh fails (e.g. refresh token expired), clear out storage
+                // Clear out invalid session credentials
                 localStorage.removeItem("token");
                 localStorage.removeItem("refreshToken");
                 localStorage.removeItem("userId");
                 localStorage.removeItem("role");
-                window.location.href = "/login";
+                localStorage.removeItem("userName");
+                localStorage.removeItem("userEmail");
+                
+                // Only redirect if user was trying to access a protected area
+                if (window.location.pathname !== "/login" && window.location.pathname !== "/signup" && window.location.pathname !== "/") {
+                    window.location.href = "/login";
+                }
                 
                 return Promise.reject(err);
             } finally {

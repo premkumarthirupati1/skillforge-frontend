@@ -33,6 +33,7 @@ import Dashboard from "./pages/dashboard/Dashboard";
 import UnifiedDashBoard from "./pages/dashboard/UnifiedDashboard";
 import Profile from "./pages/dashboard/Profile";
 import PublicProfile from "./pages/dashboard/PublicProfile";
+import Settings from "./pages/dashboard/Settings";
 
 // Public & Marketing
 import HomePage from "./pages/common/Homepage";
@@ -42,6 +43,9 @@ import PaymentSuccess from "./pages/common/PaymentSuccess";
 // Smooth Route Transition with Animated Logo Layer
 import RouteTransitionLayout from "./components/RouteTransitionLayout";
 
+// Centralized Enterprise Auth Context
+import { AuthProvider } from "./context/AuthContext";
+
 // Forge Copilot Native AI Assistant Suite
 import { ForgeCopilotProvider } from "./context/ForgeCopilotContext";
 import ForgeCopilotLauncher from "./components/copilot/ForgeCopilotLauncher";
@@ -50,146 +54,145 @@ import ForgeCopilotPanel from "./components/copilot/ForgeCopilotPanel";
 function App() {
   return (
     <BrowserRouter>
-      <ForgeCopilotProvider>
-        <Toaster 
-        position="bottom-right" 
-        toastOptions={{ 
-            style: { 
-                background: "#1C1D24", 
-                color: "#fff", 
-                border: "1px solid rgba(255,255,255,0.1)",
-                padding: "16px",
-                borderRadius: "12px",
-                boxShadow: "0 10px 30px rgba(0,0,0,0.5)"
-            } 
-        }} 
-      />
-      <RouteTransitionLayout>
-        <Routes>
-        <Route path="/profile" element={
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        } />
-        <Route path="/profile/:identifier" element={<PublicProfile />} />
-        <Route path="/u/:identifier" element={<PublicProfile />} />
-        <Route path="/" element={<HomePage />} />
-        <Route path="/signup" element={<Signup />} />
-        
-        {/* Core catalog routes */}
-        <Route path="/course-showcase" element={<CourseShowcase />} />
-        <Route path="/courses" element={<CourseShowcase />} />
-        
-        {/* Nav Links mapping */}
-        <Route path="/learn" element={<CourseShowcase />} />
-        <Route path="/tracks" element={<CourseShowcase />} />
-        <Route path="/skills" element={<CourseShowcase />} />
-        <Route path="/projects" element={<ProjectsGallery />} />
-        <Route path="/projects/:projectId" element={
-          <ProtectedRoute>
-            <ProjectWorkspace />
-          </ProtectedRoute>
-        } />
-        <Route path="/projects/:projectId/workspace" element={
-          <ProtectedRoute>
-            <ProjectWorkspace />
-          </ProtectedRoute>
-        } />
-        <Route path="/challenges" element={<ComingSoon title="Coding Challenges" />} />
-        <Route path="/community" element={<ComingSoon title="Community Hub" />} />
+      <AuthProvider>
+        <ForgeCopilotProvider>
+          <Toaster 
+            position="bottom-right" 
+            toastOptions={{ 
+                style: { 
+                    background: "#1C1D24", 
+                    color: "#fff", 
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    padding: "16px",
+                    borderRadius: "12px",
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.5)"
+                } 
+            }} 
+          />
+          <RouteTransitionLayout>
+            <Routes>
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              } />
+              <Route path="/settings" element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              } />
+              <Route path="/profile/:identifier" element={<PublicProfile />} />
+              <Route path="/u/:identifier" element={<PublicProfile />} />
+              <Route path="/" element={<HomePage />} />
+              <Route path="/signup" element={<Signup />} />
+              
+              {/* Core catalog routes */}
+              <Route path="/course-showcase" element={<CourseShowcase />} />
+              <Route path="/courses" element={<CourseShowcase />} />
+              
+              {/* Nav Links mapping */}
+              <Route path="/learn" element={<CourseShowcase />} />
+              <Route path="/tracks" element={<CourseShowcase />} />
+              <Route path="/skills" element={<CourseShowcase />} />
+              <Route path="/projects" element={<ProjectsGallery />} />
+              <Route path="/projects/:projectId" element={
+                <ProtectedRoute>
+                  <ProjectWorkspace />
+                </ProtectedRoute>
+              } />
+              <Route path="/projects/:projectId/workspace" element={
+                <ProtectedRoute>
+                  <ProjectWorkspace />
+                </ProtectedRoute>
+              } />
+              <Route path="/challenges" element={<ComingSoon title="Coding Challenges" />} />
+              <Route path="/community" element={<ComingSoon title="Community Hub" />} />
 
-        <Route path="/course/:courseId" element={<CourseDetails />} />
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <UnifiedDashBoard />
-          </ProtectedRoute>
-        } />
-        <Route path="/login" element={<Login />} />
-        <Route path="/course/:courseId/full" element={
-          <ProtectedRoute>
-            <CourseView />
-          </ProtectedRoute>
-        } />
-        <Route path="/instructor" element={
-          <ProtectedRoute>
-            <InstructorStudio />
-          </ProtectedRoute>
-        }
-        />
-        <Route path="/studio" element={
-          <ProtectedRoute>
-            <InstructorStudio />
-          </ProtectedRoute>
-        } />
-        <Route path="/studio/course/:courseId" element={
-          <ProtectedRoute>
-            <CourseEditor />
-          </ProtectedRoute>
-        } />
-        <Route path="/create-course" element={
-          <ProtectedRoute>
-            <CreateCourse />
-          </ProtectedRoute>
-        } />
-        <Route path="/course/:courseId/edit" element={
-          <ProtectedRoute>
-            <EditCourse />
-          </ProtectedRoute>
-        }
-        />
-        <Route path="/course-builder/:courseId" element={
-          <ProtectedRoute>
-            <CourseEditor />
-          </ProtectedRoute>
-        } />
-        <Route path="/module/:moduleId/edit" element={
-          <ProtectedRoute>
-            <ModuleEditor />
-          </ProtectedRoute>
-        } />
-        <Route path="/module/:moduleId" element={
-          <ProtectedRoute>
-            <LessonsView />
-          </ProtectedRoute>
-        } />
-        <Route path="/lesson-builder/:moduleId" element={
-          <ProtectedRoute>
-            <LessonBuilder />
-          </ProtectedRoute>
-        } />
-        <Route path="/edit-lesson/:lessonId" element={
-          <ProtectedRoute>
-            <EditLesson />
-          </ProtectedRoute>
-        } />
-        <Route path="/lesson/:lessonId" element={
-          <ProtectedRoute>
-            <LessonViewer />
-          </ProtectedRoute>
-        } />
-        <Route path="/forgot-password"
-          element={
-            <ForgotPassword />
-          }
-        />
-        <Route path="/auth/forgot-password/:token"
-          element={<ResetPassword />}
-        />
-        <Route path="/payment/success" element={
-          <ProtectedRoute>
-            <PaymentSuccess />
-          </ProtectedRoute>
-        } />
-        <Route path="/certificate/:courseId" element={
-          <ProtectedRoute>
-            <CertificateViewer />
-          </ProtectedRoute>
-        } />
-      </Routes>
-      </RouteTransitionLayout>
-      <ForgeCopilotLauncher />
-      <ForgeCopilotPanel />
-      </ForgeCopilotProvider>
+              <Route path="/course/:courseId" element={<CourseDetails />} />
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <UnifiedDashBoard />
+                </ProtectedRoute>
+              } />
+              <Route path="/login" element={<Login />} />
+              <Route path="/course/:courseId/full" element={
+                <ProtectedRoute>
+                  <CourseView />
+                </ProtectedRoute>
+              } />
+              <Route path="/instructor" element={
+                <ProtectedRoute>
+                  <InstructorStudio />
+                </ProtectedRoute>
+              } />
+              <Route path="/studio" element={
+                <ProtectedRoute>
+                  <InstructorStudio />
+                </ProtectedRoute>
+              } />
+              <Route path="/studio/course/:courseId" element={
+                <ProtectedRoute>
+                  <CourseEditor />
+                </ProtectedRoute>
+              } />
+              <Route path="/create-course" element={
+                <ProtectedRoute>
+                  <CreateCourse />
+                </ProtectedRoute>
+              } />
+              <Route path="/course/:courseId/edit" element={
+                <ProtectedRoute>
+                  <EditCourse />
+                </ProtectedRoute>
+              } />
+              <Route path="/course-builder/:courseId" element={
+                <ProtectedRoute>
+                  <CourseEditor />
+                </ProtectedRoute>
+              } />
+              <Route path="/module/:moduleId/edit" element={
+                <ProtectedRoute>
+                  <ModuleEditor />
+                </ProtectedRoute>
+              } />
+              <Route path="/module/:moduleId" element={
+                <ProtectedRoute>
+                  <LessonsView />
+                </ProtectedRoute>
+              } />
+              <Route path="/lesson-builder/:moduleId" element={
+                <ProtectedRoute>
+                  <LessonBuilder />
+                </ProtectedRoute>
+              } />
+              <Route path="/edit-lesson/:lessonId" element={
+                <ProtectedRoute>
+                  <EditLesson />
+                </ProtectedRoute>
+              } />
+              <Route path="/lesson/:lessonId" element={
+                <ProtectedRoute>
+                  <LessonViewer />
+                </ProtectedRoute>
+              } />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/auth/forgot-password/:token" element={<ResetPassword />} />
+              <Route path="/payment/success" element={
+                <ProtectedRoute>
+                  <PaymentSuccess />
+                </ProtectedRoute>
+              } />
+              <Route path="/certificate/:courseId" element={
+                <ProtectedRoute>
+                  <CertificateViewer />
+                </ProtectedRoute>
+              } />
+            </Routes>
+          </RouteTransitionLayout>
+          <ForgeCopilotLauncher />
+          <ForgeCopilotPanel />
+        </ForgeCopilotProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

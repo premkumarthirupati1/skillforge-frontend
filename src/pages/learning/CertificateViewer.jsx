@@ -71,7 +71,8 @@ function CertificateViewer() {
             const pdfHeight = pdf.internal.pageSize.getHeight();
             
             pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
-            pdf.save(`${course?.title?.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'course'}_certificate.pdf`);
+            const certTitle = (enrollment?.courseId?.title || 'course').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            pdf.save(`${certTitle}_certificate.pdf`);
         } catch (err) {
             console.error("Error generating PDF:", err);
             toast.error("Failed to generate PDF. Please try again.");

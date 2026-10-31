@@ -239,13 +239,14 @@ export default function ProjectsGallery() {
     };
 
     return (
-        <div className="min-h-screen bg-brand-bg text-brand-text flex flex-col selection:bg-blue-600/30 selection:text-white">
+        <div className="min-h-screen bg-[#07090E] text-slate-100 flex flex-col selection:bg-indigo-500/30 selection:text-white">
             <NavBar />
 
             {/* Ambient Background Glows */}
             <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-                <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[70vw] h-[350px] bg-blue-600/10 blur-[130px] rounded-full" />
-                <div className="absolute top-[40rem] -right-32 w-[35vw] h-[400px] bg-indigo-600/10 blur-[120px] rounded-full" />
+                <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[80vw] max-w-5xl h-[380px] bg-gradient-to-b from-indigo-600/15 via-purple-600/10 to-transparent blur-[140px] rounded-full pointer-events-none" />
+                <div className="absolute top-[35rem] -right-32 w-[35vw] h-[400px] bg-cyan-600/10 blur-[130px] rounded-full pointer-events-none" />
+                <div className="absolute top-[60rem] -left-32 w-[30vw] h-[350px] bg-purple-600/10 blur-[140px] rounded-full pointer-events-none" />
             </div>
 
             <main className="relative z-10 flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-10">
@@ -253,53 +254,55 @@ export default function ProjectsGallery() {
                 {/* ======================================================== */}
                 {/* 1. HERO SECTION                                         */}
                 {/* ======================================================== */}
-                <div className="text-center max-w-3xl mx-auto space-y-4">
-                    <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-mono font-bold uppercase tracking-widest shadow-sm">
-                        <div className="w-5 h-4 rounded bg-[#070A11] border border-blue-400/30 flex items-center justify-center shrink-0">
+                <div className="text-center max-w-3xl mx-auto space-y-5">
+                    <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-mono font-medium tracking-wide shadow-sm backdrop-blur-md">
+                        <div className="w-5 h-4 rounded bg-[#07090E] border border-indigo-400/30 flex items-center justify-center shrink-0">
                             <img src="/images/code-anvil-logo.png" alt="Anvil" className="h-2.5 w-auto object-contain" />
                         </div>
-                        <span>The Project Forge • Interactive Engineering Ecosystem</span>
+                        <span className="bg-gradient-to-r from-indigo-300 to-cyan-300 bg-clip-text text-transparent font-semibold">The Project Forge</span>
+                        <span className="text-slate-500">•</span>
+                        <span className="text-slate-400">Interactive Cloud Ecosystem</span>
                     </div>
 
-                    <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
+                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.1]">
                         Build Real Systems. <br className="hidden sm:inline" />
-                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-cyan-500 to-indigo-600 dark:from-blue-400 dark:via-cyan-300 dark:to-indigo-400">
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400">
                             Not Just Syntax.
                         </span>
                     </h1>
 
-                    <p className="text-brand-muted text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+                    <p className="text-slate-400 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-normal">
                         An autonomous engineering workspace. Build production distributed architectures from real PRDs, run automated test suites, and sync verified builds directly to your portfolio.
                     </p>
                 </div>
 
                 {/* ======================================================== */}
-                {/* 2. STATS RIBBON                                         */}
+                {/* 2. STATS RIBBON (Bento Micro-Cards)                      */}
                 {/* ======================================================== */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-2xl bg-brand-surface border border-brand-border shadow-sm text-center">
-                    <div className="p-3">
-                        <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">8</div>
-                        <div className="text-xs text-brand-muted font-medium mt-1">Production Specs</div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 p-2 sm:p-2.5 rounded-2xl bg-[#0D111A]/90 border border-white/10 backdrop-blur-xl shadow-xl text-center">
+                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 transition-colors hover:border-indigo-500/30 group">
+                        <div className="text-2xl sm:text-3xl font-black text-white group-hover:text-indigo-400 transition-colors">8</div>
+                        <div className="text-xs text-slate-400 font-medium mt-1">Production Specs</div>
                     </div>
-                    <div className="p-3 border-l border-brand-border">
-                        <div className="text-2xl sm:text-3xl font-black text-blue-600 dark:text-blue-400">50+</div>
-                        <div className="text-xs text-brand-muted font-medium mt-1">Automated Test Suites</div>
+                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 transition-colors hover:border-cyan-500/30 group">
+                        <div className="text-2xl sm:text-3xl font-black text-cyan-400 group-hover:text-cyan-300 transition-colors">50+</div>
+                        <div className="text-xs text-slate-400 font-medium mt-1">Automated Test Suites</div>
                     </div>
-                    <div className="p-3 border-l border-brand-border">
-                        <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">100%</div>
-                        <div className="text-xs text-brand-muted font-medium mt-1">Real-World Code</div>
+                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 transition-colors hover:border-purple-500/30 group">
+                        <div className="text-2xl sm:text-3xl font-black text-purple-400 group-hover:text-purple-300 transition-colors">100%</div>
+                        <div className="text-xs text-slate-400 font-medium mt-1">Real-World Code</div>
                     </div>
-                    <div className="p-3 border-l border-brand-border">
-                        <div className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400">GitHub</div>
-                        <div className="text-xs text-brand-muted font-medium mt-1">One-Click Portfolio Sync</div>
+                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 transition-colors hover:border-emerald-500/30 group">
+                        <div className="text-2xl sm:text-3xl font-black text-emerald-400 group-hover:text-emerald-300 transition-colors">GitHub</div>
+                        <div className="text-xs text-slate-400 font-medium mt-1">One-Click Portfolio Sync</div>
                     </div>
                 </div>
 
                 {/* ======================================================== */}
-                {/* 3. DEDICATED FORGE WORKSPACE TOOLBAR (CAPABILITY SWITCHER)*/}
+                {/* 3. DEDICATED FORGE WORKSPACE TOOLBAR                     */}
                 {/* ======================================================== */}
                 <div className="flex items-center justify-center pt-2">
-                    <div className="inline-flex p-1.5 rounded-2xl bg-brand-surface border border-brand-border shadow-sm gap-1.5 overflow-x-auto max-w-full">
+                    <div className="inline-flex p-1.5 rounded-2xl bg-[#0D111A] border border-white/10 shadow-lg backdrop-blur-xl gap-1.5 overflow-x-auto max-w-full">
                         {[
                             { id: "specs", label: "Engineering Specs", count: PROJECTS.length, icon: Layers },
                             { id: "builds", label: "My Active Builds", count: isLoggedIn ? userBuilds.length : 0, icon: Cpu },
@@ -312,10 +315,10 @@ export default function ProjectsGallery() {
                                 <button
                                     key={tab.id}
                                     onClick={() => setTab(tab.id)}
-                                    className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2.5 transition-all whitespace-nowrap ${
+                                    className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2.5 transition-all whitespace-nowrap ${
                                         active
-                                            ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
-                                            : "text-brand-muted hover:text-brand-text hover:bg-brand-elevated"
+                                            ? "bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/25 border border-indigo-400/30"
+                                            : "text-slate-400 hover:text-white hover:bg-white/5"
                                     }`}
                                 >
                                     <Icon size={16} />
@@ -339,15 +342,15 @@ export default function ProjectsGallery() {
                         
                         {/* Quick Resume Tray: ONLY renders if user is signed in AND has active builds */}
                         {isLoggedIn && userBuilds.length > 0 && (
-                            <div className="p-5 rounded-3xl bg-gradient-to-r from-blue-500/5 via-indigo-500/5 to-cyan-500/5 border border-blue-500/20 space-y-3">
+                            <div className="p-5 rounded-3xl bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-cyan-500/10 border border-indigo-500/25 space-y-3 backdrop-blur-md">
                                 <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-                                        <Hammer size={14} />
+                                    <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-indigo-400">
+                                        <Hammer size={14} className="text-cyan-400" />
                                         <span>In-Progress Workspaces ({userBuilds.length})</span>
                                     </div>
                                     <button 
                                         onClick={() => setTab("builds")}
-                                        className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                                        className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1"
                                     >
                                         <span>View All Builds</span>
                                         <ChevronRight size={13} />
@@ -358,28 +361,28 @@ export default function ProjectsGallery() {
                                     {userBuilds.map(build => (
                                         <div 
                                             key={build.id}
-                                            className="p-4 rounded-2xl bg-brand-surface border border-brand-border flex items-center justify-between gap-4 shadow-sm hover:border-blue-500/40 transition-colors"
+                                            className="p-4 rounded-2xl bg-[#0D111A] border border-white/10 flex items-center justify-between gap-4 shadow-sm hover:border-indigo-500/40 transition-colors"
                                         >
                                             <div className="space-y-1.5 min-w-0">
                                                 <div className="flex items-center gap-2">
                                                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                                                    <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 truncate">
+                                                    <span className="text-[11px] font-mono text-slate-400 truncate">
                                                         {build.branch}
                                                     </span>
                                                 </div>
-                                                <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                                                <h4 className="text-sm font-bold text-white truncate">
                                                     {build.title}
                                                 </h4>
-                                                <div className="flex items-center gap-3 text-xs text-brand-muted">
+                                                <div className="flex items-center gap-3 text-xs text-slate-400">
                                                     <span>Milestone {build.currentMilestone}/{build.totalMilestones} ({build.percent}%)</span>
                                                     <span>•</span>
-                                                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">{build.testsPassed}/{build.totalTests} tests passed</span>
+                                                    <span className="text-emerald-400 font-semibold">{build.testsPassed}/{build.totalTests} tests passed</span>
                                                 </div>
                                             </div>
 
                                             <button
                                                 onClick={() => navigate(`/projects/${build.projectId}/workspace`)}
-                                                className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shrink-0 transition-all shadow-sm flex items-center gap-1.5"
+                                                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-semibold shrink-0 transition-all shadow-md shadow-indigo-500/20 flex items-center gap-1.5"
                                             >
                                                 <Play size={12} fill="currentColor" />
                                                 <span>Resume</span>
@@ -394,18 +397,18 @@ export default function ProjectsGallery() {
                         <div className="space-y-4">
                             <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
                                 <div className="relative flex-grow max-w-md">
-                                    <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                                    <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
                                     <input 
                                         type="text"
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         placeholder="Search by name, tech (Redis, Go, React, AST)..."
-                                        className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-brand-surface border border-brand-border text-brand-text placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 transition-colors shadow-sm"
+                                        className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#0D111A] border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-500 transition-colors shadow-sm"
                                     />
                                     {searchQuery && (
                                         <button 
                                             onClick={() => setSearchQuery("")}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-white"
                                         >
                                             Clear
                                         </button>
@@ -413,17 +416,17 @@ export default function ProjectsGallery() {
                                 </div>
 
                                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-                                    <span className="text-xs text-brand-muted font-medium mr-1 hidden sm:inline">
+                                    <span className="text-xs text-slate-400 font-medium mr-1 hidden sm:inline">
                                         Difficulty:
                                     </span>
                                     {DIFFICULTY_LEVELS.map(diff => (
                                         <button
                                             key={diff.id}
                                             onClick={() => setSelectedDifficulty(diff.id)}
-                                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                                            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 ${
                                                 selectedDifficulty === diff.id
-                                                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm"
-                                                    : "bg-brand-surface border border-brand-border text-brand-muted hover:text-brand-text"
+                                                    ? "bg-white text-slate-900 shadow-sm font-bold"
+                                                    : "bg-[#0D111A] border border-white/10 text-slate-400 hover:text-white hover:bg-white/5"
                                             }`}
                                         >
                                             {diff.label}
@@ -433,17 +436,17 @@ export default function ProjectsGallery() {
                             </div>
 
                             {/* Track Tabs */}
-                            <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-brand-border">
+                            <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-white/10">
                                 {PROJECT_TRACKS.map(track => {
                                     const active = selectedTrack === track.id;
                                     return (
                                         <button
                                             key={track.id}
                                             onClick={() => setSelectedTrack(track.id)}
-                                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
+                                            className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 shrink-0 ${
                                                 active
-                                                    ? "bg-blue-600 text-white shadow-sm"
-                                                    : "bg-brand-surface border border-brand-border text-brand-muted hover:text-brand-text hover:bg-brand-elevated"
+                                                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-500/20 border border-indigo-400/30"
+                                                    : "bg-[#0D111A] border border-white/10 text-slate-400 hover:text-white hover:bg-white/5"
                                             }`}
                                         >
                                             {getTrackIcon(track.icon)}
@@ -457,22 +460,22 @@ export default function ProjectsGallery() {
                         {/* Projects Grid */}
                         <div>
                             <div className="flex items-center justify-between mb-6">
-                                <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                                <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
                                     <span>Available Engineering Specs</span>
-                                    <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300">
+                                    <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-white/10 text-slate-300">
                                         {filteredProjects.length}
                                     </span>
                                 </h3>
                             </div>
 
                             {filteredProjects.length === 0 ? (
-                                <div className="text-center py-16 bg-brand-surface border border-brand-border rounded-3xl p-8 shadow-sm">
-                                    <Terminal size={36} className="mx-auto text-slate-400 dark:text-slate-500 mb-3" />
-                                    <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-1">No Projects Match Your Filter</h4>
-                                    <p className="text-sm text-brand-muted mb-4">Try clearing your search query or selecting "All Tracks".</p>
+                                <div className="text-center py-16 bg-[#0D111A] border border-white/10 rounded-3xl p-8 shadow-sm">
+                                    <Terminal size={36} className="mx-auto text-slate-500 mb-3" />
+                                    <h4 className="text-lg font-bold text-white mb-1">No Projects Match Your Filter</h4>
+                                    <p className="text-sm text-slate-400 mb-4">Try clearing your search query or selecting "All Tracks".</p>
                                     <button
                                         onClick={() => { setSelectedTrack("all"); setSelectedDifficulty("all"); setSearchQuery(""); }}
-                                        className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-500 transition-colors shadow-sm"
+                                        className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-500 transition-colors shadow-sm"
                                     >
                                         Reset All Filters
                                     </button>
@@ -482,33 +485,33 @@ export default function ProjectsGallery() {
                                     {filteredProjects.map(project => (
                                         <div
                                             key={project.id}
-                                            className="group relative flex flex-col justify-between rounded-3xl bg-brand-surface border border-brand-border hover:border-blue-500/50 p-6 transition-all duration-300 shadow-sm hover:shadow-lg dark:hover:shadow-[0_15px_35px_rgba(37,99,235,0.15)] overflow-hidden"
+                                            className="group relative flex flex-col justify-between rounded-3xl bg-[#0D111A]/90 border border-white/10 hover:border-indigo-500/50 p-6 transition-all duration-300 shadow-xl hover:shadow-[0_15px_35px_rgba(99,102,241,0.18)] overflow-hidden backdrop-blur-xl"
                                         >
-                                            <div className={`absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r ${project.colorTheme}`} />
+                                            <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${project.colorTheme}`} />
 
                                             <div className="space-y-4">
                                                 <div className="flex items-center justify-between gap-2">
-                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300">
-                                                        <Flame size={12} className="text-blue-500 dark:text-blue-400" />
+                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-white/5 border border-white/10 text-slate-300">
+                                                        <Flame size={12} className="text-indigo-400" />
                                                         <span>{project.badge}</span>
                                                     </span>
 
                                                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase border ${
                                                         project.difficulty === "advanced" 
-                                                            ? "text-purple-600 dark:text-purple-400 bg-purple-500/10 border-purple-500/30" 
+                                                            ? "text-purple-400 bg-purple-500/10 border-purple-500/30" 
                                                             : project.difficulty === "intermediate"
-                                                            ? "text-blue-600 dark:text-blue-400 bg-blue-500/10 border-blue-500/30"
-                                                            : "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/30"
+                                                            ? "text-cyan-400 bg-cyan-500/10 border-cyan-500/30"
+                                                            : "text-emerald-400 bg-emerald-500/10 border-emerald-500/30"
                                                     }`}>
                                                         {project.difficulty}
                                                     </span>
                                                 </div>
 
                                                 <div>
-                                                    <h4 className="text-xl font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-snug">
+                                                    <h4 className="text-xl font-bold text-white group-hover:text-indigo-400 transition-colors leading-snug">
                                                         {project.title}
                                                     </h4>
-                                                    <p className="text-xs text-brand-muted mt-1.5 leading-relaxed line-clamp-2">
+                                                    <p className="text-xs text-slate-400 mt-1.5 leading-relaxed line-clamp-2">
                                                         {project.tagline}
                                                     </p>
                                                 </div>
@@ -517,27 +520,27 @@ export default function ProjectsGallery() {
                                                     {project.techStack.map(tech => (
                                                         <span 
                                                             key={tech}
-                                                            className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/5 text-[11px] font-mono text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/5"
+                                                            className="px-2 py-0.5 rounded-md bg-white/5 text-[11px] font-mono text-slate-300 border border-white/5"
                                                         >
                                                             {tech}
                                                         </span>
                                                     ))}
                                                 </div>
 
-                                                <div className="pt-2 border-t border-brand-border/60 space-y-1.5">
-                                                    <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                                                <div className="pt-2 border-t border-white/10 space-y-1.5">
+                                                    <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
                                                         <span>Milestones</span>
-                                                        <span className="text-blue-600 dark:text-blue-400 font-bold">{project.milestones.length} Steps</span>
+                                                        <span className="text-indigo-400 font-bold">{project.milestones.length} Steps</span>
                                                     </div>
-                                                    <ul className="space-y-1 text-xs text-brand-muted">
+                                                    <ul className="space-y-1 text-xs text-slate-400">
                                                         {project.milestones.slice(0, 2).map((m) => (
                                                             <li key={m.id} className="flex items-center gap-1.5 truncate">
-                                                                <CheckCircle2 size={12} className="text-emerald-500 dark:text-slate-500 shrink-0" />
-                                                                <span className="truncate text-slate-700 dark:text-slate-300">{m.title}</span>
+                                                                <CheckCircle2 size={12} className="text-emerald-400 shrink-0" />
+                                                                <span className="truncate text-slate-300">{m.title}</span>
                                                             </li>
                                                         ))}
                                                         {project.milestones.length > 2 && (
-                                                            <li className="text-[11px] text-slate-400 dark:text-slate-500 italic pl-4">
+                                                            <li className="text-[11px] text-slate-500 italic pl-4">
                                                                 + {project.milestones.length - 2} more architectural steps
                                                             </li>
                                                         )}
@@ -545,27 +548,28 @@ export default function ProjectsGallery() {
                                                 </div>
                                             </div>
 
-                                            <div className="pt-6 mt-6 border-t border-brand-border/60 flex items-center justify-between">
-                                                <div className="flex items-center gap-3 text-xs text-brand-muted font-medium">
+                                            <div className="pt-6 mt-6 border-t border-white/10 flex items-center justify-between">
+                                                <div className="flex items-center gap-3 text-xs text-slate-400 font-medium">
                                                     <span className="flex items-center gap-1">
-                                                        <Clock size={13} className="text-slate-400 dark:text-slate-500" />
+                                                        <Clock size={13} className="text-slate-500" />
                                                         <span>{project.timeEstimate}</span>
                                                     </span>
                                                     <span className="flex items-center gap-1">
-                                                        <Users size={13} className="text-slate-400 dark:text-slate-500" />
+                                                        <Users size={13} className="text-slate-500" />
                                                         <span>{project.popularity.toLocaleString()}</span>
                                                     </span>
                                                 </div>
 
                                                 <button
                                                     onClick={() => handleStartProject(project)}
-                                                    className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] flex items-center gap-2.5 active:scale-95 group/btn"
+                                                    className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-semibold transition-all shadow-md hover:shadow-[0_0_20px_rgba(99,102,241,0.4)] flex items-center gap-2.5 active:scale-95 group/btn"
                                                 >
-                                                    <div className="w-6 h-5 rounded-md bg-[#070A11] border border-blue-400/40 flex items-center justify-center shrink-0 shadow-sm group-hover/btn:border-cyan-300 transition-colors">
+                                                    <div className="w-6 h-5 rounded-md bg-[#07090E] border border-indigo-400/40 flex items-center justify-center shrink-0 shadow-sm group-hover/btn:border-cyan-300 transition-colors">
                                                         <img 
                                                             src="/images/code-anvil-logo.png" 
                                                             alt="The Code Anvil" 
                                                             className="h-3 w-auto object-contain drop-shadow-[0_0_4px_rgba(56,189,248,0.8)]" 
+                                                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
                                                         />
                                                     </div>
                                                     <span>Start Project</span>
@@ -586,14 +590,14 @@ export default function ProjectsGallery() {
                 {/* ======================================================== */}
                 {currentTab === "builds" && (
                     <div className="space-y-6 animate-in fade-in duration-300">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-brand-border pb-4">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
                             <div>
-                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Active Build Workspaces</h3>
-                                <p className="text-xs sm:text-sm text-brand-muted">Resume container environments and push code to your verified portfolio.</p>
+                                <h3 className="text-xl font-bold text-white">Active Build Workspaces</h3>
+                                <p className="text-xs sm:text-sm text-slate-400">Resume container environments and push code to your verified portfolio.</p>
                             </div>
                             <button
                                 onClick={() => setTab("specs")}
-                                className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-500 transition-all flex items-center gap-2 shadow-sm"
+                                className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-semibold hover:from-indigo-500 hover:to-purple-500 transition-all flex items-center gap-2 shadow-md shadow-indigo-500/20"
                             >
                                 <Play size={13} fill="currentColor" />
                                 <span>Start New Build from Specs</span>
@@ -601,50 +605,50 @@ export default function ProjectsGallery() {
                         </div>
 
                         {!isLoggedIn ? (
-                            <div className="py-16 px-6 rounded-3xl bg-brand-surface border border-brand-border text-center space-y-6 max-w-xl mx-auto shadow-sm">
-                                <div className="w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 mx-auto flex items-center justify-center">
+                            <div className="py-16 px-6 rounded-3xl bg-[#0D111A] border border-white/10 text-center space-y-6 max-w-xl mx-auto shadow-xl backdrop-blur-xl">
+                                <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 mx-auto flex items-center justify-center">
                                     <ShieldCheck size={32} />
                                 </div>
                                 <div className="space-y-2">
-                                    <h4 className="text-xl font-bold text-slate-900 dark:text-white">
+                                    <h4 className="text-xl font-bold text-white">
                                         Sign In to Save Your Workspaces
                                     </h4>
-                                    <p className="text-sm text-brand-muted max-w-md mx-auto leading-relaxed">
+                                    <p className="text-sm text-slate-400 max-w-md mx-auto leading-relaxed">
                                         Your container builds, milestone test verifications, and custom code commits are tied to your SkillForge account. Sign in to start or resume your active builds.
                                     </p>
                                 </div>
                                 <div className="flex items-center justify-center gap-3 pt-2">
                                     <button
                                         onClick={() => navigate("/login")}
-                                        className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20"
+                                        className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-semibold transition-all shadow-md shadow-indigo-500/25"
                                     >
                                         Sign In
                                     </button>
                                     <button
                                         onClick={() => navigate("/signup")}
-                                        className="px-6 py-2.5 rounded-xl bg-brand-elevated hover:bg-brand-surface border border-brand-border text-slate-800 dark:text-slate-200 text-xs font-bold transition-all"
+                                        className="px-6 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 text-xs font-semibold transition-all"
                                     >
                                         Create Free Account
                                     </button>
                                 </div>
                             </div>
                         ) : userBuilds.length === 0 ? (
-                            <div className="py-16 px-6 rounded-3xl bg-brand-surface border border-brand-border text-center space-y-6 max-w-xl mx-auto shadow-sm">
-                                <div className="w-16 h-16 rounded-2xl bg-brand-elevated border border-brand-border text-brand-muted mx-auto flex items-center justify-center">
+                            <div className="py-16 px-6 rounded-3xl bg-[#0D111A] border border-white/10 text-center space-y-6 max-w-xl mx-auto shadow-xl backdrop-blur-xl">
+                                <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 text-slate-400 mx-auto flex items-center justify-center">
                                     <Layers size={32} />
                                 </div>
                                 <div className="space-y-2">
-                                    <h4 className="text-xl font-bold text-slate-900 dark:text-white">
+                                    <h4 className="text-xl font-bold text-white">
                                         No Active Builds Yet
                                     </h4>
-                                    <p className="text-sm text-brand-muted max-w-md mx-auto leading-relaxed">
+                                    <p className="text-sm text-slate-400 max-w-md mx-auto leading-relaxed">
                                         You don't have any ongoing builds. Pick an engineering specification from our catalog to launch your first cloud sandbox.
                                     </p>
                                 </div>
                                 <div className="pt-2">
                                     <button
                                         onClick={() => setTab("specs")}
-                                        className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 inline-flex items-center gap-2"
+                                        className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-semibold transition-all shadow-md shadow-indigo-500/25 inline-flex items-center gap-2"
                                     >
                                         <Play size={13} fill="currentColor" />
                                         <span>Browse Engineering Specs</span>
@@ -656,24 +660,24 @@ export default function ProjectsGallery() {
                                 {userBuilds.map(build => (
                                     <div 
                                         key={build.id}
-                                        className="p-6 rounded-3xl bg-brand-surface border border-brand-border shadow-sm hover:border-blue-500/40 transition-all space-y-4"
+                                        className="p-6 rounded-3xl bg-[#0D111A]/90 border border-white/10 shadow-xl hover:border-indigo-500/40 transition-all space-y-4 backdrop-blur-xl"
                                     >
                                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                             <div className="space-y-1">
                                                 <div className="flex items-center gap-2.5">
-                                                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-mono font-bold uppercase">
+                                                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-mono font-bold uppercase">
                                                         {build.status}
                                                     </span>
-                                                    <span className="text-xs text-brand-muted font-mono flex items-center gap-1">
+                                                    <span className="text-xs text-slate-400 font-mono flex items-center gap-1">
                                                         <GitBranch size={12} /> {build.branch}
                                                     </span>
                                                 </div>
-                                                <h4 className="text-lg font-bold text-slate-900 dark:text-white">
+                                                <h4 className="text-lg font-bold text-white">
                                                     {build.title}
                                                 </h4>
                                                 <div className="flex flex-wrap gap-1.5 pt-1">
                                                     {build.tech.map(t => (
-                                                        <span key={t} className="text-[11px] font-mono px-2 py-0.5 rounded bg-brand-elevated text-brand-muted border border-brand-border">
+                                                        <span key={t} className="text-[11px] font-mono px-2 py-0.5 rounded bg-white/5 text-slate-400 border border-white/5">
                                                             {t}
                                                         </span>
                                                     ))}
@@ -683,15 +687,15 @@ export default function ProjectsGallery() {
                                             <div className="flex items-center gap-3 shrink-0">
                                                 <button
                                                     onClick={() => navigate(`/projects/${build.projectId}/workspace`)}
-                                                    className="px-4 py-2.5 rounded-xl bg-brand-elevated hover:bg-brand-surface border border-brand-border text-slate-700 dark:text-slate-200 text-xs font-bold transition-all flex items-center gap-2"
+                                                    className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 text-xs font-semibold transition-all flex items-center gap-2"
                                                 >
-                                                    <Terminal size={14} className="text-blue-500" />
+                                                    <Terminal size={14} className="text-cyan-400" />
                                                     <span>Open Terminal</span>
                                                 </button>
 
                                                 <button
                                                     onClick={() => navigate(`/projects/${build.projectId}/workspace`)}
-                                                    className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md flex items-center gap-2"
+                                                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-semibold transition-all shadow-md shadow-indigo-500/25 flex items-center gap-2"
                                                 >
                                                     <Play size={13} fill="currentColor" />
                                                     <span>Resume Workspace</span>
@@ -700,19 +704,19 @@ export default function ProjectsGallery() {
                                         </div>
 
                                         {/* Progress Bar & Test Suite Breakdown */}
-                                        <div className="pt-4 border-t border-brand-border/60 space-y-2">
+                                        <div className="pt-4 border-t border-white/10 space-y-2">
                                             <div className="flex items-center justify-between text-xs font-mono">
-                                                <span className="text-slate-500 dark:text-slate-400">Milestone {build.currentMilestone} of {build.totalMilestones} Completed</span>
-                                                <span className="text-blue-600 dark:text-blue-400 font-bold">{build.percent}% Overall Progress</span>
+                                                <span className="text-slate-400">Milestone {build.currentMilestone} of {build.totalMilestones} Completed</span>
+                                                <span className="text-indigo-400 font-bold">{build.percent}% Overall Progress</span>
                                             </div>
-                                            <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
+                                            <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
                                                 <div 
-                                                    className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full transition-all duration-500"
+                                                    className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-400 rounded-full transition-all duration-500"
                                                     style={{ width: `${build.percent}%` }}
                                                 />
                                             </div>
-                                            <div className="flex items-center justify-between text-[11px] text-brand-muted pt-1">
-                                                <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+                                            <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
+                                                <span className="text-emerald-400 font-semibold flex items-center gap-1">
                                                     <CheckCircle2 size={12} /> {build.testsPassed} of {build.totalTests} automated test harnesses verified
                                                 </span>
                                                 <span>Last modified {build.lastActivity}</span>
@@ -730,17 +734,17 @@ export default function ProjectsGallery() {
                 {/* ======================================================== */}
                 {currentTab === "sandbox" && (
                     <div className="space-y-6 animate-in fade-in duration-300">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-brand-border pb-4">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
                             <div>
-                                <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                    <Terminal size={20} className="text-blue-500" />
+                                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                    <Terminal size={20} className="text-cyan-400" />
                                     <span>Compiler Runtime & In-Browser Sandbox</span>
                                 </h3>
-                                <p className="text-xs sm:text-sm text-brand-muted">Isolated Linux microVM container running live automated test runners.</p>
+                                <p className="text-xs sm:text-sm text-slate-400">Isolated Linux microVM container running live automated test runners.</p>
                             </div>
                             <button
                                 onClick={() => navigate('/projects/redis-clone/workspace')}
-                                className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all flex items-center gap-2 shadow-md shadow-blue-500/20"
+                                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-semibold transition-all flex items-center gap-2 shadow-md shadow-indigo-500/20"
                             >
                                 <Play size={13} fill="currentColor" />
                                 <span>Launch Full Workspace</span>
@@ -748,10 +752,10 @@ export default function ProjectsGallery() {
                         </div>
 
                         {/* Interactive Sandbox Terminal */}
-                        <div className="rounded-3xl bg-[#070A11] border border-blue-500/30 overflow-hidden shadow-2xl text-slate-200">
+                        <div className="rounded-3xl bg-[#0A0D15] border border-indigo-500/30 overflow-hidden shadow-2xl text-slate-200">
                             
                             {/* Terminal Top Bar */}
-                            <div className="p-4 bg-[#0A0E17] border-b border-white/10 flex items-center justify-between flex-wrap gap-2 text-xs font-mono">
+                            <div className="p-4 bg-[#07090E] border-b border-white/10 flex items-center justify-between flex-wrap gap-2 text-xs font-mono">
                                 <div className="flex items-center gap-3">
                                     <div className="flex items-center gap-1.5">
                                         <span className="w-3 h-3 rounded-full bg-red-500/80 inline-block" />
@@ -790,7 +794,7 @@ export default function ProjectsGallery() {
                                                 handleRunTerminalCommand(c.cmd);
                                             }
                                         }}
-                                        className="px-3 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-400 hover:text-cyan-300 transition-colors shrink-0 disabled:opacity-50"
+                                        className="px-3 py-1 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 hover:text-cyan-300 transition-colors shrink-0 disabled:opacity-50"
                                     >
                                         $ {c.label}
                                     </button>
@@ -798,7 +802,7 @@ export default function ProjectsGallery() {
                             </div>
 
                             {/* Terminal Output Logs */}
-                            <div className="p-6 font-mono text-xs space-y-2 min-h-[260px] max-h-[420px] overflow-y-auto selection:bg-blue-500/40">
+                            <div className="p-6 font-mono text-xs space-y-2 min-h-[260px] max-h-[420px] overflow-y-auto selection:bg-indigo-500/40">
                                 {terminalLogs.map((log, idx) => (
                                     <div 
                                         key={idx} 
@@ -808,7 +812,7 @@ export default function ProjectsGallery() {
                                                 : log.startsWith("🎉")
                                                 ? "text-cyan-300 font-black"
                                                 : log.startsWith("$")
-                                                ? "text-blue-400 font-bold"
+                                                ? "text-indigo-400 font-bold"
                                                 : "text-slate-300"
                                         }`}
                                     >
@@ -825,7 +829,7 @@ export default function ProjectsGallery() {
                             </div>
 
                             {/* Terminal Footer */}
-                            <div className="p-3 bg-[#0A0E17] border-t border-white/10 flex items-center justify-between text-[11px] font-mono text-slate-500">
+                            <div className="p-3 bg-[#07090E] border-t border-white/10 flex items-center justify-between text-[11px] font-mono text-slate-500">
                                 <span>WebSocket channel: wss://forge.skillforge.dev/runtime/v1</span>
                                 <span>Latency: 14ms</span>
                             </div>
@@ -838,17 +842,17 @@ export default function ProjectsGallery() {
                 {/* ======================================================== */}
                 {currentTab === "showcase" && (
                     <div className="space-y-6 animate-in fade-in duration-300">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-brand-border pb-4">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
                             <div>
-                                <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                    <Sparkles size={20} className="text-blue-500" />
+                                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                    <Sparkles size={20} className="text-indigo-400" />
                                     <span>Community Project Showcase</span>
                                 </h3>
-                                <p className="text-xs sm:text-sm text-brand-muted">Top verified architectures built by SkillForge engineers. Explore code and benchmarks.</p>
+                                <p className="text-xs sm:text-sm text-slate-400">Top verified architectures built by SkillForge engineers. Explore code and benchmarks.</p>
                             </div>
                             <button
                                 onClick={() => alert("Submit Project: Once your test suite hits 100% pass rate, your repo is automatically eligible for the community leaderboard!")}
-                                className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-500 transition-all flex items-center gap-1.5 shadow-sm"
+                                className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-semibold hover:from-indigo-500 hover:to-purple-500 transition-all flex items-center gap-1.5 shadow-md shadow-indigo-500/20"
                             >
                                 <Award size={14} />
                                 <span>Submit Build for Review</span>
@@ -859,47 +863,47 @@ export default function ProjectsGallery() {
                             {COMMUNITY_SHOWCASE.map(item => (
                                 <div
                                     key={item.id}
-                                    className="p-6 rounded-3xl bg-brand-surface border border-brand-border shadow-sm hover:border-blue-500/40 transition-all space-y-4 flex flex-col justify-between"
+                                    className="p-6 rounded-3xl bg-[#0D111A]/90 border border-white/10 shadow-xl hover:border-indigo-500/40 transition-all space-y-4 flex flex-col justify-between backdrop-blur-xl"
                                 >
                                     <div className="space-y-3">
                                         <div className="flex items-center justify-between">
-                                            <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 text-[10px] font-mono font-bold uppercase">
+                                            <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[10px] font-mono font-bold uppercase">
                                                 {item.badge}
                                             </span>
-                                            <span className="flex items-center gap-1 text-xs font-mono font-bold text-amber-500">
+                                            <span className="flex items-center gap-1 text-xs font-mono font-bold text-amber-400">
                                                 <Star size={13} fill="currentColor" />
                                                 <span>{item.stars}</span>
                                             </span>
                                         </div>
 
-                                        <h4 className="text-base font-bold text-slate-900 dark:text-white leading-snug">
+                                        <h4 className="text-base font-bold text-white leading-snug">
                                             {item.projectTitle}
                                         </h4>
 
-                                        <p className="text-xs text-brand-muted leading-relaxed">
+                                        <p className="text-xs text-slate-400 leading-relaxed">
                                             {item.highlights}
                                         </p>
 
-                                        <div className="p-2.5 rounded-xl bg-brand-elevated border border-brand-border font-mono text-[11px] text-blue-600 dark:text-cyan-300">
+                                        <div className="p-2.5 rounded-xl bg-white/5 border border-white/5 font-mono text-[11px] text-cyan-300">
                                             ⚡ {item.benchmarks}
                                         </div>
                                     </div>
 
-                                    <div className="pt-4 border-t border-brand-border/60 flex items-center justify-between text-xs">
+                                    <div className="pt-4 border-t border-white/10 flex items-center justify-between text-xs">
                                         <div className="flex items-center gap-2">
                                             <img 
                                                 src={item.avatar} 
                                                 alt={item.author} 
-                                                className="w-6 h-6 rounded-full object-cover border border-brand-border"
+                                                className="w-6 h-6 rounded-full object-cover border border-white/10"
                                             />
-                                            <span className="font-bold text-slate-800 dark:text-slate-200">{item.author}</span>
+                                            <span className="font-semibold text-slate-200">{item.author}</span>
                                         </div>
 
                                         <a 
                                             href={item.githubUrl}
                                             target="_blank"
                                             rel="noreferrer"
-                                            className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-bold"
+                                            className="text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1 font-semibold"
                                         >
                                             <Github size={13} />
                                             <span>View Code</span>

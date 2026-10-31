@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import Editor from "@monaco-editor/react";
 import { 
     Copy, 
@@ -6,11 +6,21 @@ import {
     RotateCcw, 
     Sparkles, 
     ChevronRight, 
-    Code2,
-    FileCode,
-    Maximize2,
-    Eye,
-    EyeOff
+    Code2, 
+    FileCode, 
+    Maximize2, 
+    Eye, 
+    EyeOff,
+    WrapText,
+    ZoomIn,
+    ZoomOut,
+    GitBranch,
+    CheckCircle2,
+    Sliders,
+    Play,
+    Terminal,
+    FileText,
+    X
 } from "lucide-react";
 import { getFileIcon } from "./FileExplorerTree";
 import toast from "react-hot-toast";
@@ -34,6 +44,23 @@ function getMonacoLanguage(fileName = "") {
     }
 }
 
+function getLanguageLabel(fileName = "") {
+    const ext = fileName.split('.').pop()?.toLowerCase() || "";
+    switch (ext) {
+        case "rs": return "Rust 2021";
+        case "py": return "Python 3.12";
+        case "go": return "Go 1.22";
+        case "js":
+        case "jsx": return "JavaScript";
+        case "ts":
+        case "tsx": return "TypeScript 5.4";
+        case "json": return "JSON";
+        case "toml": return "TOML";
+        case "md": return "Markdown";
+        default: return "Plain Text";
+    }
+}
+
 function CodeStudioEditor({
     files = [],
     activeFileName,
@@ -47,40 +74,101 @@ function CodeStudioEditor({
 }) {
     const activeFile = files.find(f => f.name === activeFileName) || files[0] || { name: "main.rs", content: "" };
     const [copied, setCopied] = useState(false);
-    const [showMinimap, setShowMinimap] = useState(true);
+    
+    // Cursor position for the IDE status bar
+    const [cursorPos, setCursorPos] = useState({ line: 1, col: 1 });
+
+    // Load user preferences from settings / localStorage
+    const [editorPref, setEditorPref] = useState(() => {
+        try {
+            const raw = localStorage.getItem("skillforge_editor_settings");
+            if (raw) return JSON.parse(raw);
+        } catch (e) {}
+        return {
+            theme: "skillforge-dark",
+            fontSize: 13.5,
+            fontFamily: "'Geist Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace",
+            fontLigatures: true,
+            tabSize: 4,
+            wordWrap: "on",
+            minimap: true,
+            lineNumbers: "on"
+        };
+    });
+
+    const [showMinimap, setShowMinimap] = useState(() => editorPref.minimap !== false);
+    const [isWordWrapOn, setIsWordWrapOn] = useState(() => editorPref.wordWrap !== "off");
+    const [currentFontSize, setCurrentFontSize] = useState(() => editorPref.fontSize || 13.5);
     const internalEditorRef = useRef(null);
 
+    // Listen for settings changes dispatched from Settings modal or other components
+    useEffect(() => {
+        const handler = (e) => {
+            if (e.detail) {
+                setEditorPref(e.detail);
+                if (typeof e.detail.minimap === 'boolean') {
+                    setShowMinimap(e.detail.minimap);
+                }
+                if (e.detail.wordWrap) {
+                    setIsWordWrapOn(e.detail.wordWrap === "on");
+                }
+                if (e.detail.fontSize) {
+                    setCurrentFontSize(e.detail.fontSize);
+                }
+            }
+        };
+        window.addEventListener("skillforge_editor_settings_changed", handler);
+        return () => window.removeEventListener("skillforge_editor_settings_changed", handler);
+    }, []);
+
+    // Monaco Theme definition: SkillForge Obsidian Matte Theme
     const handleBeforeMount = (monaco) => {
-        // Define SkillForge Matte Dark Theme for Monaco
         monaco.editor.defineTheme("skillforge-dark", {
             base: "vs-dark",
             inherit: true,
             rules: [
-                { token: "comment", foreground: "6A737D", fontStyle: "italic" },
-                { token: "keyword", foreground: "79C0FF", fontStyle: "bold" },
-                { token: "string", foreground: "7EE787" },
-                { token: "number", foreground: "FFA657" },
-                { token: "type", foreground: "D2A8FF" },
-                { token: "function", foreground: "A5D6FF" },
-                { token: "variable", foreground: "E6EDF3" },
-                { token: "delimiter", foreground: "8B949E" }
+                { token: "comment", foreground: "64748B", fontStyle: "italic" },
+                { token: "keyword", foreground: "38BDF8", fontStyle: "bold" },
+                { token: "keyword.control", foreground: "38BDF8", fontStyle: "bold" },
+                { token: "type", foreground: "FCD34D", fontStyle: "bold" },
+                { token: "type.identifier", foreground: "FCD34D" },
+                { token: "function", foreground: "C084FC" },
+                { token: "method", foreground: "C084FC" },
+                { token: "string", foreground: "4ADE80" },
+                { token: "string.escape", foreground: "6EE7B7" },
+                { token: "number", foreground: "FB923C" },
+                { token: "constant", foreground: "FB7185" },
+                { token: "variable", foreground: "F1F5F9" },
+                { token: "variable.parameter", foreground: "E2E8F0" },
+                { token: "delimiter", foreground: "94A3B8" },
+                { token: "delimiter.bracket", foreground: "CBD5E1" },
+                { token: "operator", foreground: "38BDF8" },
+                { token: "tag", foreground: "F472B6" },
+                { token: "attribute.name", foreground: "A78BFA" }
             ],
             colors: {
-                "editor.background": "#1e1e1e",
+                "editor.background": "#0B0F19",
                 "editor.foreground": "#E6EDF3",
-                "editor.lineHighlightBackground": "#26262655",
-                "editor.selectionBackground": "#388bfd33",
-                "editor.inactiveSelectionBackground": "#388bfd1a",
-                "editorCursor.foreground": "#388bfd",
-                "editorWhitespace.foreground": "#2b2b2b",
-                "editorLineNumber.foreground": "#6e7681",
-                "editorLineNumber.activeForeground": "#eff1f6",
-                "editorIndentGuide.background": "#262626",
-                "editorIndentGuide.activeBackground": "#388bfd44",
-                "minimap.background": "#1e1e1e",
-                "scrollbarSlider.background": "#33333344",
-                "scrollbarSlider.hoverBackground": "#44444488",
-                "scrollbarSlider.activeBackground": "#388bfd55"
+                "editor.lineHighlightBackground": "#16203255",
+                "editor.lineHighlightBorder": "#1E293B33",
+                "editor.selectionBackground": "#2563EB38",
+                "editor.inactiveSelectionBackground": "#2563EB1A",
+                "editorCursor.foreground": "#38BDF8",
+                "editorWhitespace.foreground": "#1E293B",
+                "editorLineNumber.foreground": "#475569",
+                "editorLineNumber.activeForeground": "#38BDF8",
+                "editorIndentGuide.background": "#161F30",
+                "editorIndentGuide.activeBackground": "#38BDF844",
+                "minimap.background": "#080B12",
+                "minimap.selectionHighlight": "#38BDF840",
+                "minimapSlider.background": "#38BDF815",
+                "minimapSlider.hoverBackground": "#38BDF825",
+                "minimapSlider.activeBackground": "#38BDF835",
+                "scrollbarSlider.background": "#33415525",
+                "scrollbarSlider.hoverBackground": "#47556950",
+                "scrollbarSlider.activeBackground": "#38BDF840",
+                "editorBracketMatch.background": "#38BDF822",
+                "editorBracketMatch.border": "#38BDF866"
             }
         });
     };
@@ -93,10 +181,12 @@ function CodeStudioEditor({
 
         // Track cursor position changes
         editor.onDidChangeCursorPosition((e) => {
-            onCursorChange?.({
+            const pos = {
                 line: e.position.lineNumber,
                 col: e.position.column
-            });
+            };
+            setCursorPos(pos);
+            onCursorChange?.(pos);
         });
 
         // Keyboard Shortcut: Ctrl+Enter / Cmd+Enter to Run Tests
@@ -118,17 +208,34 @@ function CodeStudioEditor({
         setTimeout(() => setCopied(false), 2000);
     };
 
-    const editorOptions = React.useMemo(() => ({
-        fontSize: 13.5,
-        fontFamily: "'Geist Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace",
-        fontLigatures: true,
+    const handleZoomIn = () => {
+        if (currentFontSize < 24) {
+            setCurrentFontSize(prev => prev + 1);
+        }
+    };
+
+    const handleZoomOut = () => {
+        if (currentFontSize > 11) {
+            setCurrentFontSize(prev => prev - 1);
+        }
+    };
+
+    const handleToggleWordWrap = () => {
+        setIsWordWrapOn(prev => !prev);
+    };
+
+    const editorOptions = useMemo(() => ({
+        fontSize: currentFontSize,
+        fontFamily: editorPref.fontFamily || "'Geist Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace",
+        fontLigatures: editorPref.fontLigatures !== undefined ? editorPref.fontLigatures : true,
         minimap: { enabled: showMinimap, maxColumn: 80, scale: 1 },
+        lineNumbers: editorPref.lineNumbers || "on",
         scrollBeyondLastLine: false,
         smoothScrolling: true,
         automaticLayout: true,
-        tabSize: 4,
+        tabSize: editorPref.tabSize || 4,
         insertSpaces: true,
-        wordWrap: "on",
+        wordWrap: isWordWrapOn ? "on" : "off",
         bracketPairColorization: { enabled: true },
         autoClosingBrackets: "always",
         autoClosingQuotes: "always",
@@ -137,16 +244,19 @@ function CodeStudioEditor({
         renderLineHighlight: "all",
         cursorBlinking: "smooth",
         cursorSmoothCaretAnimation: "on",
-        padding: { top: 12, bottom: 12 }
-    }), [showMinimap]);
+        padding: { top: 14, bottom: 14 }
+    }), [showMinimap, isWordWrapOn, currentFontSize, editorPref]);
+
+    const activeIconMeta = getFileIcon(activeFile.name);
 
     return (
-        <div className="flex flex-col h-full bg-[#1e1e1e] select-none overflow-hidden">
+        <div className="flex flex-col h-full bg-[#0B0F19] select-none overflow-hidden border-r border-[#1B2232]">
             
-            {/* Top Editor Tab Bar */}
-            <div className="flex items-center justify-between border-b border-[#27272a] bg-[#141416] px-2 h-9 shrink-0 overflow-x-auto">
-                {/* Tabs */}
-                <div className="flex items-center gap-1 overflow-x-auto">
+            {/* 1. TOP TAB BAR */}
+            <div className="flex items-center justify-between border-b border-[#1B2232] bg-[#080B12] px-2 h-10 shrink-0 select-none">
+                
+                {/* Scrollable Tabs */}
+                <div className="flex items-center gap-1 overflow-x-auto scrollbar-none h-full pt-1.5">
                     {files.map(file => {
                         const isActive = file.name === activeFileName;
                         const iconMeta = getFileIcon(file.name);
@@ -155,38 +265,91 @@ function CodeStudioEditor({
                                 key={file.name}
                                 type="button"
                                 onClick={() => onSelectFile(file.name)}
-                                className={`px-3 py-1.5 text-xs font-mono font-medium flex items-center gap-2 border-t-2 transition-all shrink-0 ${
+                                className={`px-3 py-1.5 text-xs font-mono font-medium flex items-center gap-2 rounded-t-lg transition-all shrink-0 border-t-2 relative ${
                                     isActive
-                                        ? "bg-[#1e1e1e] text-[#f4f4f5] border-[#388bfd]"
-                                        : "text-[#71717a] hover:text-[#f4f4f5] hover:bg-white/5 border-transparent"
+                                        ? "bg-[#0B0F19] text-white border-sky-400 border-x border-[#1B2232] shadow-sm -mb-[1px] z-10"
+                                        : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] border-transparent border-x border-transparent"
                                 }`}
+                                title={file.path || file.name}
                             >
-                                <span className={`text-[10px] ${iconMeta.color}`}>{iconMeta.label}</span>
-                                <span>{file.name}</span>
+                                <span className={`text-[10px] font-bold px-1 py-0.2 rounded ${iconMeta.bg || "bg-white/5"} ${iconMeta.color} border ${iconMeta.border || "border-white/10"}`}>
+                                    {iconMeta.label}
+                                </span>
+                                <span className="truncate max-w-[140px]">{file.name}</span>
+                                {isActive && (
+                                    <span className="w-1.5 h-1.5 rounded-full bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.8)]" />
+                                )}
                             </button>
                         );
                     })}
                 </div>
 
-                {/* Editor Right Toolbar Controls */}
+                {/* Right Tab Toolbar Actions */}
                 <div className="flex items-center gap-1 shrink-0 pl-2">
+                    {/* Zoom In/Out */}
+                    <div className="hidden sm:flex items-center gap-0.5 bg-[#0D121F] border border-[#1B2232] rounded-md p-0.5">
+                        <button
+                            type="button"
+                            onClick={handleZoomOut}
+                            className="p-1 rounded text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                            title={`Zoom Out (${currentFontSize}px)`}
+                        >
+                            <ZoomOut size={12} />
+                        </button>
+                        <span className="text-[10px] font-mono text-slate-400 px-1">{currentFontSize}</span>
+                        <button
+                            type="button"
+                            onClick={handleZoomIn}
+                            className="p-1 rounded text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                            title={`Zoom In (${currentFontSize}px)`}
+                        >
+                            <ZoomIn size={12} />
+                        </button>
+                    </div>
+
+                    {/* Word Wrap Toggle */}
                     <button
-                        onClick={() => setShowMinimap(prev => !prev)}
-                        className="p-1 rounded text-[#71717a] hover:text-[#f4f4f5] hover:bg-white/5 transition-colors text-xs flex items-center gap-1"
-                        title={showMinimap ? "Hide Minimap" : "Show Minimap"}
+                        type="button"
+                        onClick={handleToggleWordWrap}
+                        className={`p-1.5 rounded-md border transition-all text-xs flex items-center ${
+                            isWordWrapOn
+                                ? "bg-sky-500/10 text-sky-400 border-sky-500/30 shadow-sm"
+                                : "text-slate-400 hover:text-white bg-[#0D121F] border-[#1B2232]"
+                        }`}
+                        title={isWordWrapOn ? "Word Wrap: ON" : "Word Wrap: OFF"}
                     >
-                        {showMinimap ? <Eye size={13} className="text-[#388bfd]" /> : <EyeOff size={13} />}
+                        <WrapText size={13} />
                     </button>
+
+                    {/* Minimap Toggle */}
                     <button
+                        type="button"
+                        onClick={() => setShowMinimap(prev => !prev)}
+                        className={`p-1.5 rounded-md border transition-all text-xs flex items-center ${
+                            showMinimap
+                                ? "bg-sky-500/10 text-sky-400 border-sky-500/30 shadow-sm"
+                                : "text-slate-400 hover:text-white bg-[#0D121F] border-[#1B2232]"
+                        }`}
+                        title={showMinimap ? "Minimap: ON" : "Minimap: OFF"}
+                    >
+                        {showMinimap ? <Eye size={13} /> : <EyeOff size={13} />}
+                    </button>
+
+                    {/* Copy Code */}
+                    <button
+                        type="button"
                         onClick={handleCopy}
-                        className="p-1 rounded text-[#71717a] hover:text-[#f4f4f5] hover:bg-white/5 transition-colors"
+                        className="p-1.5 rounded-md text-slate-400 hover:text-white bg-[#0D121F] hover:bg-white/10 border border-[#1B2232] transition-colors"
                         title="Copy Code"
                     >
-                        {copied ? <Check size={13} className="text-[#22c55e]" /> : <Copy size={13} />}
+                        {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
                     </button>
+
+                    {/* Reset File */}
                     <button
+                        type="button"
                         onClick={onResetFile}
-                        className="p-1 rounded text-[#71717a] hover:text-[#f4f4f5] hover:bg-white/5 transition-colors"
+                        className="p-1.5 rounded-md text-slate-400 hover:text-rose-400 bg-[#0D121F] hover:bg-rose-500/10 border border-[#1B2232] transition-colors"
                         title="Reset File to Starter Code"
                     >
                         <RotateCcw size={13} />
@@ -194,22 +357,39 @@ function CodeStudioEditor({
                 </div>
             </div>
 
-            {/* Breadcrumb Path Bar */}
-            <div className="flex items-center gap-1.5 px-3 py-1 border-b border-[#27272a] bg-[#18181b] text-[11px] font-mono text-[#71717a] shrink-0">
-                <Code2 size={12} className="text-[#388bfd]" />
-                <span className="text-[#52525b]">workspace</span>
-                <ChevronRight size={10} className="text-[#52525b]" />
-                <span className="text-[#d4d4d8]">{activeFile.path || activeFile.name}</span>
+            {/* 2. MODERN BREADCRUMB & CONTEXT BAR */}
+            <div className="flex items-center justify-between px-3 py-1 border-b border-[#161D2B] bg-[#090C14] text-[11px] font-mono text-slate-400 shrink-0">
+                <div className="flex items-center gap-1.5 truncate">
+                    <Code2 size={13} className="text-sky-400 shrink-0" />
+                    <span className="text-slate-500">workspace</span>
+                    <ChevronRight size={10} className="text-slate-600" />
+                    <span className="text-slate-500">src</span>
+                    <ChevronRight size={10} className="text-slate-600" />
+                    <span className="text-slate-200 font-semibold truncate flex items-center gap-1">
+                        {activeFile.name}
+                    </span>
+                </div>
+
+                <div className="flex items-center gap-2.5 text-[10px] text-slate-400 shrink-0">
+                    <span className="hidden md:inline-flex items-center gap-1 text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.2 rounded">
+                        <CheckCircle2 size={10} />
+                        Auto-saved
+                    </span>
+                    <span className="text-slate-500">•</span>
+                    <span className="font-semibold text-slate-300">
+                        {getLanguageLabel(activeFile.name)}
+                    </span>
+                </div>
             </div>
 
-            {/* Monaco Editor Container */}
-            <div className="flex-grow w-full h-full relative overflow-hidden">
+            {/* 3. MONACO CANVAS CONTAINER */}
+            <div className="flex-grow w-full h-full relative overflow-hidden bg-[#0B0F19]">
                 <Editor
                     height="100%"
                     width="100%"
                     language={getMonacoLanguage(activeFile.name)}
                     value={activeFile.content || ""}
-                    theme="skillforge-dark"
+                    theme={editorPref.theme || "skillforge-dark"}
                     beforeMount={handleBeforeMount}
                     onMount={handleEditorDidMount}
                     onChange={(newVal) => onChangeCode(newVal || "")}

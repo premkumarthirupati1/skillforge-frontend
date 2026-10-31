@@ -8,38 +8,88 @@
     --brand-surface: 255, 255, 255;
     --brand-elevated: 241, 245, 249;
     --brand-border: 226, 232, 240;
-    --brand-primary: 37, 99, 235;
-    --brand-secondary: 29, 78, 216;
-    --brand-cyan: 96, 165, 250;
+    --brand-primary: 79, 70, 229;
+    --brand-secondary: 124, 58, 237;
+    --brand-cyan: 2, 132, 199;
+    --brand-emerald: 16, 185, 129;
+    --brand-amber: 245, 158, 11;
     --brand-text: 15, 23, 42;
-    --brand-muted: 71, 85, 105;
+    --brand-muted: 100, 116, 139;
     --brand-subtle: 148, 163, 184;
   }
   
   .dark {
-    --brand-bg: 9, 13, 22;
-    --brand-surface: 17, 24, 39;
-    --brand-elevated: 26, 36, 56;
-    --brand-border: 31, 41, 55;
-    --brand-primary: 59, 130, 246;
-    --brand-secondary: 96, 165, 250;
-    --brand-cyan: 56, 189, 248;
+    --brand-bg: 7, 9, 14;
+    --brand-surface: 13, 17, 26;
+    --brand-elevated: 19, 25, 38;
+    --brand-border: 33, 41, 58;
+    --brand-primary: 99, 102, 241;
+    --brand-secondary: 139, 92, 246;
+    --brand-cyan: 6, 182, 212;
+    --brand-emerald: 16, 185, 129;
+    --brand-amber: 245, 158, 11;
     --brand-text: 248, 250, 252;
-    --brand-muted: 156, 163, 175;
-    --brand-subtle: 107, 114, 128;
+    --brand-muted: 148, 163, 184;
+    --brand-subtle: 100, 116, 139;
   }
 }
 
 @layer utilities {
   .bg-grid-pattern {
     background-image: 
-      linear-gradient(to right, rgba(var(--brand-border), 0.8) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(var(--brand-border), 0.8) 1px, transparent 1px);
-    background-size: 40px 40px;
+      linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  .bg-dots-pattern {
+    background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  .perspective-grid {
+    background-image: 
+      linear-gradient(to right, rgba(99, 102, 241, 0.08) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(99, 102, 241, 0.08) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 60% 50% at 50% 0%, #000 70%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 60% 50% at 50% 0%, #000 70%, transparent 100%);
+  }
+
+  .aurora-backdrop {
+    background: 
+      radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.18), transparent 45%),
+      radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.12), transparent 35%),
+      radial-gradient(circle at 90% 20%, rgba(6, 182, 212, 0.14), transparent 40%),
+      radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.05), transparent 40%);
   }
   
   .text-glow {
-    text-shadow: 0 0 24px rgba(var(--brand-primary), 0.25);
+    text-shadow: 0 0 24px rgba(99, 102, 241, 0.45);
+  }
+
+  .text-glow-cyan {
+    text-shadow: 0 0 24px rgba(6, 182, 212, 0.45);
+  }
+
+  .text-glow-gold {
+    text-shadow: 0 0 24px rgba(245, 158, 11, 0.45);
+  }
+
+  .shimmer-text {
+    background: linear-gradient(
+      110deg,
+      #ffffff 0%,
+      #cbd5e1 35%,
+      #67e8f9 50%,
+      #cbd5e1 65%,
+      #ffffff 100%
+    );
+    background-size: 200% auto;
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: shimmer 4s linear infinite;
   }
 
   .mask-marquee {
@@ -48,40 +98,97 @@
   }
 
   .border-glow {
-    box-shadow: 0 0 20px -3px rgba(var(--brand-primary), 0.35);
+    box-shadow: 0 0 25px -3px rgba(99, 102, 241, 0.4);
+  }
+
+  .glass-card {
+    background: rgba(10, 14, 23, 0.75);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .glass-card-elevated {
+    background: rgba(14, 19, 31, 0.85);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .glass-card-luxury {
+    background: linear-gradient(135deg, rgba(16, 22, 36, 0.8), rgba(9, 12, 20, 0.9));
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 
+      0 20px 40px -15px rgba(0, 0, 0, 0.7),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+
+  .gradient-border {
+    position: relative;
+    border-radius: inherit;
+  }
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.7), rgba(6, 182, 212, 0.3), transparent);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
   }
 }
 
 html {
   scrollbar-width: thin;
-  scrollbar-color: rgb(var(--brand-border)) rgb(var(--brand-bg));
+  scrollbar-color: rgba(255, 255, 255, 0.12) rgb(var(--brand-bg));
+  background-color: rgb(var(--brand-bg));
+  color: rgb(var(--brand-text));
+}
+
+body {
+  background-color: rgb(var(--brand-bg));
+  color: rgb(var(--brand-text));
+  min-height: 100vh;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body::-webkit-scrollbar {
-  width: 8px;
+  width: 7px;
+  height: 7px;
 }
 body::-webkit-scrollbar-track {
   background: rgb(var(--brand-bg));
 }
 body::-webkit-scrollbar-thumb {
-  background-color: rgb(var(--brand-border));
-  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+}
+body::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.22);
 }
 
 /* Custom Video Player Range Slider */
 input[type=range] {
   -webkit-appearance: none;
+  background: transparent;
 }
 input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none;
   height: 12px;
   width: 12px;
   border-radius: 50%;
-  background: #ffffff;
+  background: #6366f1;
   cursor: pointer;
-  box-shadow: 0 0 5px rgba(0,0,0,0.3);
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.8);
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s, transform 0.2s;
 }
 .group\/progress:hover input[type=range]::-webkit-slider-thumb,
 .group\/volume:hover input[type=range]::-webkit-slider-thumb {

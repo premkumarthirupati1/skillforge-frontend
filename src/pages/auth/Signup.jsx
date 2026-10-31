@@ -92,11 +92,11 @@ function Signup() {
     
     // Password Strength Meter
     const getStrengthInfo = () => {
-        if (!formData.password) return { label: "", color: "bg-slate-700", width: "0%" };
+        if (!formData.password) return { label: "", color: "bg-brand-border", width: "0%" };
         if (criteriaMet === 1) return { label: "Weak", color: "bg-red-500", width: "25%" };
-        if (criteriaMet === 2) return { label: "Fair", color: "bg-amber-500", width: "50%" };
-        if (criteriaMet === 3) return { label: "Good", color: "bg-blue-500", width: "75%" };
-        return { label: "Strong", color: "bg-emerald-500", width: "100%" };
+        if (criteriaMet === 2) return { label: "Fair", color: "bg-brand-amber", width: "50%" };
+        if (criteriaMet === 3) return { label: "Good", color: "bg-brand-primary", width: "75%" };
+        return { label: "Strong", color: "bg-brand-emerald", width: "100%" };
     };
 
     const strength = getStrengthInfo();
@@ -263,16 +263,20 @@ function Signup() {
                 if (res.data.user) {
                     localStorage.setItem("userId", res.data.user.id);
                     localStorage.setItem("role", res.data.user.role);
-                    localStorage.setItem("userName", res.data.user.name || "");
-                    localStorage.setItem("userEmail", res.data.user.email);
+                    localStorage.setItem("userName", res.data.user.name || formData.name);
+                    localStorage.setItem("userEmail", res.data.user.email || otpEmail);
                 }
                 toast.success("Email verified successfully! Welcome to SkillForge.");
                 navigate("/dashboard");
+            } else {
+                toast.success("Email verified! Please sign in with your credentials.");
+                navigate("/login");
             }
         } catch (err) {
-            const errorMsg = err.response?.data?.message || "Invalid verification code. Please try again.";
+            const errorMsg = err.response?.data?.message || "Invalid or expired verification code.";
             setError(errorMsg);
             toast.error(errorMsg);
+            console.error(err);
         } finally {
             setVerifying(false);
         }
@@ -280,15 +284,14 @@ function Signup() {
 
     const handleResendOtp = async () => {
         if (resendCooldown > 0 || resending) return;
+
         setResending(true);
         setError("");
 
         try {
             const res = await api.post("/auth/resend-otp", { email: otpEmail });
-            toast.success(res.data?.message || "New verification code sent!");
+            toast.success(res.data?.message || "Verification code resent!");
             setResendCooldown(60);
-            setOtp(["", "", "", "", "", ""]);
-            inputRefs.current[0]?.focus();
         } catch (err) {
             const errorMsg = err.response?.data?.message || "Failed to resend code. Please try again.";
             setError(errorMsg);
@@ -299,73 +302,70 @@ function Signup() {
     };
 
     return (
-        <div className="min-h-screen bg-brand-bg text-brand-text transition-colors duration-page flex flex-col relative overflow-hidden">
+        <div className="min-h-screen bg-brand-bg text-brand-text flex flex-col relative overflow-hidden selection:bg-brand-primary/30 selection:text-white">
             <NavBar />
 
             {/* Visual Ambient Background */}
-            <div className="absolute inset-0 bg-grid-pattern opacity-40 pointer-events-none z-0" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[70vw] h-[70vw] max-w-[750px] max-h-[750px] bg-brand-secondary/10 blur-[120px] rounded-full pointer-events-none z-0 animate-ambient-glow" />
+            <div className="absolute inset-0 bg-grid-pattern opacity-50 pointer-events-none z-0" />
+            <div className="absolute top-1/3 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[650px] bg-brand-secondary/15 blur-[140px] rounded-full pointer-events-none z-0 animate-ambient-glow" />
+            <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-brand-cyan/15 blur-[130px] rounded-full pointer-events-none z-0" />
 
-            <div className="flex-grow flex items-center justify-center py-16 sm:py-24 px-6 relative z-10">
-                <div className="w-full max-w-5xl mx-auto grid lg:grid-cols-12 gap-12 items-center">
+            <div className="flex-grow flex items-center justify-center py-12 sm:py-20 px-4 sm:px-6 relative z-10">
+                <div className="w-full max-w-5xl mx-auto grid lg:grid-cols-12 gap-10 items-center">
                     
-                    {/* LEFT COLUMN: Animated Developer Showcase (Desktop Only) */}
+                    {/* LEFT COLUMN: Developer Showcase */}
                     <motion.div 
-                        initial={{ opacity: 0, x: -30 }}
+                        initial={{ opacity: 0, x: -25 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.6, ease: "easeOut" }}
-                        className="hidden lg:flex lg:col-span-5 flex-col space-y-6"
+                        transition={{ duration: 0.5, ease: "easeOut" }}
+                        className="hidden lg:flex lg:col-span-5 flex-col space-y-6 pr-2"
                     >
                         {/* Status Badge */}
-                        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-surface/80 border border-brand-border w-max shadow-sm">
-                            <span className="w-2 h-2 rounded-full bg-brand-primary animate-ping" />
-                            <span className="text-xs font-bold text-brand-muted">
+                        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-surface/80 border border-brand-border/80 w-max shadow-sm backdrop-blur-md">
+                            <span className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
+                            <span className="text-xs font-semibold text-brand-muted">
                                 Fast-Track Developer Onboarding
                             </span>
                         </div>
 
                         {/* Title */}
                         <h1 className="text-4xl xl:text-5xl font-black text-brand-text tracking-tight leading-[1.15]">
-                            Forge your career as a <br />
+                            Forge your skills as a <br />
                             <span className="bg-gradient-to-r from-brand-primary via-brand-secondary to-brand-cyan bg-clip-text text-transparent">
                                 Systems Engineer.
                             </span>
                         </h1>
 
-                        <p className="text-brand-muted text-base leading-relaxed">
-                            Join thousands of ambitious developers learning production architectures, distributed systems, and modern AI engineering.
+                        <p className="text-brand-muted text-sm sm:text-base leading-relaxed">
+                            Join ambitious developers mastering real-world microservices, distributed architectures, and AI engineering workflows.
                         </p>
 
                         {/* Mini Terminal Preview */}
-                        <motion.div 
-                            animate={{ y: [-3, 3, -3] }}
-                            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                            className="bg-[#0b0f19] border border-slate-800 rounded-xl p-4 font-mono text-xs text-slate-300 shadow-xl border-glow"
-                        >
-                            <div className="flex items-center gap-1.5 pb-3 border-b border-slate-800/80 mb-3">
+                        <div className="glass-card-elevated rounded-2xl p-4 font-mono text-xs text-slate-300 shadow-xl border border-brand-border/80 relative overflow-hidden">
+                            <div className="flex items-center gap-1.5 pb-3 border-b border-white/[0.08] mb-3">
                                 <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
-                                <div className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
-                                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
-                                <span className="text-slate-500 text-[11px] ml-2">quickstart.sh</span>
+                                <div className="w-2.5 h-2.5 rounded-full bg-brand-amber/80" />
+                                <div className="w-2.5 h-2.5 rounded-full bg-brand-emerald/80" />
+                                <span className="text-brand-subtle text-[11px] ml-2">quickstart.sh</span>
                             </div>
-                            <p className="text-slate-400">$ npx create-skillforge-workspace</p>
-                            <p className="text-emerald-400 mt-1">✓ Cloud container sandbox initialized</p>
+                            <p className="text-brand-subtle">$ npx create-skillforge-workspace</p>
+                            <p className="text-brand-emerald mt-1">✓ Cloud container sandbox initialized</p>
                             <p className="text-slate-300 mt-1">✓ 50+ Production project tracks unlocked</p>
-                            <p className="text-brand-primary mt-1">✓ Verifiable certificate ledger linked</p>
-                        </motion.div>
+                            <p className="text-brand-cyan mt-1">✓ Verifiable certificate ledger linked</p>
+                        </div>
 
                         {/* Value Checklist */}
                         <div className="space-y-2.5 pt-2 text-xs font-semibold text-brand-muted">
                             <div className="flex items-center gap-2">
-                                <CheckCircle2 size={16} className="text-brand-primary shrink-0" />
+                                <CheckCircle2 size={15} className="text-brand-primary shrink-0" />
                                 <span>Zero credit card required to start</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <CheckCircle2 size={16} className="text-brand-primary shrink-0" />
+                                <CheckCircle2 size={15} className="text-brand-primary shrink-0" />
                                 <span>In-browser cloud developer sandboxes</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <CheckCircle2 size={16} className="text-brand-primary shrink-0" />
+                                <CheckCircle2 size={15} className="text-brand-primary shrink-0" />
                                 <span>Cryptographically verifiable LinkedIn certificates</span>
                             </div>
                         </div>
@@ -374,20 +374,20 @@ function Signup() {
                     {/* RIGHT COLUMN: Signup Card */}
                     <div className="lg:col-span-7 w-full max-w-[500px] mx-auto">
                         <motion.div 
-                            initial={{ opacity: 0, y: 25, scale: 0.98 }}
+                            initial={{ opacity: 0, y: 20, scale: 0.98 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
-                            transition={{ duration: 0.5, ease: "easeOut" }}
-                            className="bg-brand-surface border border-brand-border rounded-2xl p-7 sm:p-9 shadow-2xl relative backdrop-blur-xl"
+                            transition={{ duration: 0.45, ease: "easeOut" }}
+                            className="glass-card-elevated rounded-3xl p-6 sm:p-8 shadow-2xl relative border border-brand-border/80"
                         >
                             {/* Animated Error Alert */}
                             {error && (
                                 <motion.div 
                                     initial={{ opacity: 0, x: -8 }}
                                     animate={{ opacity: 1, x: [0, -8, 8, -6, 6, -3, 3, 0] }}
-                                    transition={{ duration: 0.4 }}
-                                    className="mb-5 flex items-start gap-2.5 bg-red-500/10 border border-red-500/20 text-red-400 p-3.5 rounded-xl text-sm font-medium"
+                                    transition={{ duration: 0.35 }}
+                                    className="mb-4 flex items-start gap-2.5 bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-xl text-xs sm:text-sm font-medium"
                                 >
-                                    <AlertCircle size={18} className="mt-0.5 shrink-0 text-red-400" />
+                                    <AlertCircle size={16} className="mt-0.5 shrink-0 text-red-400" />
                                     <span>{error}</span>
                                 </motion.div>
                             )}
@@ -397,25 +397,25 @@ function Signup() {
                                     key="otp-step"
                                     initial={{ opacity: 0, scale: 0.96 }}
                                     animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ duration: 0.35, ease: "easeOut" }}
+                                    transition={{ duration: 0.3, ease: "easeOut" }}
                                 >
                                     {/* OTP Header */}
                                     <div className="flex items-center gap-3.5 mb-5">
                                         <div className="w-12 h-12 rounded-2xl bg-brand-primary/10 border border-brand-primary/25 flex items-center justify-center text-brand-primary shadow-inner">
-                                            <ShieldCheck size={26} />
+                                            <ShieldCheck size={24} />
                                         </div>
                                         <div>
-                                            <h2 className="text-2xl font-black text-brand-text tracking-tight">
+                                            <h2 className="text-xl sm:text-2xl font-black text-brand-text tracking-tight">
                                                 Verify Your Email
                                             </h2>
-                                            <p className="text-brand-subtle text-xs mt-0.5">
+                                            <p className="text-brand-muted text-xs mt-0.5">
                                                 Enter the 6-digit code sent to your inbox.
                                             </p>
                                         </div>
                                     </div>
 
                                     {/* Email Info & Change Button */}
-                                    <div className="p-3 bg-brand-elevated/70 border border-brand-border rounded-xl text-xs text-brand-muted mb-6 flex items-center justify-between">
+                                    <div className="p-3 bg-brand-surface/80 border border-brand-border/60 rounded-xl text-xs text-brand-muted mb-5 flex items-center justify-between">
                                         <div className="truncate pr-2">
                                             <span className="text-brand-subtle">Sent to: </span>
                                             <strong className="text-brand-text font-semibold">{otpEmail}</strong>
@@ -426,18 +426,18 @@ function Signup() {
                                                 setStep("form");
                                                 setError("");
                                             }}
-                                            className="text-brand-primary hover:text-brand-primary/80 font-bold hover:underline shrink-0 flex items-center gap-1 text-xs transition-colors"
+                                            className="text-brand-primary hover:underline font-bold shrink-0 flex items-center gap-1 text-xs transition-colors"
                                         >
                                             <ArrowLeft size={13} /> Change
                                         </button>
                                     </div>
 
                                     {/* 6 SEGMENTED OTP INPUTS */}
-                                    <div className="space-y-2 mb-6">
+                                    <div className="space-y-2 mb-5">
                                         <label className="text-[11px] font-bold text-brand-muted uppercase tracking-wider block text-center">
                                             6-Digit Verification Code
                                         </label>
-                                        <div className="flex justify-between items-center gap-2 sm:gap-3" onPaste={handlePaste}>
+                                        <div className="flex justify-between items-center gap-2 sm:gap-2.5" onPaste={handlePaste}>
                                             {otp.map((digit, idx) => (
                                                 <input
                                                     key={idx}
@@ -450,7 +450,7 @@ function Signup() {
                                                     onChange={(e) => handleOtpChange(idx, e.target.value)}
                                                     onKeyDown={(e) => handleKeyDown(idx, e)}
                                                     autoFocus={idx === 0}
-                                                    className="w-11 h-14 sm:w-14 sm:h-16 text-center text-2xl sm:text-3xl font-mono font-black rounded-xl border border-brand-border bg-brand-elevated text-brand-text focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/20 transition-all outline-none"
+                                                    className="w-10 h-12 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-mono font-bold rounded-xl border border-brand-border bg-brand-surface text-brand-text focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/20 transition-all outline-none"
                                                 />
                                             ))}
                                         </div>
@@ -458,12 +458,12 @@ function Signup() {
 
                                     {/* VERIFY BUTTON */}
                                     <motion.button
-                                        whileHover={{ scale: 1.02 }}
+                                        whileHover={{ scale: 1.01 }}
                                         whileTap={{ scale: 0.98 }}
                                         type="button"
                                         onClick={() => handleVerifyOtp()}
                                         disabled={verifying || otp.join("").length !== 6}
-                                        className="w-full bg-brand-primary hover:bg-brand-primary/90 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-brand-primary/25 hover:shadow-brand-primary/40 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed group text-sm"
+                                        className="w-full bg-gradient-to-r from-brand-primary via-indigo-600 to-brand-primary text-white font-bold py-3 rounded-xl transition-all shadow-glow-primary/40 hover:shadow-glow-primary/60 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed group text-sm border border-white/10"
                                     >
                                         {verifying ? (
                                             <>
@@ -480,7 +480,7 @@ function Signup() {
                                     </motion.button>
 
                                     {/* RESEND & EXPIRY TIMER */}
-                                    <div className="mt-6 text-center space-y-2">
+                                    <div className="mt-5 text-center space-y-1.5">
                                         <div className="text-xs text-brand-muted">
                                             {resendCooldown > 0 ? (
                                                 <span className="flex items-center justify-center gap-1.5 font-medium text-brand-subtle">
@@ -492,70 +492,70 @@ function Signup() {
                                                     type="button"
                                                     onClick={handleResendOtp}
                                                     disabled={resending}
-                                                    className="text-brand-primary hover:text-brand-primary/80 font-bold hover:underline inline-flex items-center gap-1.5 transition-colors"
+                                                    className="text-brand-primary hover:underline font-bold inline-flex items-center gap-1.5 transition-colors"
                                                 >
                                                     {resending && <Loader2 size={13} className="animate-spin" />}
-                                                    Didn't receive the email? Resend code
+                                                    Didn't receive code? Resend
                                                 </button>
                                             )}
                                         </div>
                                         <p className="text-[11px] text-brand-subtle">
-                                            Code is valid for 10 minutes. Check your spam folder if it doesn't appear in 10 seconds.
+                                            Check your spam folder if the code doesn't arrive within 10 seconds.
                                         </p>
                                     </div>
                                 </motion.div>
                             ) : (
                                 <>
-                                    <div className="mb-6">
+                                    <div className="mb-5">
                                         <h2 className="text-2xl sm:text-3xl font-black text-brand-text tracking-tight">
                                             Create Free Account
                                         </h2>
-                                        <p className="text-brand-subtle mt-1 text-sm">
+                                        <p className="text-brand-muted mt-1 text-xs sm:text-sm">
                                             Start building production systems today.
                                         </p>
                                     </div>
 
-                                    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+                                    <form onSubmit={handleSubmit} className="space-y-3.5" noValidate>
                                         
-                                        {/* ROLE SELECTION WITH ANIMATED SLIDING PILL */}
+                                        {/* ROLE SELECTION */}
                                         <div className="space-y-1.5">
                                             <label className="text-[11px] font-bold text-brand-muted uppercase tracking-wider">
                                                 Joining as:
                                             </label>
-                                            <div className="grid grid-cols-2 gap-2 bg-brand-elevated p-1.5 rounded-xl border border-brand-border relative">
+                                            <div className="grid grid-cols-2 gap-2 bg-brand-surface/80 p-1 rounded-xl border border-brand-border relative">
                                                 <button
                                                     type="button"
                                                     onClick={() => selectRole("student")}
-                                                    className={`relative z-10 py-2.5 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-colors ${
+                                                    className={`relative z-10 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-colors ${
                                                         formData.role === "student" ? "text-white" : "text-brand-muted hover:text-brand-text"
                                                     }`}
                                                 >
                                                     {formData.role === "student" && (
                                                         <motion.div 
                                                             layoutId="role-indicator"
-                                                            className="absolute inset-0 bg-brand-primary rounded-lg shadow-md -z-10"
-                                                            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                                                            className="absolute inset-0 bg-gradient-to-r from-brand-primary to-indigo-600 rounded-lg shadow-sm -z-10"
+                                                            transition={{ type: "spring", stiffness: 450, damping: 30 }}
                                                         />
                                                     )}
-                                                    <GraduationCap size={16} />
+                                                    <GraduationCap size={15} />
                                                     <span>Student</span>
                                                 </button>
 
                                                 <button
                                                     type="button"
                                                     onClick={() => selectRole("instructor")}
-                                                    className={`relative z-10 py-2.5 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-colors ${
+                                                    className={`relative z-10 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-colors ${
                                                         formData.role === "instructor" ? "text-white" : "text-brand-muted hover:text-brand-text"
                                                     }`}
                                                 >
                                                     {formData.role === "instructor" && (
                                                         <motion.div 
                                                             layoutId="role-indicator"
-                                                            className="absolute inset-0 bg-brand-primary rounded-lg shadow-md -z-10"
-                                                            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                                                            className="absolute inset-0 bg-gradient-to-r from-brand-primary to-indigo-600 rounded-lg shadow-sm -z-10"
+                                                            transition={{ type: "spring", stiffness: 450, damping: 30 }}
                                                         />
                                                     )}
-                                                    <Presentation size={16} />
+                                                    <Presentation size={15} />
                                                     <span>Instructor</span>
                                                 </button>
                                             </div>
@@ -574,10 +574,10 @@ function Signup() {
                                                         name="name"
                                                         autoComplete="name"
                                                         required
-                                                        placeholder="Prem Kumar"
+                                                        placeholder="Jane Developer"
                                                         value={formData.name}
                                                         onChange={handleChange}
-                                                        className="w-full bg-brand-elevated text-brand-text placeholder-brand-subtle border border-brand-border focus:border-brand-primary rounded-xl py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 transition-all"
+                                                        className="w-full bg-brand-surface/90 text-brand-text placeholder-brand-subtle border border-brand-border hover:border-brand-primary/40 focus:border-brand-primary rounded-xl py-2 pl-9 pr-3 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 transition-all"
                                                     />
                                                 </div>
                                             </div>
@@ -596,7 +596,7 @@ function Signup() {
                                                         placeholder="you@domain.com"
                                                         value={formData.email}
                                                         onChange={handleChange}
-                                                        className="w-full bg-brand-elevated text-brand-text placeholder-brand-subtle border border-brand-border focus:border-brand-primary rounded-xl py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 transition-all"
+                                                        className="w-full bg-brand-surface/90 text-brand-text placeholder-brand-subtle border border-brand-border hover:border-brand-primary/40 focus:border-brand-primary rounded-xl py-2 pl-9 pr-3 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 transition-all"
                                                     />
                                                 </div>
                                             </div>
@@ -617,7 +617,7 @@ function Signup() {
                                                     placeholder="Min. 8 characters"
                                                     value={formData.password}
                                                     onChange={handleChange}
-                                                    className="w-full bg-brand-elevated text-brand-text placeholder-brand-subtle border border-brand-border focus:border-brand-primary rounded-xl py-2.5 pl-9 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 transition-all font-mono"
+                                                    className="w-full bg-brand-surface/90 text-brand-text placeholder-brand-subtle border border-brand-border hover:border-brand-primary/40 focus:border-brand-primary rounded-xl py-2 pl-9 pr-10 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 transition-all font-mono"
                                                 />
                                                 <button
                                                     type="button"
@@ -630,38 +630,30 @@ function Signup() {
                                                 </button>
                                             </div>
 
-                                            {/* PASSWORD STRENGTH METER WITH ANIMATED BAR */}
+                                            {/* PASSWORD STRENGTH METER */}
                                             {formData.password && (
                                                 <motion.div 
                                                     initial={{ opacity: 0, height: 0 }}
                                                     animate={{ opacity: 1, height: "auto" }}
-                                                    className="pt-1.5 space-y-1.5"
+                                                    className="pt-1 space-y-1"
                                                 >
                                                     <div className="flex items-center justify-between text-xs">
-                                                        <span className="text-brand-muted font-medium text-[11px]">Password Strength:</span>
-                                                        <span className={`font-bold text-[11px] ${
-                                                            strength.label === 'Strong' ? 'text-emerald-400' :
-                                                            strength.label === 'Good' ? 'text-blue-400' :
-                                                            strength.label === 'Fair' ? 'text-amber-400' : 'text-red-400'
+                                                        <span className="text-brand-muted font-medium text-[10px]">Password Strength:</span>
+                                                        <span className={`font-bold text-[10px] ${
+                                                            strength.label === 'Strong' ? 'text-brand-emerald' :
+                                                            strength.label === 'Good' ? 'text-brand-primary' :
+                                                            strength.label === 'Fair' ? 'text-brand-amber' : 'text-red-400'
                                                         }`}>
                                                             {strength.label}
                                                         </span>
                                                     </div>
-                                                    <div className="w-full h-1.5 bg-brand-elevated rounded-full overflow-hidden">
+                                                    <div className="w-full h-1 bg-brand-surface rounded-full overflow-hidden">
                                                         <motion.div 
                                                             className={`h-full rounded-full ${strength.color}`} 
                                                             initial={{ width: 0 }}
                                                             animate={{ width: strength.width }}
                                                             transition={{ duration: 0.3 }}
                                                         />
-                                                    </div>
-                                                    <div className="grid grid-cols-2 gap-1 text-[11px] pt-0.5">
-                                                        <span className={`flex items-center gap-1 ${hasMinLength ? 'text-emerald-400' : 'text-brand-subtle'}`}>
-                                                            {hasMinLength ? <Check size={12} /> : <X size={12} />} 8+ characters
-                                                        </span>
-                                                        <span className={`flex items-center gap-1 ${(hasLetter && hasNumber) ? 'text-emerald-400' : 'text-brand-subtle'}`}>
-                                                            {(hasLetter && hasNumber) ? <Check size={12} /> : <X size={12} />} Letters & numbers
-                                                        </span>
                                                     </div>
                                                 </motion.div>
                                             )}
@@ -674,13 +666,13 @@ function Signup() {
                                                     Confirm Password
                                                 </label>
                                                 {passwordsMatch && (
-                                                    <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1">
-                                                        <Check size={12} /> Matches
+                                                    <span className="text-[11px] font-semibold text-brand-emerald flex items-center gap-1">
+                                                        <Check size={11} /> Matches
                                                     </span>
                                                 )}
                                                 {passwordsDoNotMatch && (
-                                                    <span className="text-xs font-semibold text-red-400 flex items-center gap-1">
-                                                        <X size={12} /> Does not match
+                                                    <span className="text-[11px] font-semibold text-red-400 flex items-center gap-1">
+                                                        <X size={11} /> Does not match
                                                     </span>
                                                 )}
                                             </div>
@@ -694,12 +686,12 @@ function Signup() {
                                                     placeholder="Re-enter your password"
                                                     value={formData.confirmPassword}
                                                     onChange={handleChange}
-                                                    className={`w-full bg-brand-elevated text-brand-text placeholder-brand-subtle border rounded-xl py-2.5 pl-9 pr-10 text-sm focus:outline-none focus:ring-2 transition-all font-mono ${
+                                                    className={`w-full bg-brand-surface/90 text-brand-text placeholder-brand-subtle border rounded-xl py-2 pl-9 pr-10 text-xs sm:text-sm focus:outline-none focus:ring-2 transition-all font-mono ${
                                                         passwordsDoNotMatch
                                                             ? "border-red-500/50 focus:border-red-500 focus:ring-red-500/20"
                                                             : passwordsMatch
-                                                            ? "border-emerald-500/50 focus:border-emerald-500 focus:ring-emerald-500/20"
-                                                            : "border-brand-border focus:border-brand-primary focus:ring-brand-primary/20"
+                                                            ? "border-brand-emerald/50 focus:border-brand-emerald focus:ring-brand-emerald/20"
+                                                            : "border-brand-border hover:border-brand-primary/40 focus:border-brand-primary focus:ring-brand-primary/20"
                                                     }`}
                                                 />
                                                 <button
@@ -715,11 +707,11 @@ function Signup() {
                                         </div>
 
                                         <motion.button
-                                            whileHover={{ scale: 1.02 }}
+                                            whileHover={{ scale: 1.01 }}
                                             whileTap={{ scale: 0.98 }}
                                             type="submit"
                                             disabled={loading}
-                                            className="w-full bg-brand-primary hover:bg-brand-primary/90 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-brand-primary/25 hover:shadow-brand-primary/40 flex items-center justify-center gap-2 mt-4 disabled:opacity-70 disabled:cursor-not-allowed group text-sm"
+                                            className="w-full bg-gradient-to-r from-brand-primary via-indigo-600 to-brand-primary text-white font-bold py-3 rounded-xl transition-all shadow-glow-primary/40 hover:shadow-glow-primary/60 flex items-center justify-center gap-2 mt-3 disabled:opacity-70 disabled:cursor-not-allowed group text-sm border border-white/10"
                                         >
                                             {loading ? (
                                                 <>
@@ -735,10 +727,10 @@ function Signup() {
                                         </motion.button>
                                     </form>
 
-                                    <div className="mt-6 pt-5 border-t border-brand-border text-center">
-                                        <p className="text-brand-subtle text-sm">
+                                    <div className="mt-5 pt-4 border-t border-brand-border/60 text-center">
+                                        <p className="text-brand-muted text-xs sm:text-sm">
                                             Already have an account?{" "}
-                                            <button onClick={() => navigate("/login")} className="text-brand-text font-bold hover:text-brand-primary transition-colors">
+                                            <button onClick={() => navigate("/login")} className="text-brand-primary font-bold hover:underline transition-colors">
                                                 Sign in
                                             </button>
                                         </p>

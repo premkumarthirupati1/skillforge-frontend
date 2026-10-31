@@ -51,14 +51,39 @@ function CourseView() {
         };
         fetchCourse();
     }, [courseId]);
-    if (loading) return <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-500 flex items-center justify-center animate-pulse">Loading course content...</div>;
-    if (!courseData) return <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-500 flex items-center justify-center">Course not found!</div>;
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-slate-950 text-slate-400 flex flex-col">
+                <NavBar />
+                <div className="flex-1 flex items-center justify-center">
+                    <p className="animate-pulse text-xs tracking-widest uppercase font-mono">Loading course curriculum...</p>
+                </div>
+            </div>
+        );
+    }
+    if (!courseData) {
+        return (
+            <div className="min-h-screen bg-slate-950 text-slate-200 flex flex-col">
+                <NavBar />
+                <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+                    <h2 className="text-2xl font-bold text-white mb-2">Course Not Found</h2>
+                    <p className="text-slate-400 text-sm mb-6 max-w-md">The requested course content could not be located or you may not be enrolled yet.</p>
+                    <button
+                        onClick={() => navigate("/courses")}
+                        className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md transition-all"
+                    >
+                        Browse Courses
+                    </button>
+                </div>
+            </div>
+        );
+    }
     return (
         <div className="h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
             <NavBar />
             <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm px-6 py-4 flex justify-between items-center">
                 <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">
-                    {courseData.course.title}
+                    {courseData?.course?.title || courseData?.title || "Course"}
                 </h1>
 
                 <div className="w-1/3 max-w-xs">
@@ -77,13 +102,13 @@ function CourseView() {
             <div className="flex flex-1 overflow-hidden">
 
                 <div className="w-1/3 max-w-sm bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 overflow-y-auto p-4">
-                    {courseData.modules.map((module) => (
+                    {(courseData?.modules || []).map((module) => (
                         <div key={module._id} className="mb-6">
                             <h3 className="font-bold text-sm uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
                                 {module.title}
                             </h3>
 
-                            {module.lessons.map((lesson) => (
+                            {(module.lessons || []).map((lesson) => (
                                 <div
                                     key={lesson._id}
                                     onClick={() => setActiveLesson(lesson)}

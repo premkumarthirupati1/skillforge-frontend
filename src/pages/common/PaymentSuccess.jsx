@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { motion } from "framer-motion";
 import api from "../../api";
-import { CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, ArrowRight } from "lucide-react";
 import NavBar from "../../components/NavBar";
 
 function PaymentSuccess() {
@@ -27,7 +28,7 @@ function PaymentSuccess() {
                     setStatus("success");
                     setTimeout(() => {
                         navigate(`/course/${res.data.courseId}`);
-                    }, 3000);
+                    }, 2500);
                 }
             } catch (error) {
                 console.error("Payment verification failed:", error);
@@ -40,47 +41,71 @@ function PaymentSuccess() {
     }, [sessionId, navigate]);
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
+        <div className="min-h-screen bg-brand-bg text-brand-text flex flex-col font-sans relative selection:bg-brand-primary/30 selection:text-white">
             <NavBar />
             
-            <div className="flex-grow flex items-center justify-center p-6">
-                <div className="bg-white dark:bg-slate-900 rounded-3xl p-10 max-w-md w-full text-center shadow-xl border border-slate-200 dark:border-slate-800">
+            {/* Ambient Background Grid */}
+            <div className="absolute inset-0 bg-grid-pattern opacity-40 pointer-events-none z-0" />
+            <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-brand-primary/15 blur-[140px] rounded-full pointer-events-none z-0 animate-ambient-glow" />
+
+            <div className="flex-grow flex items-center justify-center p-6 relative z-10">
+                <motion.div 
+                    initial={{ opacity: 0, scale: 0.96 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4 }}
+                    className="glass-card-elevated rounded-3xl p-8 sm:p-10 max-w-md w-full text-center shadow-2xl border border-brand-border/80"
+                >
                     {status === "verifying" && (
-                        <div className="space-y-6 flex flex-col items-center">
-                            <Loader2 size={64} className="text-brand-primary animate-spin" />
-                            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Verifying Payment...</h2>
-                            <p className="text-slate-500 dark:text-slate-400 text-sm">
-                                Please wait while we securely verify your transaction. Do not close this page.
+                        <div className="space-y-5 flex flex-col items-center">
+                            <div className="w-16 h-16 rounded-2xl bg-brand-primary/10 border border-brand-primary/20 flex items-center justify-center">
+                                <Loader2 size={32} className="text-brand-primary animate-spin" />
+                            </div>
+                            <h2 className="text-2xl font-black text-brand-text tracking-tight">Verifying Transaction...</h2>
+                            <p className="text-brand-muted text-xs sm:text-sm leading-relaxed">
+                                Securely confirming your payment with the banking network. Please do not close or refresh this page.
                             </p>
                         </div>
                     )}
 
                     {status === "success" && (
-                        <div className="space-y-6 flex flex-col items-center animate-in fade-in zoom-in duration-500">
-                            <CheckCircle size={64} className="text-emerald-500" />
-                            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Payment Successful!</h2>
-                            <p className="text-slate-500 dark:text-slate-400 text-sm">
-                                You are now enrolled in the course. Redirecting you to the course curriculum...
+                        <div className="space-y-5 flex flex-col items-center">
+                            <div className="w-16 h-16 rounded-2xl bg-brand-emerald/15 border border-brand-emerald/30 flex items-center justify-center text-brand-emerald shadow-sm">
+                                <CheckCircle size={36} />
+                            </div>
+                            <h2 className="text-2xl font-black text-brand-text tracking-tight">Payment Verified!</h2>
+                            <p className="text-brand-muted text-xs sm:text-sm leading-relaxed">
+                                You are now enrolled in the track. Redirecting to your engineering curriculum now...
                             </p>
+                            <div className="w-full bg-brand-surface rounded-full h-1 overflow-hidden">
+                                <motion.div 
+                                    className="bg-brand-emerald h-full"
+                                    initial={{ width: 0 }}
+                                    animate={{ width: "100%" }}
+                                    transition={{ duration: 2.5 }}
+                                />
+                            </div>
                         </div>
                     )}
 
                     {status === "error" && (
-                        <div className="space-y-6 flex flex-col items-center animate-in fade-in zoom-in duration-500">
-                            <XCircle size={64} className="text-rose-500" />
-                            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Verification Failed</h2>
-                            <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">
+                        <div className="space-y-5 flex flex-col items-center">
+                            <div className="w-16 h-16 rounded-2xl bg-red-500/15 border border-red-500/30 flex items-center justify-center text-red-400 shadow-sm">
+                                <XCircle size={36} />
+                            </div>
+                            <h2 className="text-2xl font-black text-brand-text tracking-tight">Verification Incomplete</h2>
+                            <p className="text-brand-muted text-xs sm:text-sm mb-2 leading-relaxed">
                                 {errorMessage}
                             </p>
                             <button 
                                 onClick={() => navigate(courseId ? `/course/${courseId}` : "/dashboard")}
-                                className="bg-blue-600 text-white font-bold px-6 py-3 rounded-xl w-full hover:bg-blue-700 transition-colors"
+                                className="bg-gradient-to-r from-brand-primary via-indigo-600 to-brand-primary text-white font-bold px-6 py-3 rounded-xl w-full text-xs sm:text-sm flex items-center justify-center gap-2 shadow-glow-primary/40 border border-white/10"
                             >
-                                Go Back
+                                <span>Go to Dashboard</span>
+                                <ArrowRight size={16} />
                             </button>
                         </div>
                     )}
-                </div>
+                </motion.div>
             </div>
         </div>
     );

@@ -2,10 +2,9 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import NavBar from "../../components/NavBar";
-import SkillForgeLogo from "../../components/SkillForgeLogo";
 import api from "../../api";
-import StarRating from "../../components/StarRating";
-import { getImageUrl } from "../../utils/imageHelper";
+import ProjectLaunchModal from "../../components/ProjectLaunchModal";
+import { PROJECTS } from "../../data/projectsData";
 import {
     ArrowRight,
     ArrowUpRight,
@@ -13,1280 +12,1029 @@ import {
     Layers,
     Cpu,
     Server,
-    Smartphone,
     Shield,
     CheckCircle2,
     Sparkles,
     Check,
     Copy,
-    Code2,
     Play,
     Zap,
     BookOpen,
-    Sliders,
-    Volume2,
     Database,
     Network,
-    RefreshCw
+    Activity,
+    Box,
+    ChevronRight,
+    Flame,
+    GitBranch
 } from "lucide-react";
-import ProjectLaunchModal from "../../components/ProjectLaunchModal";
-import { PROJECTS } from "../../data/projectsData";
+
+// Interactive Architecture Cockpit Scenarios for the Hero
+const HERO_SCENARIOS = {
+    redis: {
+        id: "redis",
+        name: "Redis Clone in Rust",
+        badge: "Systems Kernel",
+        tag: "epoll & RESP protocol",
+        lang: "Rust",
+        file: "server.rs",
+        metrics: { throughput: "148,200 req/s", latency: "0.8ms p99", memory: "12.4 MB" },
+        code: `// High-concurrency RESP2/3 Server with non-blocking epoll
+use tokio::net::TcpListener;
+use bytes::BytesMut;
+
+pub struct RedisEngine {
+    store: Arc<RwLock<HashMap<String, Entry>>>,
+}
+
+impl RedisEngine {
+    pub async fn handle_command(&self, cmd: &Command) -> Result<BytesMut> {
+        match cmd {
+            Command::Set { key, val, ttl } => {
+                let mut guard = self.store.write().await;
+                guard.insert(key.clone(), Entry::new(val, *ttl));
+                Ok(BytesMut::from("+OK\\r\\n"))
+            }
+            Command::Get { key } => {
+                let guard = self.store.read().await;
+                match guard.get(key) {
+                    Some(e) if !e.is_expired() => Ok(BytesMut::from(format!("$\\{}\\r\\n{}\\{}\\r\\n", e.len(), e.val()))),
+                    _ => Ok(BytesMut::from("$-1\\r\\n")),
+                }
+            }
+        }
+    }
+}`,
+        assertions: [
+            "✓ TCP Handshake & Connection Pool (1024 conns) — Passed",
+            "✓ RESP Protocol Serialization & Binary Safeties — Passed",
+            "✓ Thread-safe O(1) TTL Eviction Lock — Passed",
+            "✓ Benchmark: 148,200 req/sec at 0.8ms p99 — Verified"
+        ]
+    },
+    raft: {
+        id: "raft",
+        name: "Distributed Raft Consensus",
+        badge: "Distributed Infrastructure",
+        tag: "Consensus & Leader Election",
+        lang: "Go",
+        file: "consensus.go",
+        metrics: { throughput: "Zero data loss", latency: "1.2ms quorum", memory: "24.1 MB" },
+        code: `// Raft Consensus Engine: Randomized Election & Log Replication
+type RaftNode struct {
+    mu          sync.Mutex
+    peers       []*rpc.Client
+    currentTerm int
+    votedFor    int
+    log         []LogEntry
+    state       NodeState // Leader, Candidate, Follower
+}
+
+func (rf *RaftNode) RequestVote(args *VoteArgs, reply *VoteReply) {
+    rf.mu.Lock()
+    defer rf.mu.Unlock()
+    
+    // Reject votes from stale terms
+    if args.Term < rf.currentTerm {
+        reply.VoteGranted = false
+        return
+    }
+    rf.resetElectionTimer()
+    reply.VoteGranted = true
+}`,
+        assertions: [
+            "✓ Jittered Election Timeout with Heartbeat Ping — Passed",
+            "✓ Quorum Consensus on 5-Node Partition — Passed",
+            "✓ Strict Log Matching Invariant — Passed",
+            "✓ Zero data loss under simulated node split-brain — Verified"
+        ]
+    },
+    crdt: {
+        id: "crdt",
+        name: "Real-Time CRDT Canvas",
+        badge: "Multiplayer Web",
+        tag: "Fractional Indexing",
+        lang: "TypeScript",
+        file: "canvas_crdt.ts",
+        metrics: { throughput: "60 FPS Cursors", latency: "14ms sync", memory: "8.6 MB" },
+        code: `// Conflict-free Replicated Data Type (LWW-Element-Set)
+export class CollaborativeCanvas {
+    private localClock = 0;
+    private state = new Map<string, ElementNode>();
+
+    applyRemoteOp(op: CRDTOperation): void {
+        const current = this.state.get(op.elementId);
+        // Deterministic tie-breaker with Lamport Timestamps
+        if (!current || op.lamportTime > current.lamportTime) {
+            this.state.set(op.elementId, {
+                ...op.payload,
+                lamportTime: op.lamportTime,
+                peerId: op.peerId
+            });
+            this.renderBatch();
+        }
+    }
+}`,
+        assertions: [
+            "✓ Multi-cursor presence broadcasting (50 peers) — Passed",
+            "✓ Zero server-side merge latency with CRDT — Passed",
+            "✓ Fractional Indexing conflict elimination — Passed",
+            "✓ Offline re-sync resolution with zero state drift — Verified"
+        ]
+    },
+    ai: {
+        id: "ai",
+        name: "Autonomous Agent Runtime",
+        badge: "AI Engineering",
+        tag: "ReAct Loop & Tool Execution",
+        lang: "Python",
+        file: "runtime_agent.py",
+        metrics: { throughput: "Tri-modal streaming", latency: "38ms TTFT", memory: "110 MB" },
+        code: `class AutonomousKernel:
+    def __init__(self, sandbox_vm, model_client):
+        self.vm = sandbox_vm
+        self.llm = model_client
+
+    async def execute_thought_loop(self, prd_spec: str):
+        plan = await self.llm.generate_plan(prd_spec)
+        for step in plan.milestones:
+            res = await self.vm.run_command(step.shell_cmd)
+            diagnosis = await self.llm.diagnose_ast(res.logs)
+            if not diagnosis.passed:
+                patch = await self.llm.synthesize_diff(step.file, diagnosis)
+                await self.vm.apply_patch(patch)
+        return True`,
+        assertions: [
+            "✓ AST-aware error localization — Passed",
+            "✓ Isolated microVM container execution — Passed",
+            "✓ Unified Diff patch synthesis & rollback — Passed",
+            "✓ 100% milestone test suite pass verification — Verified"
+        ]
+    }
+};
+
+// Architecture Tracks data
+const ARCHITECTURE_TRACKS = [
+    {
+        id: "systems",
+        title: "Systems & Kernels",
+        tagline: "epoll, memory layout, custom allocators, and protocol parsers",
+        icon: Cpu,
+        tech: ["Rust", "C++", "Linux Sockets", "Assembly"],
+        badge: "High Performance",
+        color: "from-indigo-500/20 via-purple-500/10 to-transparent",
+        accent: "text-indigo-400 border-indigo-500/30"
+    },
+    {
+        id: "distributed",
+        title: "Distributed Infrastructure",
+        tagline: "Raft consensus, partitioning, gossip protocols, and event brokers",
+        icon: Server,
+        tech: ["Go", "gRPC", "Nomad", "Kafka"],
+        badge: "Scale & Consensus",
+        color: "from-cyan-500/20 via-blue-500/10 to-transparent",
+        accent: "text-cyan-400 border-cyan-500/30"
+    },
+    {
+        id: "realtime",
+        title: "Real-Time Networking",
+        tagline: "CRDTs, fractional indexing, WebSockets, and multiplayer engines",
+        icon: Network,
+        tech: ["TypeScript", "WebSockets", "WebRTC", "Redis"],
+        badge: "Low Latency",
+        color: "from-emerald-500/20 via-teal-500/10 to-transparent",
+        accent: "text-emerald-400 border-emerald-500/30"
+    },
+    {
+        id: "ai-runtime",
+        title: "Autonomous AI Agents",
+        tagline: "ReAct loops, AST parsing, automated code synthesis, and sandboxing",
+        icon: Sparkles,
+        tech: ["Python", "PyTorch", "LLM APIs", "Docker"],
+        badge: "Next-Gen AI",
+        color: "from-purple-500/20 via-pink-500/10 to-transparent",
+        accent: "text-purple-400 border-purple-500/30"
+    },
+    {
+        id: "fullstack",
+        title: "Cloud Scale Architecture",
+        tagline: "PostgreSQL internals, read-replicas, rate limiters, and microVMs",
+        icon: Database,
+        tech: ["React", "Node.js", "PostgreSQL", "Docker"],
+        badge: "Production Ready",
+        color: "from-amber-500/20 via-orange-500/10 to-transparent",
+        accent: "text-amber-400 border-amber-500/30"
+    },
+    {
+        id: "security",
+        title: "Cryptographic Security",
+        tagline: "Zero-knowledge proofs, refresh token rotation, and threat modeling",
+        icon: Shield,
+        tech: ["OAuth 2.1", "JWT RTR", "NIST", "OWASP"],
+        badge: "Defense in Depth",
+        color: "from-rose-500/20 via-red-500/10 to-transparent",
+        accent: "text-rose-400 border-rose-500/30"
+    }
+];
 
 export default function HomePage() {
     const navigate = useNavigate();
-    const token = localStorage.getItem("token");
+
+    // Active Hero scenario state
+    const [selectedScenarioKey, setSelectedScenarioKey] = useState("redis");
+    const activeScenario = HERO_SCENARIOS[selectedScenarioKey];
+
+    // Interactive runner state
+    const [isExecutingScenario, setIsExecutingScenario] = useState(false);
+    const [testProgress, setTestProgress] = useState(4); // number of passed steps
+    const [copiedCode, setCopiedCode] = useState(false);
+
+    // Architecture failure simulation state (interactive playground)
+    const [simActiveScenario, setSimActiveScenario] = useState("partition");
+    const [simLogs, setSimLogs] = useState([
+        "[00:00:01] 5-node cluster healthy (node-1 LEADER, nodes 2..5 FOLLOWERS)",
+        "[00:00:02] Heartbeat interval 50ms stable. Replication latency: 0.8ms"
+    ]);
+    const [isSimRunning, setIsSimRunning] = useState(false);
 
     // Project launch modal state
     const [activeModalProject, setActiveModalProject] = useState(null);
 
-    // Course catalog state
-    const [courses, setCourses] = useState([]);
-    const [loadingCourses, setLoadingCourses] = useState(true);
+    // Handle running test assertions in hero
+    const handleTriggerTestRun = () => {
+        if (isExecutingScenario) return;
+        setIsExecutingScenario(true);
+        setTestProgress(0);
 
-    // Interactive workspace preview state
-    const [isPlayingPreview, setIsPlayingPreview] = useState(false);
-    const [testRunStatus, setTestRunStatus] = useState("passed"); // "running" | "passed"
-    const [copiedPreviewCode, setCopiedPreviewCode] = useState(false);
-
-    // Fetch featured courses from API
-    useEffect(() => {
-        const fetchCourses = async () => {
-            try {
-                const res = await api.get('/course/public');
-                const data = Array.isArray(res.data) ? res.data : (res.data?.result || res.data?.courses || []);
-                setCourses(data);
-            } catch (err) {
-                console.debug("Featured courses remote fetch fallback:", err.message);
-            } finally {
-                setLoadingCourses(false);
-            }
-        };
-        fetchCourses();
-    }, []);
-
-    // Guaranteed high-quality fallback courses if API returns empty/offline
-    const fallbackFeaturedCourses = [
-        {
-            _id: "course-node-mastery",
-            title: "Node.js Mastery",
-            difficulty: "ADVANCED",
-            description: "Build robust backend applications, RESTful microservices, and high-concurrency event loops with Node.js and Express.",
-            price: 2499,
-            currency: "₹",
-            averageRating: 4.9,
-            reviewCount: 248,
-            duration: "18 hrs",
-            lessonsCount: 42,
-            instructorName: "Arun Verma",
-            instructorRole: "Principal Backend Engineer",
-            category: "Backend Engineering",
-            tags: ["Node.js", "Express", "Microservices", "REST APIs"],
-            gradient: "from-emerald-600/30 via-teal-900/20 to-slate-950",
-            icon: Server
-        },
-        {
-            _id: "course-fullstack-dev",
-            title: "Full-Stack Development",
-            difficulty: "INTERMEDIATE",
-            description: "Build complete modern web applications from frontend UI in React to scalable relational databases in PostgreSQL.",
-            price: 3199,
-            currency: "₹",
-            averageRating: 4.8,
-            reviewCount: 312,
-            duration: "26 hrs",
-            lessonsCount: 64,
-            instructorName: "Sarah Chen",
-            instructorRole: "Senior Full-Stack Architect",
-            category: "Full-Stack Web",
-            tags: ["React", "TypeScript", "Node.js", "PostgreSQL"],
-            gradient: "from-blue-600/30 via-indigo-900/20 to-slate-950",
-            icon: Terminal
-        },
-        {
-            _id: "course-system-design",
-            title: "Distributed Systems & Cloud Architecture",
-            difficulty: "ADVANCED",
-            description: "Master consensus algorithms, horizontal scaling, partition tolerance, caching topologies, and event-driven architecture.",
-            price: 3999,
-            currency: "₹",
-            averageRating: 5.0,
-            reviewCount: 185,
-            duration: "22 hrs",
-            lessonsCount: 48,
-            instructorName: "Marcus Thorne",
-            instructorRole: "Distinguished Systems Architect",
-            category: "System Design",
-            tags: ["Distributed Systems", "Kubernetes", "Kafka", "Docker"],
-            gradient: "from-purple-600/30 via-violet-900/20 to-slate-950",
-            icon: Layers
-        }
-    ];
-
-    // Merge fetched courses with fallback to guarantee clean, non-blank cards
-    const displayCourses = courses.length > 0 ? courses.slice(0, 3) : fallbackFeaturedCourses;
-
-    // Interactive product preview trigger simulation
-    const handleReRunPreviewTests = () => {
-        setTestRunStatus("running");
-        setIsPlayingPreview(true);
-        setTimeout(() => {
-            setTestRunStatus("passed");
-            setIsPlayingPreview(false);
-        }, 1200);
+        const interval = setInterval(() => {
+            setTestProgress(prev => {
+                if (prev >= 4) {
+                    clearInterval(interval);
+                    setIsExecutingScenario(false);
+                    return 4;
+                }
+                return prev + 1;
+            });
+        }, 320);
     };
 
-    const previewCodeSnippet = `import { createAudioGraph } from "@skillforge/audio";
-
-export function playSequence(bpm = 120, steps = 16) {
-    const ctx = new AudioContext();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    // 1. Build oscillator & gain audio graph
-    osc.type = "sawtooth";
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    // 2. Schedule frequency automation
-    osc.frequency.setValueAtTime(440, ctx.currentTime);
-    osc.start();
-    return { active: true, nodes: 3 };
-}
-
-// 3. Verify audio graph & automated assertions
-await runTests();`;
-
-    const handleCopyPreviewCode = () => {
-        navigator.clipboard.writeText(previewCodeSnippet);
-        setCopiedPreviewCode(true);
-        setTimeout(() => setCopiedPreviewCode(false), 2000);
+    const handleCopyCode = () => {
+        navigator.clipboard.writeText(activeScenario.code);
+        setCopiedCode(true);
+        setTimeout(() => setCopiedCode(false), 2000);
     };
 
-    // Six curated learning paths (Part 6)
-    const learningPaths = [
-        {
-            id: "fullstack",
-            title: "Full-Stack Development",
-            description: "React, Node.js, databases and APIs",
-            icon: Terminal,
-            path: "/courses?search=fullstack",
-            color: "text-blue-500 bg-blue-500/10 border-blue-500/20"
-        },
-        {
-            id: "ai-ml",
-            title: "AI & Machine Learning",
-            description: "ML concepts, models and AI applications",
-            icon: Cpu,
-            path: "/courses?search=ai",
-            color: "text-purple-500 bg-purple-500/10 border-purple-500/20"
-        },
-        {
-            id: "system-design",
-            title: "System Design",
-            description: "Architecture, scalability and distributed systems",
-            icon: Layers,
-            path: "/courses?search=design",
-            color: "text-indigo-500 bg-indigo-500/10 border-indigo-500/20"
-        },
-        {
-            id: "cloud-devops",
-            title: "Cloud & DevOps",
-            description: "Deployment, infrastructure and automation",
-            icon: Server,
-            path: "/courses?search=cloud",
-            color: "text-cyan-500 bg-cyan-500/10 border-cyan-500/20"
-        },
-        {
-            id: "mobile",
-            title: "Mobile Engineering",
-            description: "Modern mobile application development",
-            icon: Smartphone,
-            path: "/courses?search=mobile",
-            color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20"
-        },
-        {
-            id: "cybersecurity",
-            title: "Cybersecurity",
-            description: "Security principles and defensive engineering",
-            icon: Shield,
-            path: "/courses?search=security",
-            color: "text-amber-500 bg-amber-500/10 border-amber-500/20"
-        }
-    ];
+    // Handle Interactive Architecture Failure Simulation
+    const handleRunSimulation = (type) => {
+        if (isSimRunning) return;
+        setIsSimRunning(true);
+        setSimActiveScenario(type);
 
-    // Three featured real engineering projects (Part 7)
-    const featuredProjects = [
-        {
-            id: "audio-synthesizer",
-            title: "Web Audio Synthesizer",
-            difficulty: "Advanced",
-            difficultyColor: "text-purple-400 bg-purple-500/10 border-purple-500/30",
-            description: "Build an interactive audio engine, oscillator graph, and step sequencer.",
-            tags: ["JavaScript", "Web Audio API", "Automated tests"],
-            language: "JavaScript",
-            track: "Creative Engineering",
-            route: "/projects/audio-synthesizer",
-            accent: "from-pink-500/20 via-purple-500/10 to-transparent",
-            icon: Volume2
-        },
-        {
-            id: "redis-clone",
-            title: "Build Your Own Redis Server",
-            difficulty: "Advanced",
-            difficultyColor: "text-blue-400 bg-blue-500/10 border-blue-500/30",
-            description: "Implement RESP protocol parsing, TCP sockets, and concurrent in-memory storage.",
-            tags: ["Rust / Go", "RESP Protocol", "TCP Sockets"],
-            language: "Rust & Go",
-            track: "Systems & Sockets",
-            route: "/projects/redis-clone",
-            accent: "from-blue-500/20 via-cyan-500/10 to-transparent",
-            icon: Database
-        },
-        {
-            id: "collaborative-canvas",
-            title: "Real-Time Collaborative Canvas (CRDTs)",
-            difficulty: "Intermediate",
-            difficultyColor: "text-emerald-400 bg-emerald-500/10 border-emerald-500/30",
-            description: "Build multiplayer presence, fractional indexing, and zero-conflict canvas syncing.",
-            tags: ["TypeScript", "WebSockets", "Canvas API"],
-            language: "TypeScript",
-            track: "Distributed Web",
-            route: "/projects/collaborative-canvas",
-            accent: "from-emerald-500/20 via-teal-500/10 to-transparent",
-            icon: Network
+        if (type === "partition") {
+            setSimLogs([
+                "[SIMULATION: NETWORK PARTITION INJECTED]",
+                "[!] Isolated node-1 (old leader) from nodes 2, 3, 4, 5",
+                "[⚡] Nodes 2..5 detected missed heartbeat (150ms timeout)",
+                "[✓] Node-3 started new election for Term 42",
+                "[✓] Received 3/4 quorum votes. Node-3 promoted to LEADER",
+                "[🎉] Cluster restored in 12ms with ZERO DATA LOSS"
+            ]);
+        } else if (type === "load") {
+            setSimLogs([
+                "[SIMULATION: 100K CONCURRENT WEBSOCKET SPIKE]",
+                "[!] Ingesting 100,000 parallel client connections...",
+                "[⚡] epoll event loop multiplexing on 8 worker threads",
+                "[✓] Zero memory allocations on GET commands (zero-copy buffer)",
+                "[✓] Resident memory: 14.8 MB (stable across 30s benchmark)",
+                "[🎉] Benchmark completed: 142,400 req/s @ 0.9ms p99"
+            ]);
+        } else {
+            setSimLogs([
+                "[SIMULATION: THREAD-SAFE CACHE EVICTION TRIGGERED]",
+                "[!] Memory capacity threshold (95%) reached",
+                "[⚡] Background eviction thread sweep initiated",
+                "[✓] Evaluated 2,400 candidate keys with sample-based LRU",
+                "[✓] Evicted 240 expired keys in 0.4ms with non-blocking read lock",
+                "[🎉] Memory normalized back to 70% threshold"
+            ]);
         }
-    ];
+
+        setTimeout(() => setIsSimRunning(false), 800);
+    };
 
     return (
-        <div className="min-h-screen bg-brand-bg text-brand-text transition-colors duration-500 flex flex-col font-sans relative overflow-x-hidden selection:bg-brand-primary/30">
+        <div className="min-h-screen bg-[#04060A] text-slate-100 flex flex-col font-sans relative overflow-x-hidden selection:bg-indigo-500/30 selection:text-white">
             
-            {/* ========================================================================= */}
-            {/* PART 1 — NAVBAR                                                           */}
-            {/* ========================================================================= */}
+            {/* ======================================================== */}
+            {/* 1. AMBIENT BIOLUMINESCENT ATMOSPHERE                     */}
+            {/* ======================================================== */}
+            <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[100vw] max-w-7xl h-[650px] aurora-backdrop blur-[140px] opacity-75" />
+                <div className="absolute top-48 left-1/2 -translate-x-1/2 w-[90vw] max-w-5xl h-[380px] perspective-grid opacity-35" />
+                <div className="absolute top-[45rem] -right-40 w-[45vw] h-[450px] bg-cyan-600/10 blur-[150px] rounded-full pointer-events-none" />
+                <div className="absolute top-[75rem] -left-40 w-[40vw] h-[450px] bg-indigo-600/10 blur-[150px] rounded-full pointer-events-none" />
+            </div>
+
+            {/* Global Floating Frosted Header */}
             <NavBar />
 
-            {/* ========================================================================= */}
-            {/* PART 2 — HERO SECTION                                                     */}
-            {/* ========================================================================= */}
-            <header className="relative pt-16 pb-14 sm:pt-20 sm:pb-20 lg:pt-24 lg:pb-24 flex flex-col items-center justify-center text-center overflow-hidden border-b border-brand-border/60">
+            {/* ======================================================== */}
+            {/* 2. LIVING HERO STAGE                                     */}
+            {/* ======================================================== */}
+            <section className="relative z-10 pt-16 sm:pt-24 lg:pt-28 pb-16 lg:pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto flex flex-col items-center text-center">
                 
-                {/* Subtle Ambient Background Grid & Restrained Blue Glow */}
-                <div className="absolute inset-0 bg-grid-pattern opacity-40 dark:opacity-25 pointer-events-none z-0" />
-                
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[100vw] max-w-[900px] h-[450px] pointer-events-none z-0 opacity-25 dark:opacity-15 flex justify-center blur-[120px]">
-                    <div className="w-[50%] h-full bg-blue-600/40 rounded-full mix-blend-screen" />
-                    <div className="w-[40%] h-full bg-indigo-500/30 rounded-full mix-blend-screen -ml-20" />
-                </div>
-
-                <div className="max-w-4xl mx-auto px-6 relative z-10 space-y-6 sm:space-y-8">
-                    
-                    {/* Eyebrow Pill Badge: LEARN · PRACTISE · BUILD */}
-                    <motion.div 
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4, ease: "easeOut" }}
-                        className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-surface/90 backdrop-blur-md border border-brand-border text-xs font-mono font-bold tracking-widest uppercase text-brand-muted shadow-sm hover:border-brand-primary/40 transition-colors"
-                    >
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                        <span>LEARN · PRACTISE · BUILD</span>
-                    </motion.div>
-
-                    {/* Two-Line Headline */}
-                    <motion.h1 
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-                        className="text-4xl sm:text-6xl lg:text-7xl font-black text-brand-text leading-[1.08] tracking-tight drop-shadow-sm"
-                    >
-                        Forge the skills. <br />
-                        <span className="bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-400 bg-clip-text text-transparent">
-                            Build your future.
+                {/* Magnetic Radar Pill Badge */}
+                <motion.div
+                    initial={{ opacity: 0, y: -12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/[0.03] border border-white/10 backdrop-blur-xl shadow-2xl mb-8 group hover:border-indigo-500/40 transition-all cursor-pointer"
+                    onClick={() => navigate("/projects")}
+                >
+                    <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500" />
+                    </span>
+                    <span className="text-xs font-mono font-medium tracking-wide text-slate-300">
+                        <span className="bg-gradient-to-r from-indigo-300 via-purple-300 to-cyan-300 bg-clip-text text-transparent font-bold">
+                            SKILLFORGE FORGE 2.5
                         </span>
-                    </motion.h1>
+                        <span className="text-slate-600 mx-1.5">•</span>
+                        <span>Autonomous Architecture Engine</span>
+                    </span>
+                    <ChevronRight size={13} className="text-slate-500 group-hover:translate-x-0.5 text-slate-300 transition-transform" />
+                </motion.div>
 
-                    {/* Reduced Paragraph (Two lines on desktop) */}
-                    <motion.p 
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
-                        className="text-base sm:text-lg lg:text-xl text-brand-muted leading-relaxed max-w-2xl mx-auto font-normal"
+                {/* Hero Headline */}
+                <motion.h1 
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.1 }}
+                    className="text-4xl sm:text-6xl lg:text-7xl font-black text-white leading-[1.08] tracking-tight max-w-4xl"
+                >
+                    Where Senior Engineers <br />
+                    <span className="shimmer-text">
+                        Forge Real Systems.
+                    </span>
+                </motion.h1>
+
+                {/* Hero Subtitle */}
+                <motion.p
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.2 }}
+                    className="mt-6 text-base sm:text-lg lg:text-xl text-slate-400 max-w-2xl leading-relaxed font-normal"
+                >
+                    Stop memorizing shallow syntax. Build distributed cache servers, Raft consensus engines, and real-time CRDT canvases from production PRDs inside isolated Linux sandboxes.
+                </motion.p>
+
+                {/* Hero Action Cluster */}
+                <motion.div
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.3 }}
+                    className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5 w-full sm:w-auto"
+                >
+                    <button
+                        onClick={() => navigate("/projects")}
+                        className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-sm sm:text-base shadow-xl shadow-indigo-500/25 border border-indigo-400/30 transition-all flex items-center justify-center gap-2.5 active:scale-[0.98] group"
                     >
-                        Master in-demand technologies through expert-led courses, hands-on coding challenges, and real-world projects.
-                    </motion.p>
+                        <Zap size={16} className="text-cyan-300 fill-cyan-300/30 group-hover:rotate-12 transition-transform" />
+                        <span>Launch Projects Forge</span>
+                        <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                    </button>
 
-                    {/* Primary & Secondary Action CTAs */}
-                    <motion.div 
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}
-                        className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-2"
+                    <button
+                        onClick={() => navigate("/courses")}
+                        className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 text-slate-200 font-semibold text-sm sm:text-base backdrop-blur-xl transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
                     >
-                        {/* Primary Button: Explore courses ↗ */}
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => navigate("/courses")}
-                            className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm sm:text-base transition-all shadow-[0_0_25px_rgba(37,99,235,0.35)] flex items-center justify-center gap-2 active:scale-95 shrink-0"
-                        >
-                            <span>Explore courses</span>
-                            <ArrowUpRight size={17} />
-                        </motion.button>
+                        <BookOpen size={16} className="text-indigo-400" />
+                        <span>Browse Curricula</span>
+                    </button>
+                </motion.div>
 
-                        {/* Secondary Button: Enter workspace */}
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => navigate(token ? "/projects" : "/projects")}
-                            className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-brand-surface/90 hover:bg-brand-elevated border border-brand-border hover:border-brand-primary/50 text-brand-text font-bold text-sm sm:text-base transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95 shrink-0"
-                        >
-                            <span>Enter workspace</span>
-                        </motion.button>
-                    </motion.div>
-
-                    {/* Three Micro-Highlights */}
-                    <motion.div 
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.5, delay: 0.4, ease: "easeOut" }}
-                        className="flex flex-wrap items-center justify-center gap-6 sm:gap-8 pt-3 text-xs sm:text-sm text-brand-muted font-medium"
-                    >
-                        <div className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                            <span>Expert-led courses</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                            <span>Hands-on coding</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                            <span>Real projects</span>
-                        </div>
-                    </motion.div>
-
-                </div>
-            </header>
-
-            {/* ========================================================================= */}
-            {/* PART 3 — PRODUCT PREVIEW: SHOW WHAT SKILLFORGE ACTUALLY DOES              */}
-            {/* ========================================================================= */}
-            <section className="py-14 sm:py-20 bg-gradient-to-b from-brand-bg via-brand-surface/30 to-brand-bg relative z-10 border-b border-brand-border/60">
-                <div className="max-w-6xl mx-auto px-4 sm:px-6">
-                    
-                    {/* Section Eyebrow */}
-                    <div className="text-center max-w-xl mx-auto mb-8 sm:mb-12 space-y-2">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs font-mono font-bold uppercase tracking-wider text-blue-500">
-                            <Terminal size={13} />
-                            <span>Inside SkillForge</span>
-                        </div>
-                        <h2 className="text-2xl sm:text-3xl font-black text-brand-text tracking-tight">
-                            Interactive workspace
-                        </h2>
-                        <p className="text-sm sm:text-base text-brand-muted">
-                            Work directly in a real compiler sandbox with automated tests, instant diagnostics, and architecture specifications.
-                        </p>
+                {/* Micro-Metrics Ribbon */}
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.6, delay: 0.4 }}
+                    className="mt-8 flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-xs font-mono text-slate-400"
+                >
+                    <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        <span>MicroVM Linux Runtimes</span>
                     </div>
+                    <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                        <span>Automated Test Assertions</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+                        <span>AI Code Review via Forge Copilot</span>
+                    </div>
+                </motion.div>
 
-                    {/* Realistic Editor Frame */}
-                    <motion.div 
-                        initial={{ opacity: 0, y: 24 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true, margin: "-50px" }}
-                        transition={{ duration: 0.6 }}
-                        className="bg-[#090D16] border border-slate-800 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden font-mono text-left"
-                    >
-                        {/* Editor Window Titlebar */}
-                        <div className="px-4 py-3 bg-[#06080F] border-b border-slate-800/80 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
+                {/* ======================================================== */}
+                {/* 3. HERO CENTERPIECE: LIVING ARCHITECTURE COCKPIT         */}
+                {/* ======================================================== */}
+                <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.7, delay: 0.35 }}
+                    className="mt-12 sm:mt-16 w-full max-w-5xl mx-auto rounded-3xl glass-card-luxury overflow-hidden border border-white/10 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] text-left relative"
+                >
+                    {/* Glowing Top Edge Strip */}
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-400" />
+
+                    {/* Window Header */}
+                    <div className="px-4 py-3 bg-[#070A11] border-b border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-1.5">
                                 <span className="w-3 h-3 rounded-full bg-red-500/80" />
                                 <span className="w-3 h-3 rounded-full bg-amber-500/80" />
                                 <span className="w-3 h-3 rounded-full bg-emerald-500/80" />
-                                <span className="text-xs text-slate-500 ml-2 hidden sm:inline">
-                                    skillforge-workspace · audio-sequencer
-                                </span>
                             </div>
+                            <span className="text-slate-400 font-bold hidden sm:inline">
+                                skillforge-cockpit :: {activeScenario.file}
+                            </span>
+                        </div>
 
-                            {/* Active Tab */}
-                            <div className="flex items-center gap-1.5 bg-slate-900 px-3 py-1 rounded-md border border-slate-800 text-xs text-slate-300">
-                                <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold text-[10px]">JS</span>
-                                <span className="text-slate-200 font-semibold">sequencer.js</span>
-                            </div>
-
-                            {/* Copy & Re-run Action */}
-                            <div className="flex items-center gap-2">
+                        {/* Scenario Switcher Tabs */}
+                        <div className="flex items-center gap-1 bg-white/[0.03] p-1 rounded-xl border border-white/5 overflow-x-auto">
+                            {Object.entries(HERO_SCENARIOS).map(([key, item]) => (
                                 <button
-                                    onClick={handleCopyPreviewCode}
-                                    className="text-slate-400 hover:text-white px-2 py-1 rounded hover:bg-slate-800 text-xs flex items-center gap-1 transition-colors"
-                                    title="Copy Code"
+                                    key={key}
+                                    onClick={() => {
+                                        setSelectedScenarioKey(key);
+                                        setTestProgress(4);
+                                    }}
+                                    className={`px-3 py-1 rounded-lg text-[11px] font-semibold transition-all whitespace-nowrap ${
+                                        selectedScenarioKey === key
+                                            ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-sm font-bold"
+                                            : "text-slate-400 hover:text-white hover:bg-white/5"
+                                    }`}
                                 >
-                                    {copiedPreviewCode ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
-                                    <span className="hidden sm:inline">{copiedPreviewCode ? "Copied" : "Copy"}</span>
+                                    {item.name}
                                 </button>
-                                <button
-                                    onClick={handleReRunPreviewTests}
-                                    disabled={isPlayingPreview}
-                                    className="px-2.5 py-1 rounded-lg bg-blue-600/30 hover:bg-blue-600/50 border border-blue-500/40 text-blue-300 text-xs font-bold flex items-center gap-1.5 transition-all"
-                                >
-                                    <RefreshCw size={12} className={isPlayingPreview ? "animate-spin" : ""} />
-                                    <span>Run Tests</span>
-                                </button>
-                            </div>
+                            ))}
                         </div>
 
-                        {/* Split Workspace View: Left Task Pane + Right Code Editor */}
-                        <div className="grid md:grid-cols-12 min-h-[380px]">
-                            
-                            {/* Left: Spec / Task Pane */}
-                            <div className="md:col-span-4 bg-[#080B14] p-5 sm:p-6 border-b md:border-b-0 md:border-r border-slate-800/80 space-y-5 font-sans">
-                                <div>
-                                    <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-blue-400 block mb-1">
-                                        YOUR TASK
-                                    </span>
-                                    <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
-                                        Build an audio sequencer
-                                    </h3>
-                                    <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                                        Implement the oscillator and audio graph according to the milestone spec.
-                                    </p>
-                                </div>
-
-                                <div className="space-y-2.5 pt-2">
-                                    <div className="text-xs font-mono font-semibold uppercase tracking-wider text-slate-400">
-                                        Verification Checklist
-                                    </div>
-                                    <div className="space-y-2">
-                                        <div className="flex items-center gap-2.5 text-xs text-slate-300 bg-white/5 p-2 rounded-lg border border-white/5">
-                                            <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
-                                            <span>Create audio nodes</span>
-                                        </div>
-                                        <div className="flex items-center gap-2.5 text-xs text-slate-300 bg-white/5 p-2 rounded-lg border border-white/5">
-                                            <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
-                                            <span>Implement sequencing</span>
-                                        </div>
-                                        <div className="flex items-center gap-2.5 text-xs text-slate-300 bg-white/5 p-2 rounded-lg border border-white/5">
-                                            <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
-                                            <span>Pass automated tests</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="pt-2 text-[11px] text-slate-500 font-mono">
-                                    Milestone 1 of 5 · Web Audio Engine
-                                </div>
-                            </div>
-
-                            {/* Right: Code Editor Display */}
-                            <div className="md:col-span-8 p-5 sm:p-6 bg-[#090D16] overflow-x-auto text-xs sm:text-sm font-mono text-slate-200 leading-relaxed">
-                                <pre className="tab-4">
-                                    <code>
-{`// Inside SkillForge Interactive Workspace
-import { createAudioGraph } from "@skillforge/audio";
-
-export function playSequence(bpm = 120, steps = 16) {
-    const ctx = new AudioContext();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    // 1. Build oscillator & gain audio graph
-    osc.type = "sawtooth";
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    // 2. Schedule frequency automation
-    osc.frequency.setValueAtTime(440, ctx.currentTime);
-    osc.start();
-    return { active: true, nodes: 3 };
-}
-
-// 3. Automated test suite runner
-await runTests();`}
-                                    </code>
-                                </pre>
-                            </div>
-
+                        {/* Telemetry pill */}
+                        <div className="flex items-center gap-3 text-[11px] text-slate-400 hidden md:flex">
+                            <span className="flex items-center gap-1">
+                                <Activity size={12} className="text-emerald-400 animate-pulse" />
+                                <span className="text-slate-300">{activeScenario.metrics.throughput}</span>
+                            </span>
+                            <span>p99: {activeScenario.metrics.latency}</span>
                         </div>
-
-                        {/* Bottom Status Drawer: Tests passed 4/4 */}
-                        <div className="px-5 py-3 bg-[#06080F] border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                            <div className="flex items-center gap-3">
-                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold">
-                                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                                    <span>{testRunStatus === "running" ? "Running verification..." : "Tests passed: 4/4"}</span>
-                                </div>
-                                <span className="text-slate-500 hidden md:inline">0ms latency · V8 Sandbox Engine</span>
-                            </div>
-
-                            <div className="flex items-center gap-4 text-slate-400 text-[11px]">
-                                <span>Oscillator: Ready</span>
-                                <span>Envelope: Verified</span>
-                                <span className="text-blue-400 font-semibold cursor-pointer hover:underline" onClick={() => navigate("/projects/audio-synthesizer")}>
-                                    Open full project ↗
-                                </span>
-                            </div>
-                        </div>
-
-                    </motion.div>
-                </div>
-            </section>
-
-            {/* ========================================================================= */}
-            {/* PART 4 — FEATURED COURSES                                                 */}
-            {/* ========================================================================= */}
-            <section id="featured-courses" className="py-20 sm:py-28 max-w-7xl mx-auto px-6 relative z-10 w-full">
-                
-                {/* Section Header */}
-                <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 sm:mb-16 gap-6">
-                    <div className="max-w-2xl space-y-2">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs font-mono font-bold uppercase tracking-wider text-blue-500">
-                            <BookOpen size={13} />
-                            <span>Catalog</span>
-                        </div>
-                        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-brand-text tracking-tight">
-                            Featured courses
-                        </h2>
-                        <p className="text-base sm:text-lg text-brand-muted">
-                            Learn from structured, practical courses.
-                        </p>
                     </div>
 
-                    <Link
-                        to="/courses"
-                        className="inline-flex items-center gap-1.5 text-sm font-bold text-blue-500 hover:text-blue-400 transition-colors shrink-0 group"
-                    >
-                        <span>View all courses</span>
-                        <ArrowUpRight size={16} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                    </Link>
-                </div>
-
-                {/* Course Grid with Guaranteed Thumbnail & Non-Blank Images */}
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {displayCourses.map((course, idx) => {
-                        const difficulty = course.difficulty || "INTERMEDIATE";
-                        const price = course.price !== undefined ? course.price : 2499;
-                        const rating = course.averageRating || 4.9;
-                        const reviews = course.reviewCount || 140 + idx * 80;
-                        const fallbackGradient = fallbackFeaturedCourses[idx % fallbackFeaturedCourses.length].gradient;
-                        const IconComponent = fallbackFeaturedCourses[idx % fallbackFeaturedCourses.length].icon;
-
-                        return (
-                            <motion.div
-                                key={course._id || idx}
-                                initial={{ opacity: 0, y: 24 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true, margin: "-40px" }}
-                                transition={{ duration: 0.45, delay: idx * 0.1 }}
-                                whileHover={{ y: -6 }}
-                                onClick={() => navigate(course._id.startsWith("course-") ? "/courses" : `/course/${course._id}`)}
-                                className="group bg-brand-surface rounded-2xl border border-brand-border overflow-hidden transition-all duration-300 cursor-pointer hover:border-brand-primary/50 hover:shadow-xl hover:shadow-brand-primary/10 flex flex-col justify-between"
-                            >
-                                {/* Branded Cover Image Container (GUARANTEED NEVER BLANK) */}
-                                <div className="h-52 bg-slate-900 relative overflow-hidden flex items-center justify-center">
-                                    
-                                    {/* Ambient mesh gradient background */}
-                                    <div className={`absolute inset-0 bg-gradient-to-br ${fallbackGradient} opacity-80 group-hover:scale-105 transition-transform duration-500`} />
-                                    
-                                    {/* Grid background on cover */}
-                                    <div className="absolute inset-0 bg-grid-pattern opacity-30 pointer-events-none" />
-
-                                    {/* Actual thumbnail if available, with graceful error fallback */}
-                                    {course.thumbnail ? (
-                                        <img
-                                            src={getImageUrl(course.thumbnail)}
-                                            alt={course.title}
-                                            className="w-full h-full object-cover relative z-10 opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
-                                            onError={(e) => {
-                                                e.currentTarget.style.display = "none";
-                                            }}
-                                        />
-                                    ) : (
-                                        <div className="relative z-10 flex flex-col items-center justify-center text-center p-6 space-y-2">
-                                            <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-lg">
-                                                <IconComponent size={24} />
-                                            </div>
-                                            <span className="text-xs font-mono font-bold tracking-wider text-slate-300 uppercase">
-                                                {course.category || "Engineering Track"}
-                                            </span>
-                                        </div>
-                                    )}
-
-                                    {/* Difficulty Badge */}
-                                    <div className="absolute top-4 left-4 z-20 px-2.5 py-1 rounded-md bg-black/70 backdrop-blur-md border border-white/10 text-white text-[10px] font-mono font-bold uppercase tracking-wider">
-                                        {difficulty}
-                                    </div>
-
-                                    {/* Price Badge */}
-                                    <div className="absolute top-4 right-4 z-20 px-3 py-1 rounded-md bg-blue-600 text-white text-xs font-bold shadow-lg shadow-blue-600/40">
-                                        {Number(price) === 0 ? "FREE" : `₹${price.toLocaleString()}`}
-                                    </div>
-                                </div>
-
-                                {/* Course Content Card Body */}
-                                <div className="p-6 flex flex-col flex-grow justify-between space-y-4">
-                                    
-                                    <div className="space-y-2">
-                                        <h3 className="text-lg font-bold text-brand-text group-hover:text-brand-primary transition-colors line-clamp-1">
-                                            {course.title}
-                                        </h3>
-                                        <p className="text-xs sm:text-sm text-brand-muted line-clamp-2 leading-relaxed">
-                                            {course.description}
-                                        </p>
-                                    </div>
-
-                                    {/* Rating & Duration */}
-                                    <div className="flex items-center justify-between text-xs text-brand-muted pt-2 border-t border-brand-border/60">
-                                        <div className="flex items-center gap-1.5">
-                                            <StarRating rating={rating} readOnly size={12} />
-                                            <span className="font-bold text-brand-text">{rating.toFixed(1)}</span>
-                                            <span>({reviews})</span>
-                                        </div>
-                                        <span>{course.duration || "20 hrs"}</span>
-                                    </div>
-
-                                    {/* Course Action Link */}
-                                    <div className="pt-2 flex items-center justify-between">
-                                        <span className="text-xs text-brand-muted font-medium">
-                                            {course.instructorName || "SkillForge Faculty"}
-                                        </span>
-                                        <span className="text-xs font-bold text-blue-500 group-hover:text-blue-400 flex items-center gap-1">
-                                            Course details <ArrowUpRight size={13} />
-                                        </span>
-                                    </div>
-
-                                </div>
-                            </motion.div>
-                        );
-                    })}
-                </div>
-            </section>
-
-            {/* ========================================================================= */}
-            {/* PART 5 — HOW SKILLFORGE WORKS (LEARN → PRACTISE → BUILD)                  */}
-            {/* ========================================================================= */}
-            <section className="py-20 sm:py-28 bg-brand-surface/40 relative z-10 border-y border-brand-border/60">
-                <div className="max-w-6xl mx-auto px-6">
-                    
-                    {/* Section Header */}
-                    <div className="text-center max-w-2xl mx-auto mb-16 sm:mb-20 space-y-3">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs font-mono font-bold uppercase tracking-wider text-blue-500">
-                            <span>The SkillForge Method</span>
-                        </div>
-                        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-brand-text tracking-tight">
-                            How SkillForge works
-                        </h2>
-                        <p className="text-base sm:text-lg text-brand-muted">
-                            Move beyond passive video watching with active compilation and verifiable feedback.
-                        </p>
-                    </div>
-
-                    {/* Horizontal 3-Step Layout on Desktop with Connecting Line */}
-                    <div className="relative">
+                    {/* Code & Assertions Split Area */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 bg-[#060910]">
                         
-                        {/* Connecting Line (Desktop) */}
-                        <div className="hidden md:block absolute top-1/2 left-[16%] right-[16%] -translate-y-6 h-0.5 border-t-2 border-dashed border-brand-border pointer-events-none z-0" />
-
-                        <div className="grid md:grid-cols-3 gap-8 sm:gap-12 relative z-10">
-                            
-                            {/* Step 01 / LEARN */}
-                            <motion.div 
-                                initial={{ opacity: 0, y: 24 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ duration: 0.5, delay: 0.1 }}
-                                className="bg-brand-bg rounded-2xl p-7 border border-brand-border shadow-sm flex flex-col space-y-4 hover:border-brand-primary/40 transition-colors"
-                            >
-                                <div className="flex items-center justify-between">
-                                    <span className="text-xs font-mono font-bold tracking-widest text-blue-500">
-                                        01 / LEARN
-                                    </span>
-                                    <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center font-bold text-xs">
-                                        1
-                                    </div>
-                                </div>
-                                <h3 className="text-xl font-bold text-brand-text">
-                                    Learn with structure
-                                </h3>
-                                <p className="text-sm text-brand-muted leading-relaxed">
-                                    Follow courses and learning paths that help you progress from fundamentals to advanced concepts.
-                                </p>
-                            </motion.div>
-
-                            {/* Step 02 / PRACTISE */}
-                            <motion.div 
-                                initial={{ opacity: 0, y: 24 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ duration: 0.5, delay: 0.2 }}
-                                className="bg-brand-bg rounded-2xl p-7 border border-brand-border shadow-sm flex flex-col space-y-4 hover:border-brand-primary/40 transition-colors"
-                            >
-                                <div className="flex items-center justify-between">
-                                    <span className="text-xs font-mono font-bold tracking-widest text-indigo-500">
-                                        02 / PRACTISE
-                                    </span>
-                                    <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center font-bold text-xs">
-                                        2
-                                    </div>
-                                </div>
-                                <h3 className="text-xl font-bold text-brand-text">
-                                    Apply what you learn
-                                </h3>
-                                <p className="text-sm text-brand-muted leading-relaxed">
-                                    Solve coding challenges, implement requirements, and use tests to validate your work.
-                                </p>
-                            </motion.div>
-
-                            {/* Step 03 / BUILD */}
-                            <motion.div 
-                                initial={{ opacity: 0, y: 24 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ duration: 0.5, delay: 0.3 }}
-                                className="bg-brand-bg rounded-2xl p-7 border border-brand-border shadow-sm flex flex-col space-y-4 hover:border-brand-primary/40 transition-colors"
-                            >
-                                <div className="flex items-center justify-between">
-                                    <span className="text-xs font-mono font-bold tracking-widest text-cyan-400">
-                                        03 / BUILD
-                                    </span>
-                                    <div className="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center font-bold text-xs">
-                                        3
-                                    </div>
-                                </div>
-                                <h3 className="text-xl font-bold text-brand-text">
-                                    Create real projects
-                                </h3>
-                                <p className="text-sm text-brand-muted leading-relaxed">
-                                    Move beyond isolated exercises and apply your skills to larger engineering projects.
-                                </p>
-                            </motion.div>
-
+                        {/* Left Code Editor Panel */}
+                        <div className="lg:col-span-7 p-5 font-mono text-xs overflow-x-auto border-b lg:border-b-0 lg:border-r border-white/10 space-y-3">
+                            <div className="flex items-center justify-between text-[11px] text-slate-500 pb-2 border-b border-white/5">
+                                <span>LANGUAGE: {activeScenario.lang.toUpperCase()}</span>
+                                <button 
+                                    onClick={handleCopyCode}
+                                    className="hover:text-slate-300 flex items-center gap-1 transition-colors"
+                                >
+                                    {copiedCode ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+                                    <span>{copiedCode ? "Copied" : "Copy"}</span>
+                                </button>
+                            </div>
+                            <pre className="text-slate-300 leading-relaxed font-mono selection:bg-indigo-500/40">
+                                <code>{activeScenario.code}</code>
+                            </pre>
                         </div>
 
-                    </div>
-
-                </div>
-            </section>
-
-            {/* ========================================================================= */}
-            {/* PART 6 — EXPLORE LEARNING PATHS                                           */}
-            {/* ========================================================================= */}
-            <section className="py-20 sm:py-28 max-w-7xl mx-auto px-6 relative z-10 w-full">
-                
-                {/* Section Header */}
-                <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 sm:mb-16 gap-6">
-                    <div className="max-w-2xl space-y-2">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs font-mono font-bold uppercase tracking-wider text-blue-500">
-                            <Layers size={13} />
-                            <span>Curated Curricula</span>
-                        </div>
-                        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-brand-text tracking-tight">
-                            Choose your path
-                        </h2>
-                        <p className="text-base sm:text-lg text-brand-muted">
-                            Find the skills you want to master.
-                        </p>
-                    </div>
-
-                    <Link
-                        to="/tracks"
-                        className="inline-flex items-center gap-1.5 text-sm font-bold text-blue-500 hover:text-blue-400 transition-colors shrink-0 group"
-                    >
-                        <span>Explore all</span>
-                        <ArrowUpRight size={16} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                    </Link>
-                </div>
-
-                {/* The 6 Curated Learning Paths Grid */}
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {learningPaths.map((path, idx) => {
-                        const Icon = path.icon;
-                        return (
-                            <motion.div
-                                key={path.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true, margin: "-30px" }}
-                                transition={{ duration: 0.4, delay: idx * 0.08 }}
-                                whileHover={{ y: -5 }}
-                                onClick={() => navigate(path.path)}
-                                className="group p-7 rounded-2xl bg-brand-surface border border-brand-border hover:border-brand-primary/50 transition-all duration-300 cursor-pointer flex flex-col justify-between hover:shadow-xl hover:shadow-brand-primary/5 min-h-[200px]"
-                            >
-                                <div className="space-y-4">
-                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center border shadow-sm ${path.color} group-hover:scale-110 transition-transform duration-300`}>
-                                        <Icon size={22} />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <h3 className="text-lg font-bold text-brand-text group-hover:text-brand-primary transition-colors">
-                                            {path.title}
-                                        </h3>
-                                        <p className="text-xs sm:text-sm text-brand-muted leading-relaxed">
-                                            {path.description}
-                                        </p>
-                                    </div>
+                        {/* Right Test Assertion & Execution Panel */}
+                        <div className="lg:col-span-5 p-5 bg-[#080C14] flex flex-col justify-between space-y-4">
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+                                        <Shield size={14} className="text-cyan-400" />
+                                        <span>Automated Test Runner</span>
+                                    </span>
+                                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
+                                        {testProgress}/4 VERIFIED
+                                    </span>
                                 </div>
 
-                                <div className="pt-4 flex items-center gap-1 text-xs font-bold text-blue-500 group-hover:text-blue-400">
-                                    <span>Explore path</span>
-                                    <ArrowUpRight size={13} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                                </div>
-                            </motion.div>
-                        );
-                    })}
-                </div>
-
-            </section>
-
-            {/* ========================================================================= */}
-            {/* ========================================================================= */}
-            {/* PART 7 — FEATURED PROJECTS                                                */}
-            {/* ========================================================================= */}
-            <section className="py-20 sm:py-28 max-w-7xl mx-auto px-6 relative z-10 w-full border-t border-brand-border/60">
-                
-                {/* Section Header */}
-                <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 sm:mb-16 gap-6">
-                    <div className="max-w-2xl space-y-2">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs font-mono font-bold uppercase tracking-wider text-blue-500">
-                            <Code2 size={13} />
-                            <span>From concepts to creation</span>
-                        </div>
-                        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-brand-text tracking-tight">
-                            Put your knowledge to work on practical builds.
-                        </h2>
-                    </div>
-
-                    <Link
-                        to="/projects"
-                        className="inline-flex items-center gap-1.5 text-sm font-bold text-blue-500 hover:text-blue-400 transition-colors shrink-0 group"
-                    >
-                        <span>All projects</span>
-                        <ArrowUpRight size={16} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                    </Link>
-                </div>
-
-                {/* Featured Projects Grid */}
-                <div className="grid md:grid-cols-3 gap-8">
-                    {featuredProjects.map((project, idx) => {
-                        const fullProject = PROJECTS.find(p => p.id === project.id) || project;
-
-                        return (
-                            <motion.div
-                                key={project.id}
-                                initial={{ opacity: 0, y: 24 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true, margin: "-40px" }}
-                                transition={{ duration: 0.45, delay: idx * 0.12 }}
-                                whileHover={{ y: -6 }}
-                                onClick={() => setActiveModalProject(fullProject)}
-                                className="group bg-brand-surface rounded-2xl border border-brand-border overflow-hidden transition-all duration-300 cursor-pointer hover:border-brand-primary/50 hover:shadow-xl hover:shadow-brand-primary/10 flex flex-col justify-between"
-                            >
-                                {/* Actual Product Screenshot / Interactive Preview Header */}
-                                {project.id === "audio-synthesizer" && (
-                                    <div className="h-52 bg-[#06080F] relative overflow-hidden flex flex-col justify-between p-3.5 border-b border-brand-border/60 font-mono select-none">
-                                        <div className="absolute inset-0 bg-gradient-to-br from-pink-500/10 via-purple-600/10 to-transparent pointer-events-none" />
-                                        <div className="absolute inset-0 bg-grid-pattern opacity-20 pointer-events-none" />
-
-                                        {/* Status Header */}
-                                        <div className="relative z-10 flex items-center justify-between text-[10px]">
-                                            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-slate-300">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                                                <span className="font-semibold">WebAudioContext</span>
-                                                <span className="text-slate-500">•</span>
-                                                <span className="text-cyan-300">440.0 Hz (A4)</span>
-                                            </div>
-                                            <span className="text-[10px] font-bold text-purple-400 bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 rounded-full">
-                                                ADVANCED
-                                            </span>
-                                        </div>
-
-                                        {/* Oscilloscope Waveform Display */}
-                                        <div className="relative z-10 flex items-center justify-center my-auto py-1">
-                                            <div className="w-full h-16 bg-[#030508] rounded-lg border border-cyan-500/20 shadow-inner flex items-center justify-center relative overflow-hidden px-2">
-                                                <div className="absolute inset-0 bg-[linear-gradient(to_right,#0e1e2d_1px,transparent_1px),linear-gradient(to_bottom,#0e1e2d_1px,transparent_1px)] bg-[size:10px_10px] opacity-35" />
-                                                <svg viewBox="0 0 320 60" className="w-full h-full text-cyan-400 drop-shadow-[0_0_8px_rgba(56,189,248,0.8)]">
-                                                    <path
-                                                        d="M0 30 Q 20 5, 40 30 T 80 30 T 120 10 T 160 50 T 200 30 T 240 15 T 280 45 T 320 30"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        strokeWidth="2.5"
-                                                        strokeLinecap="round"
-                                                    />
-                                                </svg>
-                                                <span className="absolute top-1 right-2 text-[8px] font-mono text-cyan-500/80 uppercase">Sawtooth · ADSR</span>
-                                            </div>
-                                        </div>
-
-                                        {/* 16-Step Rhythm Sequencer Matrix */}
-                                        <div className="relative z-10 bg-black/40 backdrop-blur-sm rounded-md p-1.5 border border-white/5 space-y-1">
-                                            <div className="flex items-center justify-between text-[9px] text-slate-400 px-0.5">
-                                                <span className="text-slate-400 font-semibold">16-Step Sequencer</span>
-                                                <span className="text-amber-400 font-bold">120 BPM</span>
-                                            </div>
-                                            <div className="grid grid-cols-[repeat(16,minmax(0,1fr))] gap-1">
-                                                {[1,0,1,0, 1,0,0,1, 1,0,1,0, 0,1,1,0].map((active, i) => (
-                                                    <div
-                                                        key={i}
-                                                        className={`h-2.5 rounded-sm transition-all ${
-                                                            active 
-                                                                ? "bg-cyan-400 shadow-[0_0_6px_rgba(56,189,248,0.7)]" 
-                                                                : (i % 4 === 0 ? "bg-slate-700/60" : "bg-slate-800/40")
-                                                        }`}
-                                                    />
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {project.id === "redis-clone" && (
-                                    <div className="h-52 bg-[#06080F] relative overflow-hidden flex flex-col justify-between p-3.5 border-b border-brand-border/60 font-mono select-none">
-                                        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-cyan-600/10 to-transparent pointer-events-none" />
-                                        <div className="absolute inset-0 bg-grid-pattern opacity-20 pointer-events-none" />
-
-                                        {/* Terminal Titlebar */}
-                                        <div className="relative z-10 flex items-center justify-between text-[10px]">
-                                            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-slate-300">
-                                                <Terminal size={11} className="text-blue-400" />
-                                                <span className="font-semibold text-slate-200">redis-server :6379</span>
-                                                <span className="text-slate-500">•</span>
-                                                <span className="text-emerald-400">TCP Active</span>
-                                            </div>
-                                            <span className="text-[10px] font-bold text-blue-400 bg-blue-500/15 border border-blue-500/30 px-2 py-0.5 rounded-full">
-                                                ADVANCED
-                                            </span>
-                                        </div>
-
-                                        {/* Live Terminal Console Stream */}
-                                        <div className="relative z-10 my-auto bg-[#030508] rounded-lg border border-slate-800/90 p-2.5 space-y-1 text-[11px] leading-tight shadow-inner">
-                                            <div className="flex items-center gap-1.5 text-slate-400">
-                                                <span className="text-blue-500">&gt;</span>
-                                                <span className="text-slate-200">redis-cli PING</span>
-                                            </div>
-                                            <div className="text-emerald-400 pl-3">
-                                                +PONG <span className="text-slate-500 text-[9px]">(0.12ms)</span>
-                                            </div>
-                                            <div className="flex items-center gap-1.5 text-slate-400 pt-0.5">
-                                                <span className="text-blue-500">&gt;</span>
-                                                <span className="text-slate-200">SET session:0x94 "auth_ok" EX 3600</span>
-                                            </div>
-                                            <div className="text-cyan-300 pl-3">
-                                                +OK <span className="text-slate-500 text-[9px]">[TTL: 3600s · O(1) LRU]</span>
-                                            </div>
-                                        </div>
-
-                                        {/* Status Bar */}
-                                        <div className="relative z-10 flex items-center justify-between text-[9px] text-slate-400 bg-black/40 backdrop-blur-sm px-2 py-1 rounded-md border border-white/5">
-                                            <span className="text-slate-300 font-semibold">RESP2 Protocol Parser</span>
-                                            <span className="text-cyan-400 font-mono font-bold">Memory: 14.2MB</span>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {project.id === "collaborative-canvas" && (
-                                    <div className="h-52 bg-[#06080F] relative overflow-hidden flex flex-col justify-between p-3.5 border-b border-brand-border/60 font-sans select-none">
-                                        <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/10 via-teal-600/10 to-transparent pointer-events-none" />
-                                        <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:12px_12px] opacity-60 pointer-events-none" />
-
-                                        {/* Top Bar */}
-                                        <div className="relative z-10 flex items-center justify-between text-[10px] font-mono">
-                                            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-slate-300">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                                                <span className="font-semibold text-slate-200">Vector Canvas</span>
-                                                <span className="text-slate-500">•</span>
-                                                <span className="text-teal-300">2 Connected</span>
-                                            </div>
-                                            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full">
-                                                INTERMEDIATE
-                                            </span>
-                                        </div>
-
-                                        {/* Canvas Vector Nodes & Multiplayer Cursors */}
-                                        <div className="relative z-10 my-auto h-24 w-full">
-                                            {/* Vector Shape Box */}
-                                            <div className="absolute left-4 top-2 w-24 h-12 rounded-lg bg-blue-600/20 border-2 border-blue-500 flex items-center justify-center text-[10px] font-mono text-blue-200 font-bold shadow-lg">
-                                                Node: AuthState
-                                            </div>
-
-                                            {/* Connected Node */}
-                                            <div className="absolute right-4 top-6 w-24 h-12 rounded-lg bg-purple-600/20 border-2 border-purple-500 flex items-center justify-center text-[10px] font-mono text-purple-200 font-bold shadow-lg">
-                                                DB: Postgres
-                                            </div>
-
-                                            {/* Connecting SVG Bezier curve */}
-                                            <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                                                <path d="M 115 26 C 145 26, 155 46, 185 46" stroke="#60A5FA" strokeWidth="2" strokeDasharray="3 3" fill="none" />
-                                            </svg>
-
-                                            {/* Live Multiplayer Cursor 1 (Sarah) */}
-                                            <div className="absolute left-20 top-7 flex items-start gap-1 pointer-events-none drop-shadow-md">
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="#A855F7" stroke="#FFFFFF" strokeWidth="1.5">
-                                                    <path d="M3 3l7 18 3-7 7-3L3 3z" />
-                                                </svg>
-                                                <span className="px-1.5 py-0.5 rounded bg-purple-600 text-white text-[8px] font-bold shadow-sm">
-                                                    Sarah
-                                                </span>
-                                            </div>
-
-                                            {/* Live Multiplayer Cursor 2 (Alex) */}
-                                            <div className="absolute right-12 top-1 flex items-start gap-1 pointer-events-none drop-shadow-md">
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="#38BDF8" stroke="#FFFFFF" strokeWidth="1.5">
-                                                    <path d="M3 3l7 18 3-7 7-3L3 3z" />
-                                                </svg>
-                                                <span className="px-1.5 py-0.5 rounded bg-sky-500 text-white text-[8px] font-bold shadow-sm">
-                                                    Alex
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        {/* Bottom Status Bar */}
-                                        <div className="relative z-10 flex items-center justify-between text-[9px] font-mono text-slate-400 bg-black/40 backdrop-blur-sm px-2 py-1 rounded-md border border-white/5">
-                                            <span className="text-slate-300 font-semibold">CRDT Fractional Indexing</span>
-                                            <span className="text-emerald-400 font-bold">60 FPS · 0ms Drift</span>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Card Body & Details */}
-                                <div className="p-6 flex flex-col flex-grow justify-between space-y-4">
-                                    <div className="space-y-2">
-                                        <h3 className="text-xl font-bold text-brand-text group-hover:text-brand-primary transition-colors">
-                                            {project.title}
-                                        </h3>
-                                        <p className="text-xs sm:text-sm text-brand-muted leading-relaxed">
-                                            {project.description}
-                                        </p>
-                                    </div>
-
-                                    {/* Technology Tags */}
-                                    <div className="flex flex-wrap gap-1.5 pt-1">
-                                        {project.tags.map((tag) => (
-                                            <span
-                                                key={tag}
-                                                className="px-2.5 py-0.5 rounded-md bg-brand-elevated border border-brand-border text-[11px] font-mono text-brand-muted group-hover:text-brand-text transition-colors"
+                                {/* Assertion Steps */}
+                                <div className="space-y-2 pt-1 font-mono text-xs">
+                                    {activeScenario.assertions.map((step, idx) => {
+                                        const isDone = idx < testProgress;
+                                        return (
+                                            <div 
+                                                key={idx}
+                                                className={`p-2.5 rounded-xl border transition-all flex items-start gap-2.5 ${
+                                                    isDone 
+                                                        ? "bg-white/[0.02] border-emerald-500/30 text-emerald-300"
+                                                        : "bg-white/[0.01] border-white/5 text-slate-500 opacity-60"
+                                                }`}
                                             >
-                                                {tag}
-                                            </span>
-                                        ))}
-                                    </div>
-
-                                    {/* Explore project link */}
-                                    <div className="pt-3 border-t border-brand-border/60 flex items-center justify-between">
-                                        <span className="text-xs text-brand-muted font-mono">
-                                            {project.language}
-                                        </span>
-                                        <span className="text-xs font-bold text-blue-500 group-hover:text-blue-400 flex items-center gap-1">
-                                            Explore project <ArrowUpRight size={14} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                                        </span>
-                                    </div>
+                                                <CheckCircle2 
+                                                    size={14} 
+                                                    className={`mt-0.5 shrink-0 ${isDone ? "text-emerald-400" : "text-slate-600"}`} 
+                                                />
+                                                <span className="leading-snug">{step}</span>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
-                            </motion.div>
-                        );
-                    })}
-                </div>
+                            </div>
 
-            </section>
-
-            {/* ========================================================================= */}
-            {/* PART 8 — WHY SKILLFORGE?                                                  */}
-            {/* ========================================================================= */}
-            <section className="py-20 sm:py-28 max-w-6xl mx-auto px-6 relative z-10 w-full">
-                
-                {/* Section Header */}
-                <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
-                    <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-brand-text tracking-tight">
-                        A better way to develop your skills
-                    </h2>
-                </div>
-
-                {/* Three Benefits */}
-                <div className="grid md:grid-cols-3 gap-8">
-                    
-                    <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.4, delay: 0.1 }}
-                        className="p-8 rounded-2xl bg-brand-surface border border-brand-border space-y-3 shadow-sm hover:border-brand-primary/40 transition-colors"
-                    >
-                        <div className="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center mb-4">
-                            <BookOpen size={22} />
+                            {/* Runner Action Button */}
+                            <div className="pt-2">
+                                <button
+                                    onClick={handleTriggerTestRun}
+                                    disabled={isExecutingScenario}
+                                    className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-bold transition-all shadow-md shadow-indigo-500/20 flex items-center justify-center gap-2 disabled:opacity-50"
+                                >
+                                    <Play size={13} fill="currentColor" />
+                                    <span>{isExecutingScenario ? "Executing Test Harness..." : "Re-Run Automated Assertions"}</span>
+                                </button>
+                            </div>
                         </div>
-                        <h3 className="text-xl font-bold text-brand-text">
-                            Structured learning
-                        </h3>
-                        <p className="text-sm text-brand-muted leading-relaxed">
-                            Courses and paths designed around clear learning goals.
-                        </p>
-                    </motion.div>
 
-                    <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.4, delay: 0.2 }}
-                        className="p-8 rounded-2xl bg-brand-surface border border-brand-border space-y-3 shadow-sm hover:border-brand-primary/40 transition-colors"
-                    >
-                        <div className="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center mb-4">
-                            <Code2 size={22} />
+                    </div>
+
+                    {/* Cockpit Footer Stats */}
+                    <div className="p-3 bg-[#070A11] border-t border-white/10 flex flex-wrap items-center justify-between text-[11px] font-mono text-slate-500 gap-2">
+                        <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                            <span className="text-slate-400">Sandbox status: Isolated Container Active (Alpine Linux 6.6)</span>
                         </div>
-                        <h3 className="text-xl font-bold text-brand-text">
-                            Hands-on practice
-                        </h3>
-                        <p className="text-sm text-brand-muted leading-relaxed">
-                            Work with code, challenges, and automated feedback.
-                        </p>
-                    </motion.div>
-
-                    <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.4, delay: 0.3 }}
-                        className="p-8 rounded-2xl bg-brand-surface border border-brand-border space-y-3 shadow-sm hover:border-brand-primary/40 transition-colors"
-                    >
-                        <div className="w-12 h-12 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center mb-4">
-                            <Zap size={22} />
-                        </div>
-                        <h3 className="text-xl font-bold text-brand-text">
-                            Practical projects
-                        </h3>
-                        <p className="text-sm text-brand-muted leading-relaxed">
-                            Apply your knowledge to meaningful engineering work.
-                        </p>
-                    </motion.div>
-
-                </div>
-
-            </section>
-
-            {/* ========================================================================= */}
-            {/* PART 9 — FINAL CALL TO ACTION                                             */}
-            {/* ========================================================================= */}
-            <section className="py-24 sm:py-32 relative overflow-hidden bg-[#070A12] border-t border-brand-border/60">
-                
-                {/* Background Ambient Glow */}
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-900/30 via-[#070A12] to-indigo-950/40 pointer-events-none" />
-                <div className="absolute inset-0 bg-grid-pattern opacity-25 pointer-events-none" />
-
-                <motion.div 
-                    initial={{ opacity: 0, scale: 0.96 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5 }}
-                    className="max-w-3xl mx-auto px-6 relative z-10 text-center space-y-6"
-                >
-                    <span className="text-xs font-mono font-bold uppercase tracking-widest text-blue-400 block">
-                        YOUR NEXT CHAPTER STARTS HERE
-                    </span>
-
-                    <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight">
-                        Learn something. Build something.
-                    </h2>
-
-                    <p className="text-base sm:text-lg text-slate-300 max-w-xl mx-auto leading-relaxed">
-                        Choose your next course, sharpen your skills, and turn what you learn into something real.
-                    </p>
-
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-                        <button
-                            onClick={() => navigate("/courses")}
-                            className="w-full sm:w-auto px-8 py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-base transition-all shadow-[0_0_30px_rgba(37,99,235,0.4)] flex items-center justify-center gap-2 active:scale-95"
-                        >
-                            <span>Explore courses</span>
-                            <ArrowUpRight size={18} />
-                        </button>
-                        <button
-                            onClick={() => navigate(token ? "/projects" : "/projects")}
-                            className="w-full sm:w-auto px-8 py-4 rounded-xl bg-white/10 hover:bg-white/15 text-white border border-white/15 font-bold text-base transition-all flex items-center justify-center gap-2 active:scale-95"
-                        >
-                            <span>Enter workspace</span>
-                        </button>
+                        <span className="text-slate-400">WebSocket Ping: 12ms • Memory: {activeScenario.metrics.memory}</span>
                     </div>
                 </motion.div>
+
             </section>
 
-            {/* ========================================================================= */}
-            {/* PART 10 — FOOTER                                                          */}
-            {/* ========================================================================= */}
-            <footer className="bg-brand-bg border-t border-brand-border py-16 text-brand-muted text-sm font-sans">
-                <div className="max-w-7xl mx-auto px-6">
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-10 pb-12 border-b border-brand-border/60">
-                        
-                        {/* Brand Column */}
-                        <div className="col-span-2 space-y-4">
-                            <SkillForgeLogo size="md" />
-                            <p className="text-sm text-brand-muted leading-relaxed max-w-sm">
-                                Learn, practise, and build with purpose.
+            {/* ======================================================== */}
+            {/* 4. ENTERPRISE ENGINEERING LOGO MARQUEE                   */}
+            {/* ======================================================== */}
+            <section className="border-y border-white/10 py-10 bg-white/[0.01] relative z-10 overflow-hidden">
+                <div className="max-w-7xl mx-auto px-4 text-center mb-6">
+                    <p className="text-xs font-mono font-bold uppercase tracking-widest text-slate-500">
+                        Architectures inspired by production engineering at
+                    </p>
+                </div>
+
+                <div className="mask-marquee flex overflow-hidden">
+                    <div className="flex shrink-0 items-center gap-12 sm:gap-20 animate-marquee text-slate-400 font-bold text-sm sm:text-base tracking-wider font-mono">
+                        {["STRIPE", "VERCEL", "LINEAR", "CLOUDFLARE", "DATADOG", "HASHICORP", "META", "AMAZON AWS", "NETFLIX", "DOCKER"].map((logo, idx) => (
+                            <span key={idx} className="hover:text-white transition-colors opacity-60 hover:opacity-100 flex items-center gap-2">
+                                <Box size={14} className="text-indigo-400" />
+                                <span>{logo}</span>
+                            </span>
+                        ))}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-12 sm:gap-20 animate-marquee text-slate-400 font-bold text-sm sm:text-base tracking-wider font-mono" aria-hidden="true">
+                        {["STRIPE", "VERCEL", "LINEAR", "CLOUDFLARE", "DATADOG", "HASHICORP", "META", "AMAZON AWS", "NETFLIX", "DOCKER"].map((logo, idx) => (
+                            <span key={`dup-${idx}`} className="hover:text-white transition-colors opacity-60 hover:opacity-100 flex items-center gap-2">
+                                <Box size={14} className="text-indigo-400" />
+                                <span>{logo}</span>
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* ======================================================== */}
+            {/* 5. INTERACTIVE ARCHITECTURE PLAYGROUND                   */}
+            {/* ======================================================== */}
+            <section className="py-20 lg:py-28 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-12">
+                
+                <div className="text-center max-w-3xl mx-auto space-y-4">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-mono font-bold uppercase">
+                        <Flame size={13} />
+                        <span>Interactive Playground</span>
+                    </div>
+                    <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
+                        Test Real-World Failure Scenarios. <br />
+                        <span className="bg-gradient-to-r from-cyan-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                            Before You Deploy.
+                        </span>
+                    </h2>
+                    <p className="text-slate-400 text-sm sm:text-base leading-relaxed">
+                        Click any system stress scenario below to watch how our compiled runtimes handle partitions, memory pressure, and high-concurrency spikes in real-time.
+                    </p>
+                </div>
+
+                {/* Interactive Simulator Cockpit */}
+                <div className="rounded-3xl glass-card-luxury border border-white/10 p-6 sm:p-8 overflow-hidden space-y-6">
+                    
+                    {/* Scenario Triggers */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {[
+                            {
+                                id: "partition",
+                                title: "Network Partition",
+                                subtitle: "Split-brain consensus election",
+                                icon: Network,
+                                color: "border-indigo-500/40 bg-indigo-500/10 text-indigo-300"
+                            },
+                            {
+                                id: "load",
+                                title: "100k Concurrent Conns",
+                                subtitle: "epoll non-blocking multiplexer",
+                                icon: Activity,
+                                color: "border-cyan-500/40 bg-cyan-500/10 text-cyan-300"
+                            },
+                            {
+                                id: "eviction",
+                                title: "Cache Eviction Spike",
+                                subtitle: "Thread-safe O(1) LRU cleanup",
+                                icon: Database,
+                                color: "border-purple-500/40 bg-purple-500/10 text-purple-300"
+                            }
+                        ].map((btn) => {
+                            const Icon = btn.icon;
+                            const isSelected = simActiveScenario === btn.id;
+                            return (
+                                <button
+                                    key={btn.id}
+                                    onClick={() => handleRunSimulation(btn.id)}
+                                    className={`p-4 rounded-2xl border text-left transition-all flex items-start gap-3.5 ${
+                                        isSelected
+                                            ? "bg-white/[0.08] border-indigo-400 shadow-lg shadow-indigo-500/20"
+                                            : "bg-white/[0.02] border-white/10 hover:border-white/20 hover:bg-white/[0.04]"
+                                    }`}
+                                >
+                                    <div className={`p-2.5 rounded-xl border ${btn.color} shrink-0`}>
+                                        <Icon size={18} />
+                                    </div>
+                                    <div className="space-y-0.5">
+                                        <h4 className="text-sm font-bold text-white flex items-center gap-1.5">
+                                            <span>{btn.title}</span>
+                                            {isSelected && <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />}
+                                        </h4>
+                                        <p className="text-xs text-slate-400">{btn.subtitle}</p>
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* Live Simulation Terminal Console */}
+                    <div className="rounded-2xl bg-[#060910] border border-white/10 p-5 font-mono text-xs space-y-2 min-h-[180px]">
+                        <div className="flex items-center justify-between text-[11px] text-slate-500 pb-2 border-b border-white/5">
+                            <span className="flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                                <span>SIMULATION_ENGINE :: RUNTIME_TELEMETRY</span>
+                            </span>
+                            <span>STATUS: READY</span>
+                        </div>
+
+                        <div className="space-y-1.5 pt-2">
+                            {simLogs.map((log, idx) => (
+                                <div 
+                                    key={idx} 
+                                    className={`flex items-start gap-2 ${
+                                        log.startsWith("[🎉]") 
+                                            ? "text-cyan-300 font-bold" 
+                                            : log.startsWith("[✓]")
+                                            ? "text-emerald-400 font-medium"
+                                            : log.startsWith("[!]")
+                                            ? "text-amber-400 font-semibold"
+                                            : log.startsWith("[⚡]")
+                                            ? "text-indigo-400 font-semibold"
+                                            : "text-slate-400"
+                                    }`}
+                                >
+                                    <span className="text-slate-600 select-none">&gt;</span>
+                                    <span>{log}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                </div>
+
+            </section>
+
+            {/* ======================================================== */}
+            {/* 6. BENTO GRID 2.0: THE FIVE ENGINEERING PILLARS         */}
+            {/* ======================================================== */}
+            <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-12">
+                
+                <div className="text-center max-w-2xl mx-auto space-y-3">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-mono font-bold uppercase">
+                        <Layers size={13} />
+                        <span>The SkillForge Method</span>
+                    </div>
+                    <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                        Built for Engineers Who Value Depth.
+                    </h2>
+                    <p className="text-slate-400 text-sm sm:text-base">
+                        Five core principles that transform your engineering capabilities from syntax-memorizer to distributed systems architect.
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    
+                    {/* Bento 1: MicroVM Container Isolation (Col span 2) */}
+                    <div className="md:col-span-2 p-8 rounded-3xl glass-card-luxury border border-white/10 hover:border-indigo-500/40 transition-all flex flex-col justify-between space-y-6 group">
+                        <div className="space-y-3">
+                            <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center">
+                                <Terminal size={24} />
+                            </div>
+                            <h3 className="text-2xl font-bold text-white group-hover:text-indigo-300 transition-colors">
+                                In-Browser Linux MicroVM Containers
+                            </h3>
+                            <p className="text-slate-400 text-sm leading-relaxed max-w-xl">
+                                Full Alpine Linux microVM running directly in your browser. Real POSIX sockets, thread scheduling, file systems, and compiler toolchains (Rust, Go, Node.js, Python).
                             </p>
                         </div>
 
-                        {/* Column 1: Learn */}
-                        <div className="space-y-3">
-                            <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-brand-text">
-                                Learn
-                            </h4>
-                            <ul className="space-y-2 text-xs sm:text-sm">
-                                <li>
-                                    <Link to="/courses" className="hover:text-brand-text transition-colors">Courses</Link>
-                                </li>
-                                <li>
-                                    <Link to="/tracks" className="hover:text-brand-text transition-colors">Learning paths</Link>
-                                </li>
-                                <li>
-                                    <Link to="/challenges" className="hover:text-brand-text transition-colors">Challenges</Link>
-                                </li>
-                            </ul>
+                        <div className="p-4 rounded-2xl bg-[#060910] border border-white/10 font-mono text-xs text-slate-400 flex items-center justify-between">
+                            <span className="flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                                <span>$ cargo test --release -- --nocapture</span>
+                            </span>
+                            <span className="text-emerald-400 font-bold">ALL 18 PASSED (0.24s)</span>
                         </div>
-
-                        {/* Column 2: Platform */}
-                        <div className="space-y-3">
-                            <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-brand-text">
-                                Platform
-                            </h4>
-                            <ul className="space-y-2 text-xs sm:text-sm">
-                                <li>
-                                    <Link to="/projects" className="hover:text-brand-text transition-colors">Projects</Link>
-                                </li>
-                                <li>
-                                    <Link to="/community" className="hover:text-brand-text transition-colors">Community</Link>
-                                </li>
-                                <li>
-                                    <Link to="/help" className="hover:text-brand-text transition-colors">Help and support</Link>
-                                </li>
-                            </ul>
-                        </div>
-
-                        {/* Column 3: Company & Legal */}
-                        <div className="space-y-3">
-                            <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-brand-text">
-                                Company
-                            </h4>
-                            <ul className="space-y-2 text-xs sm:text-sm">
-                                <li>
-                                    <Link to="/about" className="hover:text-brand-text transition-colors">About</Link>
-                                </li>
-                                <li>
-                                    <Link to="/contact" className="hover:text-brand-text transition-colors">Contact</Link>
-                                </li>
-                                <li className="pt-2">
-                                    <span className="text-[11px] font-mono uppercase tracking-wider text-brand-subtle block mb-1">Legal</span>
-                                    <div className="space-y-1.5">
-                                        <div><Link to="/privacy" className="hover:text-brand-text transition-colors">Privacy policy</Link></div>
-                                        <div><Link to="/terms" className="hover:text-brand-text transition-colors">Terms and conditions</Link></div>
-                                        <div><Link to="/refund" className="hover:text-brand-text transition-colors">Refund policy</Link></div>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-
                     </div>
 
-                    {/* Bottom Copyright */}
-                    <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-brand-muted">
-                        <p>© 2026 SkillForge. All rights reserved.</p>
-                        <p className="text-brand-subtle">Engineered for serious software developers.</p>
+                    {/* Bento 2: Production PRDs & RFCs */}
+                    <div className="p-8 rounded-3xl glass-card-luxury border border-white/10 hover:border-purple-500/40 transition-all flex flex-col justify-between space-y-6 group">
+                        <div className="space-y-3">
+                            <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center">
+                                <BookOpen size={24} />
+                            </div>
+                            <h3 className="text-xl font-bold text-white group-hover:text-purple-300 transition-colors">
+                                Real Production RFCs & PRDs
+                            </h3>
+                            <p className="text-slate-400 text-xs sm:text-sm leading-relaxed">
+                                Never code from vague prompts. Every project includes architectural RFCs, sequence diagrams, and mathematical invariants.
+                            </p>
+                        </div>
+                        <div className="pt-2 text-xs font-mono text-purple-400 flex items-center gap-1 font-bold">
+                            <span>Read Sample Specification</span>
+                            <ChevronRight size={13} />
+                        </div>
                     </div>
+
+                    {/* Bento 3: Tri-Modal Forge Copilot AI */}
+                    <div className="p-8 rounded-3xl glass-card-luxury border border-white/10 hover:border-cyan-500/40 transition-all flex flex-col justify-between space-y-6 group">
+                        <div className="space-y-3">
+                            <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center">
+                                <Sparkles size={24} />
+                            </div>
+                            <h3 className="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">
+                                Forge Copilot Tri-Modal AI
+                            </h3>
+                            <p className="text-slate-400 text-xs sm:text-sm leading-relaxed">
+                                Not just a generic chat. An autonomous mentor that inspects failing test logs, analyzes Big-O space complexity, and guides you without giving away solutions.
+                            </p>
+                        </div>
+                        <div className="pt-2 text-xs font-mono text-cyan-400 flex items-center gap-1 font-bold">
+                            <span>Explore Copilot Capabilities</span>
+                            <ChevronRight size={13} />
+                        </div>
+                    </div>
+
+                    {/* Bento 4: 1-Click GitHub Portfolio Sync (Col span 2) */}
+                    <div className="md:col-span-2 p-8 rounded-3xl glass-card-luxury border border-white/10 hover:border-emerald-500/40 transition-all flex flex-col justify-between space-y-6 group">
+                        <div className="space-y-3">
+                            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                                <GitBranch size={24} />
+                            </div>
+                            <h3 className="text-2xl font-bold text-white group-hover:text-emerald-300 transition-colors">
+                                One-Click Verified GitHub Portfolio Sync
+                            </h3>
+                            <p className="text-slate-400 text-sm leading-relaxed max-w-xl">
+                                Once all milestone test assertions pass at 100%, push clean git commits with architecture READMEs directly to your GitHub portfolio. Stand out to engineering leaders immediately.
+                            </p>
+                        </div>
+
+                        <div className="flex flex-wrap gap-3 text-xs font-mono">
+                            <span className="px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 text-slate-300">
+                                ✦ Automated Git Commit Trees
+                            </span>
+                            <span className="px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 text-slate-300">
+                                ✦ Verified Test Badge
+                            </span>
+                            <span className="px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 text-slate-300">
+                                ✦ Architecture Benchmark Report
+                            </span>
+                        </div>
+                    </div>
+
                 </div>
-            </footer>
 
-            {/* Project Architecture & Launch Modal */}
+            </section>
+
+            {/* ======================================================== */}
+            {/* 7. CURATED ARCHITECTURE TRACKS                           */}
+            {/* ======================================================== */}
+            <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-12">
+                
+                <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-4 border-b border-white/10 pb-6">
+                    <div className="space-y-2">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-mono font-bold uppercase">
+                            <Cpu size={13} />
+                            <span>Curated Tracks</span>
+                        </div>
+                        <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                            Master Core Domains of Scale
+                        </h2>
+                    </div>
+                    <button
+                        onClick={() => navigate("/courses")}
+                        className="text-xs font-bold font-mono text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors"
+                    >
+                        <span>View All Curricula</span>
+                        <ArrowUpRight size={14} />
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {ARCHITECTURE_TRACKS.map((track) => {
+                        const Icon = track.icon;
+                        return (
+                            <div
+                                key={track.id}
+                                className="p-6 rounded-3xl glass-card-luxury border border-white/10 hover:border-indigo-500/40 transition-all flex flex-col justify-between space-y-5 group hover:shadow-[0_15px_35px_rgba(99,102,241,0.15)]"
+                            >
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/10 text-indigo-400 flex items-center justify-center">
+                                            <Icon size={20} />
+                                        </div>
+                                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase border ${track.accent}`}>
+                                            {track.badge}
+                                        </span>
+                                    </div>
+
+                                    <div>
+                                        <h3 className="text-lg font-bold text-white group-hover:text-indigo-300 transition-colors">
+                                            {track.title}
+                                        </h3>
+                                        <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                                            {track.tagline}
+                                        </p>
+                                    </div>
+
+                                    <div className="flex flex-wrap gap-1.5 pt-1">
+                                        {track.tech.map((t) => (
+                                            <span 
+                                                key={t}
+                                                className="px-2 py-0.5 rounded-md bg-white/[0.03] text-[11px] font-mono text-slate-400 border border-white/5"
+                                            >
+                                                {t}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={() => navigate(`/courses?search=${track.id}`)}
+                                    className="w-full py-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 text-xs font-semibold text-slate-200 transition-all flex items-center justify-center gap-1.5"
+                                >
+                                    <span>Explore Track</span>
+                                    <ChevronRight size={13} />
+                                </button>
+                            </div>
+                        );
+                    })}
+                </div>
+
+            </section>
+
+            {/* ======================================================== */}
+            {/* 8. FEATURED SPECIFICATIONS (PROJECTS FORGE PREVIEW)       */}
+            {/* ======================================================== */}
+            <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-12">
+                
+                <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-4 border-b border-white/10 pb-6">
+                    <div className="space-y-2">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-mono font-bold uppercase">
+                            <Terminal size={13} />
+                            <span>Featured Specs</span>
+                        </div>
+                        <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                            Build Real Engineering Specs
+                        </h2>
+                    </div>
+                    <button
+                        onClick={() => navigate("/projects")}
+                        className="text-xs font-bold font-mono text-cyan-400 hover:text-cyan-300 flex items-center gap-1 transition-colors"
+                    >
+                        <span>View All 8 Specs</span>
+                        <ArrowRight size={14} />
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {PROJECTS.slice(0, 3).map((project) => (
+                        <div
+                            key={project.id}
+                            className="p-6 rounded-3xl glass-card-luxury border border-white/10 hover:border-indigo-500/40 transition-all flex flex-col justify-between space-y-5 group"
+                        >
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-mono font-bold uppercase px-2.5 py-1 rounded-full bg-white/[0.03] border border-white/10 text-slate-300">
+                                        {project.badge}
+                                    </span>
+                                    <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-full text-indigo-400 bg-indigo-500/10 border border-indigo-500/30">
+                                        {project.difficulty}
+                                    </span>
+                                </div>
+
+                                <div>
+                                    <h3 className="text-lg font-bold text-white group-hover:text-indigo-300 transition-colors">
+                                        {project.title}
+                                    </h3>
+                                    <p className="text-xs text-slate-400 mt-1 leading-relaxed line-clamp-2">
+                                        {project.tagline}
+                                    </p>
+                                </div>
+
+                                <div className="flex flex-wrap gap-1.5 pt-1">
+                                    {project.techStack.map((tech) => (
+                                        <span 
+                                            key={tech}
+                                            className="px-2 py-0.5 rounded-md bg-white/[0.03] text-[11px] font-mono text-slate-400 border border-white/5"
+                                        >
+                                            {tech}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={() => setActiveModalProject(project)}
+                                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-bold transition-all shadow-md shadow-indigo-500/20 flex items-center justify-center gap-2"
+                            >
+                                <Play size={13} fill="currentColor" />
+                                <span>Launch Workspace</span>
+                            </button>
+                        </div>
+                    ))}
+                </div>
+
+            </section>
+
+            {/* ======================================================== */}
+            {/* 9. HIGH-CONVERSION GRAND FINALE CTA PORTAL               */}
+            {/* ======================================================== */}
+            <section className="py-24 max-w-5xl mx-auto px-4 sm:px-6 relative z-10 text-center">
+                <div className="p-10 sm:p-16 rounded-3xl glass-card-luxury border border-indigo-500/30 relative overflow-hidden space-y-8 shadow-[0_0_60px_rgba(99,102,241,0.2)]">
+                    
+                    {/* Background Radial Glow */}
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-cyan-500/20 blur-[100px] pointer-events-none" />
+
+                    <div className="relative z-10 max-w-2xl mx-auto space-y-4">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.05] border border-white/10 text-xs font-mono text-cyan-300">
+                            <Sparkles size={13} />
+                            <span>Zero Fluff • 100% Real Architecture</span>
+                        </div>
+
+                        <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
+                            Ready to Build Systems That <br />
+                            <span className="shimmer-text">
+                                Define Your Career?
+                            </span>
+                        </h2>
+
+                        <p className="text-slate-400 text-sm sm:text-base leading-relaxed">
+                            Join thousands of engineers deploying production architectures, mastering deep systems, and creating verified GitHub portfolios.
+                        </p>
+                    </div>
+
+                    <div className="relative z-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <button
+                            onClick={() => navigate("/signup")}
+                            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-sm sm:text-base shadow-xl shadow-indigo-500/30 border border-indigo-400/40 transition-all flex items-center justify-center gap-2"
+                        >
+                            <span>Create Free Engineer Account</span>
+                            <ArrowRight size={16} />
+                        </button>
+
+                        <button
+                            onClick={() => navigate("/projects")}
+                            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-slate-200 font-bold text-sm sm:text-base backdrop-blur-xl transition-all"
+                        >
+                            <span>Launch Live Sandbox</span>
+                        </button>
+                    </div>
+
+                    <div className="relative z-10 pt-4 flex flex-wrap items-center justify-center gap-6 text-xs font-mono text-slate-400">
+                        <span>✓ No credit card required</span>
+                        <span>•</span>
+                        <span>✓ Instant in-browser runtime</span>
+                        <span>•</span>
+                        <span>✓ 100% open source friendly</span>
+                    </div>
+
+                </div>
+            </section>
+
+            {/* Launch Workspace Modal */}
             <ProjectLaunchModal
                 project={activeModalProject}
                 isOpen={!!activeModalProject}

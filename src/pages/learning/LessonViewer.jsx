@@ -325,7 +325,28 @@ function LessonViewer() {
         );
     }
 
-    if (!lesson) return <div className="p-20 text-center text-brand-muted bg-brand-bg min-h-screen">Lesson missing.</div>;
+    if (!lesson) {
+        return (
+            <div className="bg-brand-bg min-h-screen text-slate-200">
+                <NavBar />
+                <div className="max-w-xl mx-auto px-6 py-28 text-center space-y-6">
+                    <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto text-amber-400">
+                        <FileText size={28} />
+                    </div>
+                    <h2 className="text-2xl font-black text-white tracking-tight">Lesson Stream Not Found</h2>
+                    <p className="text-slate-400 text-sm">The lesson you are attempting to view may have been moved or is currently not accessible.</p>
+                    <div className="pt-2 flex justify-center gap-3">
+                        <button
+                            onClick={() => navigate(derivedCourseId ? `/course/${derivedCourseId}` : "/courses")}
+                            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 text-white font-bold text-xs shadow-md shadow-indigo-500/25 border border-indigo-400/30 hover:scale-105 transition-all"
+                        >
+                            Return to Course
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     const isCurrentLessonDone = completedLessonIds.includes(lessonId.toString());
 

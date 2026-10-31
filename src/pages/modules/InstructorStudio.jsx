@@ -124,30 +124,28 @@ function InstructorStudio() {
     };
 
     return (
-        <div className="bg-brand-bg min-h-screen font-sans text-brand-text transition-colors duration-300 flex flex-col selection:bg-brand-primary/30">
+        <div className="bg-brand-bg min-h-screen font-sans text-brand-text flex flex-col selection:bg-brand-primary/30 selection:text-white relative">
             <NavBar />
 
-            {/* Ambient Background Gradient Glows */}
-            <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-                <div className="absolute top-24 left-1/3 w-[600px] h-[400px] bg-brand-primary/5 blur-[140px] rounded-full" />
-                <div className="absolute top-80 right-10 w-[450px] h-[350px] bg-brand-primary/3 blur-[120px] rounded-full" />
-            </div>
+            {/* Ambient Background Grid Pattern */}
+            <div className="absolute inset-0 bg-grid-pattern opacity-40 pointer-events-none z-0" />
+            <div className="absolute top-20 left-1/3 w-[600px] h-[400px] bg-brand-primary/10 blur-[140px] rounded-full pointer-events-none z-0 animate-ambient-glow" />
 
-            <main className="flex-1 max-w-7xl w-full mx-auto px-6 sm:px-8 py-8 sm:py-12 relative z-10 space-y-8">
+            <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-10 space-y-8">
                 
                 {/* 1. HEADER SECTION */}
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-brand-border/60">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-4 border-b border-brand-border/60">
                     <div>
                         <div className="flex items-center gap-2 mb-2">
-                            <span className="w-2.5 h-2.5 rounded-full bg-brand-primary animate-pulse" />
-                            <span className="text-xs font-bold uppercase tracking-wider text-brand-muted">
+                            <span className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
+                            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-brand-muted">
                                 Instructor Workspace
                             </span>
                         </div>
                         <h1 className="text-3xl sm:text-4xl font-black text-brand-text tracking-tight">
                             Creator Studio
                         </h1>
-                        <p className="text-brand-subtle text-sm mt-1 max-w-2xl">
+                        <p className="text-brand-muted text-xs sm:text-sm mt-1 max-w-2xl">
                             Architect learning paths, manage video lessons, and track student enrollment in real time.
                         </p>
                     </div>
@@ -157,10 +155,10 @@ function InstructorStudio() {
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => navigate('/create-course')}
-                            className="bg-brand-primary hover:bg-brand-secondary text-white font-bold text-sm px-6 py-2.5 rounded-xl shadow-lg shadow-brand-primary/20 flex items-center gap-2 transition-all cursor-pointer"
+                            className="bg-gradient-to-r from-brand-primary via-indigo-600 to-brand-primary text-white font-bold text-xs sm:text-sm px-5 py-2.5 rounded-xl shadow-glow-primary/40 flex items-center gap-2 transition-all cursor-pointer border border-white/10"
                         >
-                            <Plus size={18} />
-                            Create New Course
+                            <Plus size={16} />
+                            <span>Create Course</span>
                         </motion.button>
                     </div>
                 </div>
@@ -171,79 +169,79 @@ function InstructorStudio() {
                         initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3 }}
-                        className="bg-brand-surface border border-brand-border p-5 rounded-2xl relative overflow-hidden group hover:border-brand-primary/40 transition-all shadow-sm"
+                        className="glass-card-elevated p-5 rounded-2xl relative overflow-hidden group hover:border-brand-primary/40 transition-all shadow-sm"
                     >
                         <div className="flex items-center justify-between mb-3">
-                            <span className="text-xs font-bold text-brand-muted uppercase tracking-wider">Total Courses</span>
-                            <div className="w-8 h-8 rounded-lg bg-brand-elevated text-brand-primary flex items-center justify-center">
+                            <span className="text-[11px] font-bold text-brand-muted uppercase tracking-wider">Total Courses</span>
+                            <div className="w-8 h-8 rounded-xl bg-brand-surface border border-brand-border text-brand-primary flex items-center justify-center">
                                 <BookOpen size={16} />
                             </div>
                         </div>
                         <div className="text-2xl sm:text-3xl font-black text-brand-text">
                             {stats.total}
                         </div>
-                        <p className="text-xs text-brand-subtle mt-1 font-medium">Curriculums authored</p>
+                        <p className="text-[11px] text-brand-subtle mt-1 font-medium">Curriculums authored</p>
                     </motion.div>
 
                     <motion.div 
                         initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3, delay: 0.05 }}
-                        className="bg-brand-surface border border-brand-border p-5 rounded-2xl relative overflow-hidden group hover:border-emerald-500/40 transition-all shadow-sm"
+                        className="glass-card-elevated p-5 rounded-2xl relative overflow-hidden group hover:border-brand-emerald/40 transition-all shadow-sm"
                     >
                         <div className="flex items-center justify-between mb-3">
-                            <span className="text-xs font-bold text-brand-muted uppercase tracking-wider">Live & Public</span>
-                            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                            <span className="text-[11px] font-bold text-brand-muted uppercase tracking-wider">Live & Public</span>
+                            <div className="w-8 h-8 rounded-xl bg-brand-surface border border-brand-border text-brand-emerald flex items-center justify-center">
                                 <Globe size={16} />
                             </div>
                         </div>
-                        <div className="text-2xl sm:text-3xl font-black text-emerald-400">
+                        <div className="text-2xl sm:text-3xl font-black text-brand-emerald">
                             {stats.published}
                         </div>
-                        <p className="text-xs text-brand-subtle mt-1 font-medium">Published in catalog</p>
+                        <p className="text-[11px] text-brand-subtle mt-1 font-medium">Published in catalog</p>
                     </motion.div>
 
                     <motion.div 
                         initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3, delay: 0.1 }}
-                        className="bg-brand-surface border border-brand-border p-5 rounded-2xl relative overflow-hidden group hover:border-brand-primary/40 transition-all shadow-sm"
+                        className="glass-card-elevated p-5 rounded-2xl relative overflow-hidden group hover:border-brand-primary/40 transition-all shadow-sm"
                     >
                         <div className="flex items-center justify-between mb-3">
-                            <span className="text-xs font-bold text-brand-muted uppercase tracking-wider">Drafts</span>
-                            <div className="w-8 h-8 rounded-lg bg-brand-elevated text-brand-muted flex items-center justify-center">
+                            <span className="text-[11px] font-bold text-brand-muted uppercase tracking-wider">Drafts</span>
+                            <div className="w-8 h-8 rounded-xl bg-brand-surface border border-brand-border text-brand-muted flex items-center justify-center">
                                 <Lock size={16} />
                             </div>
                         </div>
                         <div className="text-2xl sm:text-3xl font-black text-brand-text">
                             {stats.drafts}
                         </div>
-                        <p className="text-xs text-brand-subtle mt-1 font-medium">Under construction</p>
+                        <p className="text-[11px] text-brand-subtle mt-1 font-medium">Under construction</p>
                     </motion.div>
 
                     <motion.div 
                         initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3, delay: 0.15 }}
-                        className="bg-brand-surface border border-brand-border p-5 rounded-2xl relative overflow-hidden group hover:border-brand-primary/40 transition-all shadow-sm"
+                        className="glass-card-elevated p-5 rounded-2xl relative overflow-hidden group hover:border-brand-primary/40 transition-all shadow-sm"
                     >
                         <div className="flex items-center justify-between mb-3">
-                            <span className="text-xs font-bold text-brand-muted uppercase tracking-wider">Students Enrolled</span>
-                            <div className="w-8 h-8 rounded-lg bg-brand-primary/10 text-brand-primary flex items-center justify-center">
+                            <span className="text-[11px] font-bold text-brand-muted uppercase tracking-wider">Students Enrolled</span>
+                            <div className="w-8 h-8 rounded-xl bg-brand-surface border border-brand-border text-brand-cyan flex items-center justify-center">
                                 <Users size={16} />
                             </div>
                         </div>
                         <div className="text-2xl sm:text-3xl font-black text-brand-text">
                             {stats.totalStudents}
                         </div>
-                        <p className="text-xs text-brand-subtle mt-1 font-medium">Across all courses</p>
+                        <p className="text-[11px] text-brand-subtle mt-1 font-medium">Across all courses</p>
                     </motion.div>
                 </div>
 
                 {/* 3. CONTROLS: SEARCH & FILTER TABS */}
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-2">
                     {/* Status Tabs */}
-                    <div className="flex items-center bg-brand-surface border border-brand-border p-1 rounded-xl self-start">
+                    <div className="flex items-center glass-card border border-brand-border p-1 rounded-xl self-start">
                         {[
                             { key: "all", label: "All Courses", count: stats.total },
                             { key: "published", label: "Published", count: stats.published },
@@ -252,7 +250,7 @@ function InstructorStudio() {
                             <button
                                 key={tab.key}
                                 onClick={() => setStatusFilter(tab.key)}
-                                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer ${
                                     statusFilter === tab.key
                                         ? "bg-brand-primary text-white shadow-sm"
                                         : "text-brand-muted hover:text-brand-text"
@@ -260,7 +258,7 @@ function InstructorStudio() {
                             >
                                 <span>{tab.label}</span>
                                 <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
-                                    statusFilter === tab.key ? "bg-white/20 text-white" : "bg-brand-elevated text-brand-muted"
+                                    statusFilter === tab.key ? "bg-white/20 text-white" : "bg-brand-surface text-brand-muted"
                                 }`}>
                                     {tab.count}
                                 </span>
@@ -270,18 +268,18 @@ function InstructorStudio() {
 
                     {/* Search Input */}
                     <div className="relative w-full sm:w-72">
-                        <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-muted pointer-events-none" />
+                        <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-subtle pointer-events-none" />
                         <input
                             type="text"
                             placeholder="Filter by title or tag..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-full bg-brand-surface border border-brand-border text-brand-text text-sm rounded-xl py-2 pl-9 pr-8 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all placeholder-brand-muted"
+                            className="w-full bg-brand-surface text-brand-text text-xs sm:text-sm rounded-xl py-2 pl-9 pr-8 border border-brand-border focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all placeholder-brand-subtle"
                         />
                         {search && (
                             <button
                                 onClick={() => setSearch("")}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-muted hover:text-brand-text p-0.5 rounded cursor-pointer"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-subtle hover:text-brand-text p-0.5 rounded cursor-pointer"
                             >
                                 <X size={14} />
                             </button>
@@ -292,20 +290,20 @@ function InstructorStudio() {
                 {/* 4. COURSES GRID */}
                 {loading ? (
                     <div className="py-24 flex flex-col items-center justify-center gap-4">
-                        <div className="w-10 h-10 border-3 border-brand-border border-t-brand-primary rounded-full animate-spin" />
+                        <div className="w-10 h-10 border-2 border-brand-border border-t-brand-primary rounded-full animate-spin" />
                         <p className="text-brand-muted font-mono text-xs uppercase tracking-widest">
                             Loading Studio Workspace...
                         </p>
                     </div>
                 ) : filteredCourses.length === 0 ? (
-                    <div className="py-16 px-6 bg-brand-surface border border-dashed border-brand-border rounded-3xl text-center flex flex-col items-center justify-center">
-                        <div className="w-16 h-16 rounded-2xl bg-brand-elevated flex items-center justify-center mb-4 text-brand-muted">
-                            {courses.length === 0 ? <GraduationCap size={28} /> : <Search size={28} />}
+                    <div className="py-16 px-6 glass-card-elevated border border-dashed border-brand-border rounded-3xl text-center flex flex-col items-center justify-center">
+                        <div className="w-14 h-14 rounded-2xl bg-brand-surface flex items-center justify-center mb-4 text-brand-muted">
+                            {courses.length === 0 ? <GraduationCap size={26} /> : <Search size={26} />}
                         </div>
-                        <h3 className="text-xl font-bold mb-2 text-brand-text">
+                        <h3 className="text-lg font-bold mb-1 text-brand-text">
                             {courses.length === 0 ? "No courses created yet" : "No matching courses"}
                         </h3>
-                        <p className="text-brand-subtle text-sm max-w-md mb-6">
+                        <p className="text-brand-muted text-xs sm:text-sm max-w-md mb-6 leading-relaxed">
                             {courses.length === 0
                                 ? "Start your creator journey by creating your first course. Build lessons, upload videos, and teach engineers."
                                 : "No courses match your current search or filter criteria. Try adjusting your query."}
@@ -313,14 +311,14 @@ function InstructorStudio() {
                         {courses.length === 0 ? (
                             <button
                                 onClick={() => navigate('/create-course')}
-                                className="bg-brand-primary hover:bg-brand-secondary text-white font-bold text-sm px-6 py-2.5 rounded-xl transition-all cursor-pointer shadow-md"
+                                className="bg-brand-primary text-white font-bold text-xs sm:text-sm px-6 py-2.5 rounded-xl transition-all cursor-pointer shadow-md"
                             >
                                 Create First Course &rarr;
                             </button>
                         ) : (
                             <button
                                 onClick={() => { setSearch(""); setStatusFilter("all"); }}
-                                className="text-brand-primary font-bold text-sm hover:underline cursor-pointer"
+                                className="text-brand-primary font-bold text-xs hover:underline cursor-pointer"
                             >
                                 Reset search and filters
                             </button>
@@ -341,12 +339,12 @@ function InstructorStudio() {
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.95 }}
                                         transition={{ duration: 0.3, delay: idx * 0.04 }}
-                                        className="bg-brand-surface border border-brand-border hover:border-brand-primary/40 rounded-2xl overflow-hidden transition-all duration-300 flex flex-col group shadow-sm hover:shadow-lg hover:shadow-black/20"
+                                        className="glass-card-elevated border border-brand-border hover:border-brand-primary/40 rounded-3xl overflow-hidden transition-all duration-300 flex flex-col group shadow-sm hover:shadow-glow-primary/20"
                                     >
                                         {/* Thumbnail Area */}
                                         <div 
                                             onClick={() => navigate(`/studio/course/${course._id}`)}
-                                            className="aspect-video bg-brand-elevated relative overflow-hidden cursor-pointer group/thumb"
+                                            className="aspect-video bg-brand-surface relative overflow-hidden cursor-pointer group/thumb"
                                         >
                                             {thumbnailSrc ? (
                                                 <img
@@ -364,15 +362,12 @@ function InstructorStudio() {
                                                 <PlayCircle size={44} />
                                             </div>
 
-                                            {/* Subtle gradient vignette */}
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
-
                                             {/* Status Badge */}
                                             <div className="absolute top-3 left-3 z-10 flex items-center gap-2">
-                                                <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 backdrop-blur-md shadow-md ${
+                                                <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 backdrop-blur-md shadow-sm ${
                                                     course.isPublished 
-                                                        ? 'bg-emerald-500/90 text-white' 
-                                                        : 'bg-black/70 text-brand-muted border border-white/10'
+                                                        ? 'bg-brand-emerald text-white' 
+                                                        : 'glass-card text-brand-muted border border-white/10'
                                                 }`}>
                                                     <span className={`w-1.5 h-1.5 rounded-full ${course.isPublished ? 'bg-white animate-pulse' : 'bg-brand-muted'}`} />
                                                     {course.isPublished ? 'Live' : 'Draft'}
@@ -381,15 +376,8 @@ function InstructorStudio() {
 
                                             {/* Price Badge */}
                                             <div className="absolute top-3 right-3 z-10">
-                                                <span className="px-2.5 py-1 rounded-md text-[11px] font-mono font-bold bg-black/75 text-white backdrop-blur-md border border-white/10 shadow-md">
-                                                    {course.price && course.price > 0 ? `$${course.price}` : 'Free'}
-                                                </span>
-                                            </div>
-
-                                            {/* Hover Quick Overlay */}
-                                            <div className="absolute inset-0 bg-brand-primary/20 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center gap-2 pointer-events-none">
-                                                <span className="px-3 py-1.5 rounded-lg bg-black/80 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg backdrop-blur-md">
-                                                    <Layers size={13} /> Manage Curriculum
+                                                <span className="px-2.5 py-0.5 rounded-md text-xs font-mono font-bold bg-brand-primary text-white shadow-md">
+                                                    {course.price && course.price > 0 ? `₹${course.price}` : 'Free'}
                                                 </span>
                                             </div>
                                         </div>
@@ -397,14 +385,14 @@ function InstructorStudio() {
                                         {/* Card Body */}
                                         <div className="p-5 flex-1 flex flex-col">
                                             {/* Category / Tags & Difficulty */}
-                                            <div className="flex items-center gap-2 mb-2.5 flex-wrap">
+                                            <div className="flex items-center gap-2 mb-2 flex-wrap">
                                                 {course.difficulty && (
-                                                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-brand-elevated text-brand-subtle border border-brand-border">
+                                                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md glass-card text-brand-muted border border-brand-border">
                                                         {course.difficulty}
                                                     </span>
                                                 )}
                                                 {Array.isArray(course.tags) && course.tags.slice(0, 2).map((tag, tIdx) => (
-                                                    <span key={tIdx} className="text-[10px] font-medium text-brand-muted bg-brand-surface px-2 py-0.5 rounded border border-brand-border/60">
+                                                    <span key={tIdx} className="text-[10px] font-medium text-brand-subtle bg-brand-surface px-2 py-0.5 rounded-md border border-brand-border/60">
                                                         #{tag}
                                                     </span>
                                                 ))}
@@ -413,7 +401,7 @@ function InstructorStudio() {
                                             {/* Course Title */}
                                             <h3 
                                                 onClick={() => navigate(`/studio/course/${course._id}`)}
-                                                className="font-bold text-base sm:text-lg text-brand-text group-hover:text-brand-primary transition-colors cursor-pointer line-clamp-2 leading-snug mb-2"
+                                                className="font-bold text-base text-brand-text group-hover:text-brand-primary transition-colors cursor-pointer line-clamp-2 leading-snug mb-1.5"
                                                 title={course.title}
                                             >
                                                 {course.title}
@@ -437,99 +425,44 @@ function InstructorStudio() {
                                             </div>
 
                                             {/* Card Action Buttons Bar */}
-                                            <div className="flex items-center gap-2 pt-4 mt-3 border-t border-brand-border/40">
-                                                {/* Primary CTA: Edit Curriculum */}
+                                            <div className="flex items-center gap-2 pt-3 mt-3 border-t border-brand-border/40">
                                                 <button
                                                     onClick={() => navigate(`/studio/course/${course._id}`)}
-                                                    className="flex-1 bg-brand-elevated hover:bg-brand-primary hover:text-white text-brand-text border border-brand-border hover:border-brand-primary text-xs font-bold py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                                                    className="flex-1 glass-card hover:bg-brand-primary hover:text-white text-brand-text border border-brand-border hover:border-brand-primary text-xs font-bold py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
                                                 >
-                                                    <Layers size={14} />
-                                                    Curriculum
+                                                    <Layers size={13} />
+                                                    <span>Curriculum</span>
                                                 </button>
 
-                                                {/* Settings Button */}
                                                 <button
                                                     onClick={() => navigate(`/course/${course._id}/edit`)}
-                                                    className="p-2 rounded-xl bg-brand-surface border border-brand-border hover:border-brand-primary/50 text-brand-muted hover:text-brand-text transition-colors cursor-pointer"
+                                                    className="glass-card hover:bg-brand-elevated text-brand-muted hover:text-brand-text p-2 rounded-xl transition-colors border border-brand-border"
                                                     title="Course Settings"
                                                 >
-                                                    <Settings size={15} />
+                                                    <Settings size={14} />
                                                 </button>
 
-                                                {/* Public Preview Button */}
                                                 <button
-                                                    onClick={() => navigate(`/course/${course._id}`)}
-                                                    className="p-2 rounded-xl bg-brand-surface border border-brand-border hover:border-brand-primary/50 text-brand-muted hover:text-brand-text transition-colors cursor-pointer"
-                                                    title="Preview Public Page"
+                                                    onClick={() => handlePublishToggle(course._id)}
+                                                    disabled={isProcessing}
+                                                    className={`p-2 rounded-xl transition-colors border ${
+                                                        course.isPublished
+                                                            ? "glass-card text-brand-emerald hover:bg-brand-elevated border-brand-border"
+                                                            : "glass-card text-brand-muted hover:text-brand-text border-brand-border"
+                                                    }`}
+                                                    title={course.isPublished ? "Unpublish to Draft" : "Publish Live"}
                                                 >
-                                                    <Eye size={15} />
+                                                    <Globe size={14} />
                                                 </button>
 
-                                                {/* Actions Dropdown Toggle */}
-                                                <div className="relative">
-                                                    <button
-                                                        disabled={isProcessing}
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setActionMenu(actionMenu === course._id ? null : course._id);
-                                                        }}
-                                                        className="p-2 rounded-xl bg-brand-surface border border-brand-border hover:border-brand-primary/50 text-brand-muted hover:text-brand-text transition-colors cursor-pointer disabled:opacity-50"
-                                                        title="More options"
-                                                    >
-                                                        <MoreVertical size={15} />
-                                                    </button>
-
-                                                    {/* Dropdown Menu */}
-                                                    {actionMenu === course._id && (
-                                                        <div 
-                                                            onClick={(e) => e.stopPropagation()}
-                                                            className="absolute right-0 bottom-full mb-2 w-52 bg-brand-elevated border border-brand-border rounded-xl shadow-2xl p-1.5 z-30 animate-in fade-in zoom-in-95 duration-150"
-                                                        >
-                                                            <button 
-                                                                onClick={() => { handlePublishToggle(course._id); }}
-                                                                className="w-full text-left px-3 py-2 text-xs font-medium text-brand-text hover:bg-brand-surface rounded-lg flex items-center gap-2.5 transition-colors cursor-pointer"
-                                                            >
-                                                                {course.isPublished ? (
-                                                                    <>
-                                                                        <Lock size={14} className="text-amber-400" />
-                                                                        <span>Move to Drafts</span>
-                                                                    </>
-                                                                ) : (
-                                                                    <>
-                                                                        <Globe size={14} className="text-emerald-400" />
-                                                                        <span>Publish Live</span>
-                                                                    </>
-                                                                )}
-                                                            </button>
-
-                                                            <button 
-                                                                onClick={() => navigate(`/course/${course._id}/edit`)}
-                                                                className="w-full text-left px-3 py-2 text-xs font-medium text-brand-text hover:bg-brand-surface rounded-lg flex items-center gap-2.5 transition-colors cursor-pointer"
-                                                            >
-                                                                <Settings size={14} />
-                                                                <span>Edit Details & Tags</span>
-                                                            </button>
-
-                                                            <button 
-                                                                onClick={() => navigate(`/course/${course._id}`)}
-                                                                className="w-full text-left px-3 py-2 text-xs font-medium text-brand-text hover:bg-brand-surface rounded-lg flex items-center gap-2.5 transition-colors cursor-pointer"
-                                                            >
-                                                                <ExternalLink size={14} />
-                                                                <span>Open Public Page</span>
-                                                            </button>
-
-                                                            <div className="h-px bg-brand-border/60 my-1" />
-
-                                                            <button 
-                                                                onClick={() => handleDelete(course._id)}
-                                                                className="w-full text-left px-3 py-2 text-xs font-medium text-red-400 hover:bg-red-500/10 rounded-lg flex items-center gap-2.5 transition-colors cursor-pointer"
-                                                            >
-                                                                <Trash2 size={14} />
-                                                                <span>Delete Course</span>
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </div>
+                                                <button
+                                                    onClick={() => handleDelete(course._id)}
+                                                    disabled={isProcessing}
+                                                    className="glass-card hover:bg-red-500/10 text-brand-muted hover:text-red-400 p-2 rounded-xl transition-colors border border-brand-border"
+                                                    title="Delete Course"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
                                             </div>
                                         </div>
                                     </motion.div>

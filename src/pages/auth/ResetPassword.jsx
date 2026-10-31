@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams, useNavigate, Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { toast } from "react-hot-toast";
 import api from "../../api";
 import NavBar from "../../components/NavBar";
@@ -71,9 +72,9 @@ function ResetPassword() {
     const getStrengthInfo = () => {
         if (!password) return { label: "", color: "bg-brand-border", width: "0%" };
         if (criteriaMet === 1) return { label: "Weak", color: "bg-red-500", width: "25%" };
-        if (criteriaMet === 2) return { label: "Fair", color: "bg-amber-500", width: "50%" };
-        if (criteriaMet === 3) return { label: "Good", color: "bg-blue-500", width: "75%" };
-        return { label: "Strong", color: "bg-emerald-500", width: "100%" };
+        if (criteriaMet === 2) return { label: "Fair", color: "bg-brand-amber", width: "50%" };
+        if (criteriaMet === 3) return { label: "Good", color: "bg-brand-primary", width: "75%" };
+        return { label: "Strong", color: "bg-brand-emerald", width: "100%" };
     };
 
     const strength = getStrengthInfo();
@@ -119,27 +120,31 @@ function ResetPassword() {
     };
 
     return (
-        <div className="min-h-screen bg-brand-bg text-brand-text transition-colors duration-page flex flex-col relative overflow-hidden">
+        <div className="min-h-screen bg-brand-bg text-brand-text flex flex-col relative overflow-hidden selection:bg-brand-primary/30 selection:text-white">
             <NavBar />
 
             {/* Visual Ambient Background */}
-            <div className="absolute inset-0 bg-grid-pattern opacity-40 pointer-events-none z-0" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] h-[60vw] max-w-[600px] max-h-[600px] bg-brand-primary/10 blur-[100px] rounded-full pointer-events-none z-0 animate-ambient-glow" />
+            <div className="absolute inset-0 bg-grid-pattern opacity-50 pointer-events-none z-0" />
+            <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-brand-primary/15 blur-[140px] rounded-full pointer-events-none z-0 animate-ambient-glow" />
 
-            <div className="flex-grow flex items-center justify-center py-24 px-6 relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-hero">
+            <div className="flex-grow flex items-center justify-center py-16 px-4 sm:px-6 relative z-10">
                 <div className="w-full max-w-[460px]">
-                    <div className="bg-brand-surface border border-brand-border rounded-2xl p-8 sm:p-9 shadow-2xl relative backdrop-blur-xl">
-
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ duration: 0.45, ease: "easeOut" }}
+                        className="glass-card-elevated rounded-3xl p-7 sm:p-9 shadow-2xl relative border border-brand-border/80"
+                    >
                         {/* STATE 1: Token Verifying */}
                         {isVerifying && (
                             <div className="py-12 text-center space-y-4">
-                                <div className="w-14 h-14 rounded-2xl bg-brand-primary/10 border border-brand-primary/20 text-brand-primary flex items-center justify-center mx-auto shadow-lg shadow-brand-primary/10">
-                                    <Loader2 size={28} className="animate-spin text-brand-primary" />
+                                <div className="w-14 h-14 rounded-2xl bg-brand-primary/10 border border-brand-primary/20 text-brand-primary flex items-center justify-center mx-auto shadow-sm">
+                                    <Loader2 size={26} className="animate-spin text-brand-primary" />
                                 </div>
                                 <h3 className="text-xl font-bold text-brand-text">
                                     Verifying Security Token
                                 </h3>
-                                <p className="text-brand-subtle text-xs max-w-xs mx-auto">
+                                <p className="text-brand-muted text-xs max-w-xs mx-auto">
                                     Authenticating your recovery link. This takes just a moment...
                                 </p>
                             </div>
@@ -147,24 +152,24 @@ function ResetPassword() {
 
                         {/* STATE 2: Token Invalid / Expired */}
                         {!isVerifying && !isTokenValid && (
-                            <div className="text-center space-y-5">
-                                <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mx-auto shadow-lg shadow-red-500/10">
-                                    <ShieldAlert size={28} />
+                            <div className="text-center space-y-4 py-3">
+                                <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mx-auto shadow-sm">
+                                    <ShieldAlert size={26} />
                                 </div>
 
                                 <div>
-                                    <h3 className="text-2xl font-extrabold text-brand-text tracking-tight">
+                                    <h3 className="text-xl sm:text-2xl font-black text-brand-text tracking-tight">
                                         Link Expired or Invalid
                                     </h3>
-                                    <p className="text-brand-subtle text-xs mt-2 leading-relaxed">
+                                    <p className="text-brand-muted text-xs mt-1.5 leading-relaxed">
                                         {verificationError || "This password recovery link has expired or has already been used. Security links are valid for 15 minutes."}
                                     </p>
                                 </div>
 
-                                <div className="space-y-3 pt-2">
+                                <div className="space-y-2.5 pt-2">
                                     <Link
                                         to="/forgot-password"
-                                        className="w-full bg-brand-primary hover:bg-brand-primary/90 text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-lg shadow-brand-primary/25 flex items-center justify-center gap-2 text-sm"
+                                        className="w-full bg-gradient-to-r from-brand-primary via-indigo-600 to-brand-primary text-white font-bold py-3 px-6 rounded-xl transition-all shadow-glow-primary/40 flex items-center justify-center gap-2 text-sm border border-white/10"
                                     >
                                         <span>Request New Reset Link</span>
                                         <ArrowRight size={16} />
@@ -172,9 +177,9 @@ function ResetPassword() {
 
                                     <Link
                                         to="/login"
-                                        className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-brand-muted hover:text-brand-text transition-colors pt-2"
+                                        className="inline-flex items-center justify-center gap-2 text-xs font-semibold text-brand-muted hover:text-brand-text transition-colors pt-2"
                                     >
-                                        <ArrowLeft size={16} />
+                                        <ArrowLeft size={14} />
                                         <span>Back to Sign In</span>
                                     </Link>
                                 </div>
@@ -183,21 +188,21 @@ function ResetPassword() {
 
                         {/* STATE 3: Success State */}
                         {!isVerifying && isTokenValid && isSuccess && (
-                            <div className="py-6 text-center space-y-5">
-                                <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/10 animate-bounce">
-                                    <CheckCircle2 size={32} />
+                            <div className="py-4 text-center space-y-4">
+                                <div className="w-14 h-14 rounded-2xl bg-brand-emerald/15 border border-brand-emerald/30 text-brand-emerald flex items-center justify-center mx-auto shadow-sm">
+                                    <CheckCircle2 size={30} />
                                 </div>
 
                                 <div>
-                                    <h3 className="text-2xl font-extrabold text-brand-text tracking-tight">
+                                    <h3 className="text-2xl font-black text-brand-text tracking-tight">
                                         Password Updated!
                                     </h3>
-                                    <p className="text-brand-subtle text-sm mt-1.5">
+                                    <p className="text-brand-muted text-xs sm:text-sm mt-1">
                                         Your account credentials have been successfully updated.
                                     </p>
                                 </div>
 
-                                <div className="p-3.5 bg-brand-elevated border border-brand-border rounded-xl">
+                                <div className="p-3 bg-brand-surface/80 border border-brand-border/60 rounded-xl">
                                     <p className="text-xs text-brand-muted">
                                         Redirecting you to the sign-in screen now...
                                     </p>
@@ -205,7 +210,7 @@ function ResetPassword() {
 
                                 <button
                                     onClick={() => navigate("/login")}
-                                    className="w-full bg-brand-primary hover:bg-brand-primary/90 text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-lg shadow-brand-primary/25 flex items-center justify-center gap-2 text-sm"
+                                    className="w-full bg-gradient-to-r from-brand-primary via-indigo-600 to-brand-primary text-white font-bold py-3 px-6 rounded-xl transition-all shadow-glow-primary/40 flex items-center justify-center gap-2 text-sm border border-white/10"
                                 >
                                     <span>Sign In Now</span>
                                     <ArrowRight size={16} />
@@ -216,27 +221,32 @@ function ResetPassword() {
                         {/* STATE 4: Form Input */}
                         {!isVerifying && isTokenValid && !isSuccess && (
                             <>
-                                <div className="mb-7">
+                                <div className="mb-6">
                                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-primary/10 border border-brand-primary/20 text-brand-primary text-xs font-semibold mb-3">
                                         <KeyRound size={13} />
                                         <span>Security Recovery</span>
                                     </div>
-                                    <h2 className="text-2xl sm:text-3xl font-extrabold text-brand-text tracking-tight">
+                                    <h2 className="text-2xl sm:text-3xl font-black text-brand-text tracking-tight">
                                         Create New Password
                                     </h2>
-                                    <p className="text-brand-subtle mt-1.5 text-xs sm:text-sm">
+                                    <p className="text-brand-muted mt-1 text-xs sm:text-sm">
                                         Set a secure new password for <span className="font-semibold text-brand-text">{email}</span>.
                                     </p>
                                 </div>
 
                                 {formError && (
-                                    <div className="mb-6 flex items-start gap-2.5 bg-red-500/10 border border-red-500/20 text-red-400 p-3.5 rounded-xl text-sm font-medium animate-in fade-in duration-200">
-                                        <AlertCircle size={18} className="mt-0.5 shrink-0 text-red-400" />
+                                    <motion.div 
+                                        initial={{ opacity: 0, x: -8 }}
+                                        animate={{ opacity: 1, x: [0, -8, 8, -6, 6, -3, 3, 0] }}
+                                        transition={{ duration: 0.35 }}
+                                        className="mb-5 flex items-start gap-2.5 bg-red-500/10 border border-red-500/20 text-red-400 p-3.5 rounded-xl text-xs sm:text-sm font-medium"
+                                    >
+                                        <AlertCircle size={16} className="mt-0.5 shrink-0 text-red-400" />
                                         <span>{formError}</span>
-                                    </div>
+                                    </motion.div>
                                 )}
 
-                                <form onSubmit={handlePasswordReset} className="space-y-5" noValidate>
+                                <form onSubmit={handlePasswordReset} className="space-y-4" noValidate>
                                     
                                     {/* NEW PASSWORD INPUT */}
                                     <div className="space-y-1.5">
@@ -257,7 +267,7 @@ function ResetPassword() {
                                                     if (formError) setFormError("");
                                                 }}
                                                 disabled={isSubmitting}
-                                                className="w-full bg-brand-elevated text-brand-text placeholder-brand-subtle border border-brand-border focus:border-brand-primary rounded-xl py-3 pl-10 pr-11 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 transition-all font-mono"
+                                                className="w-full bg-brand-surface/90 text-brand-text placeholder-brand-subtle border border-brand-border hover:border-brand-primary/40 focus:border-brand-primary rounded-xl py-2.5 pl-10 pr-11 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 transition-all font-mono"
                                             />
                                             <button
                                                 type="button"
@@ -272,53 +282,41 @@ function ResetPassword() {
 
                                         {/* PASSWORD STRENGTH BAR */}
                                         {password.length > 0 && (
-                                            <div className="space-y-2 pt-1 animate-in fade-in duration-200">
+                                            <div className="space-y-1.5 pt-1">
                                                 <div className="flex justify-between items-center text-xs">
-                                                    <span className="text-brand-subtle">Password strength:</span>
-                                                    <span className={`font-semibold ${
+                                                    <span className="text-brand-subtle text-[10px]">Password strength:</span>
+                                                    <span className={`font-bold text-[10px] ${
                                                         criteriaMet <= 1 ? "text-red-400" :
-                                                        criteriaMet === 2 ? "text-amber-400" :
-                                                        criteriaMet === 3 ? "text-blue-400" : "text-emerald-400"
+                                                        criteriaMet === 2 ? "text-brand-amber" :
+                                                        criteriaMet === 3 ? "text-brand-primary" : "text-brand-emerald"
                                                     }`}>
                                                         {strength.label}
                                                     </span>
                                                 </div>
-                                                <div className="h-1.5 w-full bg-brand-elevated rounded-full overflow-hidden border border-brand-border/40">
+                                                <div className="h-1 w-full bg-brand-surface rounded-full overflow-hidden">
                                                     <div 
                                                         className={`h-full transition-all duration-300 rounded-full ${strength.color}`} 
                                                         style={{ width: strength.width }}
                                                     />
                                                 </div>
-
-                                                {/* CRITERIA CHECKLIST */}
-                                                <div className="grid grid-cols-2 gap-2 pt-1 text-[11px]">
-                                                    <div className={`flex items-center gap-1.5 ${hasMinLength ? "text-emerald-400 font-medium" : "text-brand-subtle"}`}>
-                                                        {hasMinLength ? <Check size={12} className="text-emerald-400 shrink-0" /> : <span className="w-1.5 h-1.5 rounded-full bg-brand-subtle shrink-0" />}
-                                                        <span>8+ characters</span>
-                                                    </div>
-                                                    <div className={`flex items-center gap-1.5 ${hasLetter && hasNumber ? "text-emerald-400 font-medium" : "text-brand-subtle"}`}>
-                                                        {hasLetter && hasNumber ? <Check size={12} className="text-emerald-400 shrink-0" /> : <span className="w-1.5 h-1.5 rounded-full bg-brand-subtle shrink-0" />}
-                                                        <span>Letters & numbers</span>
-                                                    </div>
-                                                </div>
                                             </div>
                                         )}
                                     </div>
 
-                                    {/* CONFIRM NEW PASSWORD INPUT */}
+                                    {/* CONFIRM PASSWORD INPUT */}
                                     <div className="space-y-1.5">
                                         <div className="flex justify-between items-center">
                                             <label className="text-[11px] font-bold text-brand-muted uppercase tracking-wider">
                                                 Confirm New Password
                                             </label>
                                             {passwordsMatch && (
-                                                <span className="text-[11px] font-semibold text-emerald-400 flex items-center gap-1">
-                                                    <Check size={12} /> Match
+                                                <span className="text-[11px] font-semibold text-brand-emerald flex items-center gap-1">
+                                                    <Check size={11} /> Matches
                                                 </span>
                                             )}
                                             {passwordsDoNotMatch && (
                                                 <span className="text-[11px] font-semibold text-red-400 flex items-center gap-1">
-                                                    <X size={12} /> Do not match
+                                                    <X size={11} /> Does not match
                                                 </span>
                                             )}
                                         </div>
@@ -336,12 +334,12 @@ function ResetPassword() {
                                                     if (formError) setFormError("");
                                                 }}
                                                 disabled={isSubmitting}
-                                                className={`w-full bg-brand-elevated text-brand-text placeholder-brand-subtle border rounded-xl py-3 pl-10 pr-11 text-sm focus:outline-none focus:ring-2 transition-all font-mono ${
-                                                    passwordsMatch 
-                                                        ? "border-emerald-500/50 focus:border-emerald-500 focus:ring-emerald-500/20" 
-                                                        : passwordsDoNotMatch 
-                                                        ? "border-red-500/50 focus:border-red-500 focus:ring-red-500/20" 
-                                                        : "border-brand-border focus:border-brand-primary focus:ring-brand-primary/20"
+                                                className={`w-full bg-brand-surface/90 text-brand-text placeholder-brand-subtle border rounded-xl py-2.5 pl-10 pr-11 text-xs sm:text-sm focus:outline-none focus:ring-2 transition-all font-mono ${
+                                                    passwordsDoNotMatch
+                                                        ? "border-red-500/50 focus:border-red-500 focus:ring-red-500/20"
+                                                        : passwordsMatch
+                                                        ? "border-brand-emerald/50 focus:border-brand-emerald focus:ring-brand-emerald/20"
+                                                        : "border-brand-border hover:border-brand-primary/40 focus:border-brand-primary focus:ring-brand-primary/20"
                                                 }`}
                                             />
                                             <button
@@ -356,39 +354,29 @@ function ResetPassword() {
                                         </div>
                                     </div>
 
-                                    {/* SUBMIT BUTTON */}
-                                    <button
+                                    <motion.button
+                                        whileHover={{ scale: 1.01 }}
+                                        whileTap={{ scale: 0.98 }}
                                         type="submit"
-                                        disabled={isSubmitting || !hasMinLength || !hasLetter || !hasNumber || !passwordsMatch}
-                                        className="w-full bg-brand-primary hover:bg-brand-primary/90 text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-lg shadow-brand-primary/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group text-sm"
+                                        disabled={isSubmitting}
+                                        className="w-full bg-gradient-to-r from-brand-primary via-indigo-600 to-brand-primary text-white font-bold py-3 rounded-xl transition-all shadow-glow-primary/40 hover:shadow-glow-primary/60 flex items-center justify-center gap-2 mt-3 disabled:opacity-70 disabled:cursor-not-allowed group text-sm border border-white/10"
                                     >
                                         {isSubmitting ? (
                                             <>
-                                                <Loader2 size={18} className="animate-spin" />
+                                                <Loader2 size={16} className="animate-spin" />
                                                 <span>Updating Password...</span>
                                             </>
                                         ) : (
                                             <>
-                                                <span>Update Password</span>
-                                                <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
+                                                <span>Save & Continue</span>
+                                                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                                             </>
                                         )}
-                                    </button>
+                                    </motion.button>
                                 </form>
-
-                                <div className="mt-8 pt-6 border-t border-brand-border/60 text-center">
-                                    <Link 
-                                        to="/login" 
-                                        className="inline-flex items-center gap-2 text-sm font-semibold text-brand-muted hover:text-brand-text transition-colors group"
-                                    >
-                                        <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
-                                        <span>Back to Sign In</span>
-                                    </Link>
-                                </div>
                             </>
                         )}
-
-                    </div>
+                    </motion.div>
                 </div>
             </div>
         </div>
